@@ -1,7 +1,5 @@
 package keville;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.io.IOException;
@@ -9,7 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class Proximal {
   public static void main(String[] args) {
@@ -39,14 +36,10 @@ public class Proximal {
       if ( message.equals("Okay") ) {
 
         System.out.println("Server Response: "+message);
-        //List<JsonObject> eventsList = (List<JsonObject>) ois.readObject();
-        List<String> eventsStringList = (List<String>) ois.readObject();
-
-        List<JsonObject> events = eventsStringList.stream()
-          .map(e -> JsonParser.parseString(e).getAsJsonObject() )
-          .collect(Collectors.toList());
-
-        System.out.println(events.toString());
+        List<Event> events = (List<Event>) ois.readObject();
+        for (Event e : events ) {
+          System.out.println(e.toString()+"\n");
+        }
 
       } else if ( message.equals("Unknown") ) {
 
@@ -72,10 +65,6 @@ public class Proximal {
       System.out.println("error connecting to server");
       System.out.println(e.getMessage());
     }
-
-
-    System.out.println("After test");
-
 
   }
 }

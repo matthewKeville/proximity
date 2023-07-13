@@ -12,6 +12,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -24,7 +30,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class VenueLocator {
+public class EventBriteVenueLocator {
 
   private static String venueBaseUri = "https://www.eventbriteapi.com/v3/venues/";
   private static String cacheFilePath = "./.venueCache.json";
@@ -33,7 +39,7 @@ public class VenueLocator {
   private HttpClient httpClient;
   private String BEARER_TOKEN;
 
-  public VenueLocator(Properties properties) {
+  public EventBriteVenueLocator(Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
     venues = new HashMap<String,JsonObject>();
