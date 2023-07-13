@@ -1,5 +1,10 @@
 package keville;
 
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -16,7 +21,7 @@ import java.time.format.DateTimeFormatter;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 
-public class App 
+public class ProximalDaemon 
 {
     static Properties props;
     static VenueLocator venueLocator;
@@ -147,17 +152,6 @@ public class App
 
     public static void main( String[] args )
     {
-        //Scan for new events
-
-        //When I google city lat/lon pairs google show somethings like 40.2204° N, 74.0121° W
-        //but this translates to (40.2204,-74.0121,5.0) , i.e. W means negative
-        //EventScanner eventScanner = new EventScanner(39.9710,-75.1285,5.0); //fishtown
-        //EventScanner eventScanner = new EventScanner(40.2204,-74.0121,20.0); //asbury park
-        //List<String> newEventIds = eventScanner.scan(15);
-        //newEventIds.stream()
-        //  .forEach(e -> eventLocator.locateEvent(e));
-        
-
 
         List<JsonObject> allEvents = eventLocator.getAllKnownEvents();
 
@@ -175,9 +169,66 @@ public class App
           filter(WithinDaysFromNow(2)).
           collect(Collectors.toList());
         
-
         //Display events
         printEventInfo(events);
+
+
+        int port = 9876;
+        boolean run = true;
+        try {
+
+          ServerSocket server = new ServerSocket(port);
+          while (run) {
+
+            //process one socket request at a time
+
+            Socket socket = server.accept();
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
+            //what is the client requesting?
+            String request = (String) ois.readObject();
+
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+            if (request.equals("List")) {
+
+              String filterString = (String) ois.readObject();
+              System.out.println("request :" + request );
+              System.out.println("filterString :" + filterString );
+
+              oos.writeObject("Okay");
+              List<String> allEventsAsString = allEvents.stream()
+                .map(e -> e.toString())
+                .collect(Collectors.toList());
+              oos.writeObject(allEventsAsString);
+
+            } else {
+              oos.writeObject("Unknown");
+            }
+
+
+
+            ois.close();
+            oos.close();
+            socket.close();
+          }
+          server.close();
+
+        } catch (IOException | ClassNotFoundException e) {
+          System.out.println("the server encountered an error");
+          System.out.println(e.getMessage());
+        }
+        System.exit(0);
+
+        //Scan for new events
+        //When I google city lat/lon pairs google show somethings like 40.2204° N, 74.0121° W
+        //but this translates to (40.2204,-74.0121,5.0) , i.e. W means negative
+        //EventScanner eventScanner = new EventScanner(39.9710,-75.1285,5.0); //fishtown
+        //EventScanner eventScanner = new EventScanner(40.2204,-74.0121,20.0); //asbury park
+        //List<String> newEventIds = eventScanner.scan(15);
+        //newEventIds.stream()
+        //  .forEach(e -> eventLocator.locateEvent(e));
+
+
 
         // save venues & events to cold storage
         eventLocator.notifyTermination();

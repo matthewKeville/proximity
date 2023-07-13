@@ -17,9 +17,6 @@
     <!-- https://maven.apache.org/plugins/maven-compiler-plugin/examples/set-compiler-source-and-target.html -->
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <!-- https://stackoverflow.com/questions/1089285/maven-run-project -->
-    <!-- now we can use `mv exec:java` to run the project (not test) -->
-    <exec.mainClass>keville.App</exec.mainClass> 
     <!--https://stackoverflow.com/questions/51871635/couldnt-destroy-threadgroup-org-codehaus-mojo-exec-execjavamojoisolatedthreadg-->
     <exec.cleanupDaemonThreads>false</exec.cleanupDaemonThreads>
   </properties>
@@ -132,6 +129,47 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
         </plugin>
+
+        <!-- https://stackoverflow.com/questions/8252107/is-it-possible-to-execute-two-different-maven-exec-maven-plugin-in-a-single-pom -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <executions>
+
+            <execution>
+              <id>server</id>
+              <goals>
+                <goal>java</goal>
+              </goals>
+              <configuration>
+                <mainClass>keville.ProximalDaemon</mainClass>
+                <arguments>
+                  <argument></argument>
+                </arguments>
+                <systemProperties>
+                </systemProperties>
+              </configuration>
+            </execution>
+
+            <execution>
+              <id>client</id>
+              <goals>
+                <goal>java</goal>
+              </goals>
+              <configuration>
+                <mainClass>keville.Proximal</mainClass>
+                <arguments>
+                  <argument></argument>
+                </arguments>
+                <systemProperties>
+                </systemProperties>
+              </configuration>
+            </execution>
+
+          </executions>
+        </plugin>
+
       </plugins>
     </pluginManagement>
   </build>
