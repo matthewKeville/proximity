@@ -3,6 +3,7 @@ package keville.Eventbrite;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
+import keville.util.DateTimeUtils;
 
 import keville.Eventbrite.VenueCache;
 import keville.Eventbrite.EventCache;
@@ -14,11 +15,11 @@ import java.io.Writer;
 import java.io.StringWriter;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.Duration;
 
 import java.util.stream.Collectors;
 import java.util.Properties;
@@ -26,9 +27,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
@@ -87,7 +88,8 @@ public class EventbriteScanner implements EventScanner {
   private EventCache eventCache;
   private VenueCache venueCache;
 
-  public EventbriteScanner(double latitude,double longitude,double radius,Properties props) {
+  public EventbriteScanner(double latitude,double longitude,double radius, keville.EventCache masterEventCache, Properties props) {
+    this.masterEventCache = masterEventCache;
     this.latitude = latitude;
     this.longitude = longitude;
     this.radius = radius; /*in miles*/
@@ -233,7 +235,7 @@ public class EventbriteScanner implements EventScanner {
     } 
      
     JsonObject eventStartJson = eventJson.getAsJsonObject("start");
-    LocalDateTime start = ISOInstantToLocalDateTime(eventStartJson.get("utc").getAsString());
+    LocalDateTime start = DateTimeUtils.ISOInstantToLocalDateTime(eventStartJson.get("utc").getAsString());
 
     String venueId = "";
     JsonElement venueIdElement = eventJson.get("venue_id");
@@ -275,15 +277,6 @@ public class EventbriteScanner implements EventScanner {
         state,
         url
         );
-  }
-
-  /* this doesn't really belong in this class should belong in keville.util */
-  //https://stackoverflow.com/questions/32826077/parsing-iso-instant-and-similar-date-time-strings
-  public static LocalDateTime ISOInstantToLocalDateTime(String instantString) {
-    DateTimeFormatter dtf = DateTimeFormatter.ISO_INSTANT;
-    Instant instant = Instant.from(dtf.parse(instantString));
-    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(ZoneOffset.UTC.getId()));
-    return localDateTime;
   }
 
 

@@ -1,6 +1,7 @@
 package keville;
 
 import keville.Eventbrite.EventbriteScanner;
+import keville.meetup.MeetupScanner;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -32,22 +33,23 @@ public class ProximalDaemon
 
         Predicate<Event> eventFilter;
         eventFilter = Event.WithinDaysFromNow(3);
-        eventFilter = eventFilter.and(Event.CitiesFilter(Arrays.asList("Philadelphia")));
+        //eventFilter = eventFilter.and(Event.CitiesFilter(Arrays.asList("Philadelphia")));
         
         //Filter events
         List<Event> events = allEvents.stream().
           filter(eventFilter).
           collect(Collectors.toList());
 
+        /*
         for (Event e : events ) {
           System.out.println(e+"\n");
         }
+        */
 
-        System.out.println("quitting");
-
-        eventCache.notifyTermination();
-        System.exit(0);
-
+        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury park
+        EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
+        //int found = meetupScanner.scan();
+        //eventCache.notifyTermination();
 
         int port = 9876;
         boolean run = true;
@@ -95,9 +97,7 @@ public class ProximalDaemon
           System.out.println("the server encountered an error");
           System.out.println(e.getMessage());
         }
-        System.exit(0);
 
-        EventScanner eventScanner = new EventbriteScanner(40.2204,-74.0121,20.0,props); //asbury park
 
         // save venues & events to cold storage
         eventCache.notifyTermination();

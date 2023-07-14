@@ -45,8 +45,19 @@ public class Event implements Serializable {
       }
 
   public String toString() {
-    return String.format("Name: %s\nDescription: %s\nStart %s\nLocale : %s,%s\nLat , Lon: %4.2f,%4.2f\nUrl %s",
-        name,description.substring(0,Math.min(description.length(),60)),start.toString(),city,state,latitude,longitude,url);
+    return String.format("Name: %s\nDescription: %s\nStart %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %4.2f,%4.2f\nUrl %s",
+        name,description.substring(0,Math.min(description.length(),60)),start.toString(),city,state,eventTypeString(eventType),latitude,longitude,url);
+  }
+
+  public static String eventTypeString(EventTypeEnum type) {
+    switch (type) {
+      case EVENTBRITE:
+            return "Eventbrite.com";
+      case MEETUP:
+            return "meetup.com";
+      default:
+            return "unknown";
+    }
   }
 
   // location filters
