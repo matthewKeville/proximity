@@ -1,5 +1,7 @@
 package keville;
 
+import keville.Eventbrite.EventbriteScanner;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.ObjectInputStream;
@@ -12,13 +14,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Arrays;
-import java.time.LocalDateTime;
 
 
 public class ProximalDaemon 
 {
     static Properties props;
-    static EventBriteEventLocator eventLocator;
+    static EventCache eventCache;
 
     static {
       initialize();
@@ -27,19 +28,25 @@ public class ProximalDaemon
     public static void main( String[] args )
     {
 
-        List<Event> allEvents = eventLocator.getAllKnownEvents();
+        List<Event> allEvents = eventCache.getAll();
 
         Predicate<Event> eventFilter;
         eventFilter = Event.WithinDaysFromNow(3);
         eventFilter = eventFilter.and(Event.CitiesFilter(Arrays.asList("Philadelphia")));
-        //eventFilter = eventFilter.and(CitiesFilter(Arrays.asList("Asbury Park","Belmar","Ocean Grove","Neptune","Lake Como")));
-
-        //cities filter not working ...
         
         //Filter events
         List<Event> events = allEvents.stream().
           filter(eventFilter).
           collect(Collectors.toList());
+
+        for (Event e : events ) {
+          System.out.println(e+"\n");
+        }
+
+        System.out.println("quitting");
+
+        eventCache.notifyTermination();
+        System.exit(0);
 
 
         int port = 9876;
@@ -90,15 +97,10 @@ public class ProximalDaemon
         }
         System.exit(0);
 
-        //Scan for new events
-        //EventScanner eventScanner = new EventScanner(40.2204,-74.0121,20.0); //asbury park
-        //List<String> newEventIds = eventScanner.scan();
-        //newEventIds.stream()
-        //  .forEach(e -> eventLocator.locateEvent(e));
-
+        EventScanner eventScanner = new EventbriteScanner(40.2204,-74.0121,20.0,props); //asbury park
 
         // save venues & events to cold storage
-        eventLocator.notifyTermination();
+        eventCache.notifyTermination();
 
     }
 
@@ -126,7 +128,7 @@ public class ProximalDaemon
       }
       System.out.println("using api_key : "+props.getProperty("event_brite_api_key"));
 
-      eventLocator = new EventBriteEventLocator(props);
+      eventCache = new EventCache();
     }
 
 }

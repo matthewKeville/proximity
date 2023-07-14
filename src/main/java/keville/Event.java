@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 
 public class Event implements Serializable {
   public EventTypeEnum eventType; 
-  public String eventId;
+  public String id;
   public String name;
   public String description;
   public LocalDateTime start;
@@ -22,7 +22,7 @@ public class Event implements Serializable {
 
   public Event() {};
   public Event(EventTypeEnum eventType,
-      String eventId,
+      String id,
       String name,
       String description,
       LocalDateTime start,
@@ -33,7 +33,7 @@ public class Event implements Serializable {
       String url
       ) {
         this.eventType = eventType;
-        this.eventId = eventId;
+        this.id = id;
         this.name = name;
         this.description = description;
         this.start = start;

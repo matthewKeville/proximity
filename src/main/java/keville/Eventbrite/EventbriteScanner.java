@@ -1,4 +1,34 @@
-package keville;
+package keville.Eventbrite;
+
+import keville.Event;
+import keville.EventScanner;
+import keville.EventTypeEnum;
+
+import keville.Eventbrite.VenueCache;
+import keville.Eventbrite.EventCache;
+
+import java.io.IOException;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.io.StringWriter;
+
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.Duration;
+
+import java.util.stream.Collectors;
+import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
@@ -14,18 +44,10 @@ import net.lightbody.bmp.client.ClientUtil;
 import net.lightbody.bmp.core.har.Har;
 import net.lightbody.bmp.proxy.CaptureType;
 
-import java.io.Writer;
-import java.io.StringWriter;
-import java.time.Duration;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-public class EventBriteEventScanner implements EventScanner {
+public class EventbriteScanner implements EventScanner {
 
 
   /* return a bounding box  that is circumsribed by the circle defined by (lon,lat,radius) */
@@ -60,15 +82,20 @@ public class EventBriteEventScanner implements EventScanner {
   private double latitude;
   private double longitude;
   private double radius; /*in miles*/
-  /*private someSchedulingStructure schedule*/
 
-  public EventBriteEventScanner(double latitude,double longitude,double radius) {
+  private keville.EventCache masterEventCache;
+  private EventCache eventCache;
+  private VenueCache venueCache;
+
+  public EventbriteScanner(double latitude,double longitude,double radius,Properties props) {
     this.latitude = latitude;
     this.longitude = longitude;
     this.radius = radius; /*in miles*/
+    venueCache = new VenueCache(props);
+    eventCache = new EventCache(props);
   }
 
-  public List<String> scan() {
+  public int scan() {
 
       int page  = 0;
       int pages = 0;
@@ -172,9 +199,92 @@ public class EventBriteEventScanner implements EventScanner {
         driver.quit();
       }
 
-      System.out.println("Scrubbed "+eventIds.size()+" events");
-      return eventIds;
+      // Only process new event ids
+      List<Event> events = eventIds
+        .stream()
+        .filter(ei -> !masterEventCache.has(ei))
+        .map(ei -> createEventFrom(ei))
+        .filter(e -> e != null)
+        .collect(Collectors.toList());
+
+      masterEventCache.addAll(events);
+
+      //Package into Domain Event
+      return events.size();
 
   }
+
+
+  /* transform local event format to Event object */
+  private Event createEventFrom(String eventId) {
+
+    JsonObject eventJson = eventCache.get(eventId);
+    if (eventJson == null) {
+      System.err.println("error generating domain event for eventbrite id : " + eventId);
+      return null;
+    }
+
+    String eventName = eventJson.getAsJsonObject("name").get("text").getAsString();
+
+    String eventDescription = "";
+    JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
+    if (!eventDescriptionJson.isJsonNull()) {
+      eventDescription = eventDescriptionJson.getAsString();
+    } 
+     
+    JsonObject eventStartJson = eventJson.getAsJsonObject("start");
+    LocalDateTime start = ISOInstantToLocalDateTime(eventStartJson.get("utc").getAsString());
+
+    String venueId = "";
+    JsonElement venueIdElement = eventJson.get("venue_id");
+    if (!venueIdElement.isJsonNull()) {
+      venueId = venueIdElement.getAsString();
+    }
+
+    double latitude = 0;
+    double longitude = 0;
+    String city = "";
+    String state = "";
+    if (!venueId.isEmpty()) {
+      JsonObject venue = venueCache.get(venueId);
+      latitude  = Double.parseDouble(venue.get("latitude").getAsString());
+      longitude = Double.parseDouble(venue.get("longitude").getAsString());
+      JsonObject address = venue.getAsJsonObject("address");
+      JsonElement cityJson = address.get("city");
+      if (cityJson  != null && !cityJson.isJsonNull() )  {
+        city = cityJson.getAsString();
+      }
+      JsonElement stateJson = address.get("region");
+      if (stateJson != null && !stateJson.isJsonNull() )  {
+        state = stateJson.getAsString();
+      }
+    } else {
+      System.out.println("Venue: no venue information");
+    }
+
+    String url = eventJson.get("url").getAsString();
+
+    return new Event(EventTypeEnum.EVENTBRITE,
+        eventId,
+        eventName,
+        eventDescription,
+        start,
+        longitude,
+        latitude,
+        city,
+        state,
+        url
+        );
+  }
+
+  /* this doesn't really belong in this class should belong in keville.util */
+  //https://stackoverflow.com/questions/32826077/parsing-iso-instant-and-similar-date-time-strings
+  public static LocalDateTime ISOInstantToLocalDateTime(String instantString) {
+    DateTimeFormatter dtf = DateTimeFormatter.ISO_INSTANT;
+    Instant instant = Instant.from(dtf.parse(instantString));
+    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(ZoneOffset.UTC.getId()));
+    return localDateTime;
+  }
+
 
 }

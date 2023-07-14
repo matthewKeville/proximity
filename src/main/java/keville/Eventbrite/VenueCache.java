@@ -1,22 +1,14 @@
-package keville;
+package keville.Eventbrite;
 
 import java.util.Properties;
 import java.util.Map;
 import java.util.HashMap;
-
+import java.util.Scanner;
 import java.util.Iterator;
+
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Scanner; /*why is this convention over FileReader?*/
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-
-import java.time.LocalDateTime;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,7 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class EventBriteVenueLocator {
+public class VenueCache {
 
   private static String venueBaseUri = "https://www.eventbriteapi.com/v3/venues/";
   private static String cacheFilePath = "./.venueCache.json";
@@ -39,18 +31,14 @@ public class EventBriteVenueLocator {
   private HttpClient httpClient;
   private String BEARER_TOKEN;
 
-  public EventBriteVenueLocator(Properties properties) {
+  public VenueCache(Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
     venues = new HashMap<String,JsonObject>();
     loadCacheFromFile();
   }
 
-  public List<JsonObject> getAllKnownVenues() {
-    return (List<JsonObject>) new ArrayList<JsonObject>(venues.values()); 
-  }
-
-  public JsonObject locateVenue(String venueId) {
+  public JsonObject get(String venueId) {
     /* is this in the cache?  or do we need to retrieve it ? */
     JsonObject venueJson = null;
     if (venues.containsKey(venueId)) {
