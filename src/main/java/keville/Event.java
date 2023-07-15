@@ -1,5 +1,7 @@
 package keville;
 
+import keville.util.AnsiColors;
+import keville.util.GeoUtils;
 import java.time.LocalDateTime;
 import java.io.Serializable;
 import java.util.List;
@@ -49,6 +51,22 @@ public class Event implements Serializable {
         name,description.substring(0,Math.min(description.length(),60)),start.toString(),city,state,eventTypeString(eventType),latitude,longitude,url);
   }
 
+  public String toColorString() {
+    return String.format("Name: %s\nDescription: %s\nStart %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %s,%s\nUrl %s",
+        AnsiColors.colorString(name,AnsiColors.RED),
+        AnsiColors.colorString(description.substring(0,Math.min(description.length(),60)),AnsiColors.GREEN),
+        AnsiColors.colorString(start.toString(),AnsiColors.YELLOW),
+        AnsiColors.colorString(city,AnsiColors.BLUE),
+        AnsiColors.colorString(state,AnsiColors.BLUE),
+        AnsiColors.colorString(eventTypeString(eventType),AnsiColors.PURPLE),
+        AnsiColors.colorString(((Double) latitude).toString(),AnsiColors.CYAN),
+        AnsiColors.colorString(((Double) longitude).toString(),AnsiColors.CYAN),
+        AnsiColors.colorString(url,AnsiColors.WHITE));
+
+  }
+
+
+
   public static String eventTypeString(EventTypeEnum type) {
     switch (type) {
       case EVENTBRITE:
@@ -75,6 +93,14 @@ public class Event implements Serializable {
       public boolean test(Event event) {
         return cities.stream()
           .anyMatch(c -> c.equals(event.city));
+      }
+    };
+  }
+
+  public static Predicate<Event> WithinKMilesOf(double lat,double lon,double miles) {
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+        return GeoUtils.isWithinMilesOf(miles,lat,lon,event.latitude,event.longitude);
       }
     };
   }

@@ -22,6 +22,7 @@ public class Proximal {
       ObjectInputStream ois = null;
 
       socket = new Socket(host.getHostName(), 9876);
+      socket.setSoTimeout(5000/*ms*/);
       oos = new ObjectOutputStream(socket.getOutputStream());
       System.out.println("Sending request to Socket Server");
 
@@ -38,7 +39,8 @@ public class Proximal {
         System.out.println("Server Response: "+message);
         List<Event> events = (List<Event>) ois.readObject();
         for (Event e : events ) {
-          System.out.println(e.toString()+"\n");
+          //System.out.println(e.toString()+"\n");
+          System.out.println(e.toColorString()+"\n");
         }
 
       } else if ( message.equals("Unknown") ) {
@@ -55,12 +57,10 @@ public class Proximal {
       //close resources
       ois.close();
       oos.close();
-      Thread.sleep(100);
 
     } catch (
         IOException|
-        ClassNotFoundException|
-        InterruptedException e 
+        ClassNotFoundException e
     ) {
       System.out.println("error connecting to server");
       System.out.println(e.getMessage());

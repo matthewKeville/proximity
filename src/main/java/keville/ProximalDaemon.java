@@ -2,6 +2,7 @@ package keville;
 
 import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
+import keville.util.GeoUtils;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -29,22 +31,19 @@ public class ProximalDaemon
     public static void main( String[] args )
     {
 
+        Map<String,Double> currentLocation = GeoUtils.getClientGeolocation(); 
+
         List<Event> allEvents = eventCache.getAll();
 
         Predicate<Event> eventFilter;
-        eventFilter = Event.WithinDaysFromNow(3);
+        eventFilter = Event.WithinDaysFromNow(2);
+        eventFilter = eventFilter.and(Event.WithinKMilesOf(currentLocation.get("latitude"),currentLocation.get("longitude"),10.0));
         //eventFilter = eventFilter.and(Event.CitiesFilter(Arrays.asList("Philadelphia")));
         
         //Filter events
         List<Event> events = allEvents.stream().
           filter(eventFilter).
           collect(Collectors.toList());
-
-        /*
-        for (Event e : events ) {
-          System.out.println(e+"\n");
-        }
-        */
 
         //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury park
         EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
