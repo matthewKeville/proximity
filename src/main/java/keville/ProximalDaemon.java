@@ -2,6 +2,7 @@ package keville;
 
 import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
+import keville.facebook.FacebookScanner;
 import keville.util.GeoUtils;
 
 import java.net.ServerSocket;
@@ -46,9 +47,14 @@ public class ProximalDaemon
           collect(Collectors.toList());
 
         //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury park
-        EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
+        //EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
         //int found = meetupScanner.scan();
         //eventCache.notifyTermination();
+        
+        
+        EventScanner facebookScanner = new FacebookScanner("Belmar","nj",eventCache);
+        int ffound = facebookScanner.scan();
+        System.exit(0); 
 
         int port = 9876;
         boolean run = true;
