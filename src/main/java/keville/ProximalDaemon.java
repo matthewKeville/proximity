@@ -22,7 +22,8 @@ import java.util.Arrays;
 public class ProximalDaemon 
 {
     static Properties props;
-    static EventCache eventCache;
+    //static EventCache eventCache;
+    static EventService eventService;
 
     static {
       initialize();
@@ -32,23 +33,24 @@ public class ProximalDaemon
     {
 
         Map<String,Double> currentLocation = GeoUtils.getClientGeolocation(); 
-
-        List<Event> allEvents = eventCache.getAll();
-
+        
+        //Assemble a test filter
         Predicate<Event> eventFilter;
         eventFilter = Event.WithinDaysFromNow(2);
-        eventFilter = eventFilter.and(Event.WithinKMilesOf(currentLocation.get("latitude"),currentLocation.get("longitude"),10.0));
-        //eventFilter = eventFilter.and(Event.CitiesFilter(Arrays.asList("Philadelphia")));
-        
-        //Filter events
-        List<Event> events = allEvents.stream().
-          filter(eventFilter).
-          collect(Collectors.toList());
+        eventFilter = eventFilter.and(
+            Event.WithinKMilesOf(
+              currentLocation.get("latitude"),
+              currentLocation.get("longitude"),
+            10.0));
 
-        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury park
-        EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
-        //int found = meetupScanner.scan();
-        //eventCache.notifyTermination();
+        //Load known events into memory
+        List<Event> events = eventService.getEvents();
+        //List<Event> allEvents = eventService.getEvents(eventFilter);
+
+        //scan events optional
+        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury
+        //EventbriteScanner.scan();
+        //EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
 
         int port = 9876;
         boolean run = true;
@@ -73,12 +75,6 @@ public class ProximalDaemon
               System.out.println("filterString :" + filterString );
 
               oos.writeObject("Okay");
-              /*
-              List<String> allEventsAsString = allEvents.stream()
-                .map(e -> e.toString())
-                .collect(Collectors.toList());
-              */
-              //oos.writeObject(allEventsAsString);
               oos.writeObject(events);
 
             } else {
@@ -97,13 +93,11 @@ public class ProximalDaemon
           System.out.println(e.getMessage());
         }
 
-
-        // save venues & events to cold storage
-        eventCache.notifyTermination();
-
     }
 
     static void initialize() {
+
+      //load configuration w/ respect to custum.properties
       props = new Properties();
       try {
         File customProperties = new File("./custom.properties");
@@ -127,7 +121,7 @@ public class ProximalDaemon
       }
       System.out.println("using api_key : "+props.getProperty("event_brite_api_key"));
 
-      eventCache = new EventCache();
+      eventService = new EventService(props);
     }
 
 }

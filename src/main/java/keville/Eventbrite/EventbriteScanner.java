@@ -84,12 +84,12 @@ public class EventbriteScanner implements EventScanner {
   private double longitude;
   private double radius; /*in miles*/
 
-  private keville.EventCache masterEventCache;
+  private keville.EventService eventService;
   private EventCache eventCache;
   private VenueCache venueCache;
 
-  public EventbriteScanner(double latitude,double longitude,double radius, keville.EventCache masterEventCache, Properties props) {
-    this.masterEventCache = masterEventCache;
+  public EventbriteScanner(double latitude,double longitude,double radius, keville.EventService eventService, Properties props) {
+    this.eventService = eventService;
     this.latitude = latitude;
     this.longitude = longitude;
     this.radius = radius; /*in miles*/
@@ -145,7 +145,7 @@ public class EventbriteScanner implements EventScanner {
       System.out.println("found "+pages);
 
 
-      int maxPagesToScrub = 10;
+      int maxPagesToScrub = 3;//10;
       int pageLoadDelay_ms = 1000;/*1 sec*/
       if (pages == 0) {
         maxPagesToScrub = 1;
@@ -204,12 +204,12 @@ public class EventbriteScanner implements EventScanner {
       // Only process new event ids
       List<Event> events = eventIds
         .stream()
-        .filter(ei -> !masterEventCache.has(ei))
+        .filter(ei -> !eventService.exists(EventTypeEnum.EVENTBRITE,ei))
         .map(ei -> createEventFrom(ei))
         .filter(e -> e != null)
         .collect(Collectors.toList());
 
-      masterEventCache.addAll(events);
+      eventService.createEvents(events);
 
       //Package into Domain Event
       return events.size();
@@ -266,8 +266,8 @@ public class EventbriteScanner implements EventScanner {
 
     String url = eventJson.get("url").getAsString();
 
-    return new Event(EventTypeEnum.EVENTBRITE,
-        eventId,
+    return new Event(eventId,
+        EventTypeEnum.EVENTBRITE,
         eventName,
         eventDescription,
         start,

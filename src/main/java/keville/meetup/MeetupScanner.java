@@ -40,7 +40,7 @@ import com.google.gson.JsonObject;
 
 public class MeetupScanner implements EventScanner {
 
-  private keville.EventCache masterEventCache;
+  private keville.EventService eventService;
   private String city;
   private String state;
 
@@ -48,8 +48,8 @@ public class MeetupScanner implements EventScanner {
    * this is very wrong city,state or lat / long in Eventbrite
    * cleary I need some Location interace 
    */
-  public MeetupScanner(String city,String state, keville.EventCache masterEventCache) {
-    this.masterEventCache = masterEventCache;
+  public MeetupScanner(String city,String state, keville.EventService eventService) {
+    this.eventService = eventService;
     this.city = city;
     this.state = state;
   }
@@ -147,14 +147,14 @@ public class MeetupScanner implements EventScanner {
         for (JsonElement jo : eventsArray) {
           JsonObject event = jo.getAsJsonObject();
           String id = eventBriteJsonId(event);
-          if (!masterEventCache.has(id)) {
+          if (!eventService.exists(EventTypeEnum.MEETUP,id)) {
             newEvents.add(createEventFrom(event));
           }
         }
       }
 
 
-      masterEventCache.addAll(newEvents);
+      eventService.createEvents(newEvents);
 
       //Package into Domain Event
       return newEvents.size();
@@ -204,8 +204,9 @@ public class MeetupScanner implements EventScanner {
 
       System.out.println("url is : " + url);
 
-    return new Event(EventTypeEnum.MEETUP,
+    return new Event(
         eventId,
+        EventTypeEnum.MEETUP,
         eventName,
         eventDescription,
         start,
