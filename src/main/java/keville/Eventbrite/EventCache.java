@@ -2,13 +2,6 @@ package keville.Eventbrite;
 
 import java.util.Properties;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Scanner;
-
-import java.io.IOException;
-import java.io.File;
-import java.io.FileWriter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,103 +10,98 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 
 public class EventCache {
 
   private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
-  private static String cacheFilePath = "./.eventCache.json";
 
-  private Map<String,JsonObject> events;
   private HttpClient httpClient;
   private String BEARER_TOKEN;
+
+  private Connection con;
+  private String connectionString;
 
   public EventCache (Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
-    events = new HashMap<String,JsonObject>();
-    loadCacheFromFile();
+
+    //connectionString = properties.getProperty("connection_string");
+    connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
+    System.out.println("connecting to " + connectionString);
+
+    try {
+      con = DriverManager.getConnection(connectionString);
+      System.out.println("connected to " + connectionString);
+    } catch (SQLException e) {
+      System.out.println("Critical error : unable to read events from database : " + connectionString);
+      System.out.println(e.getMessage());
+      System.exit(5);
+    }
+
   }
 
   public JsonObject get(String eventId) {
-    JsonObject eventJson = null;
-    if (events.containsKey(eventId)) {
-      eventJson = events.get(eventId);
-    } else {
+    JsonObject eventJson = getEventJsonFromDb(eventId);
+    if ( (eventJson == null) ) {
       System.out.println(String.format("local miss on event %s",eventId));
       eventJson = getEventFromApi(eventId);
       if (eventJson != null ) {
-        events.put(eventId,eventJson);
+        createEventJsonInDb(eventId, eventJson);
       } else {
         System.err.println("eventbrite api generated a null eventjson");
       }
-    }
+    }    
     return eventJson;
   }
 
-  /* load cached events if any */
-  private void loadCacheFromFile() {
-    System.out.println("loading local cache");
-    File cacheFile = new File(cacheFilePath);
-    if (!cacheFile.exists() ) {
-      System.out.println("no local cache found");
-      return;
-    }
-    System.out.println("found local cache");
-    Scanner cacheFileScanner;
-    String json = "";
-    try {
-      cacheFileScanner = new Scanner(cacheFile);
-      while (cacheFileScanner.hasNextLine()) {
-        json+=cacheFileScanner.nextLine(); 
-      }
-    } catch (Exception e) {
-      System.out.println("Error reading event cache file :" + e.getMessage());
-    }
-    
-    /* populate event map */
-    if (!json.equals("")) {
-      JsonObject eventJsonList = JsonParser.parseString(json).getAsJsonObject();
-      JsonArray eventsArray = eventJsonList.getAsJsonArray("events");
-      System.out.println(String.format("found %d events in cache",eventsArray.size()));
-      for (JsonElement jo : eventsArray) {
-        JsonObject event = jo.getAsJsonObject();
-        String eventIdString = event.get("id").getAsString();
-        events.put(eventIdString,event);
-      }
-    }
+  private boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
 
-    return;
+    try {
+      String sql = "INSERT INTO EVENT (EVENT_ID,JSON)" 
+        + "VALUES (" + "'" + eventId + "', "    
+        + "'" + eventJson.toString() + "'"    
+        +");";                                        
+
+      System.out.println(sql);
+      Statement stmt = con.createStatement();
+      int rowsUpdated = stmt.executeUpdate(sql);
+      return rowsUpdated == 1;
+    } catch (SQLException se)  {
+      System.out.println("error adding eventbrite event data to eventbrite.db");
+      System.out.println(se.getMessage());
+    }
+    return false;
   }
 
-  private void saveCacheToFile() {
-    System.out.println("saving local cache");
-    File cacheFile = new File(cacheFilePath);
-    FileWriter fileWriter;
+
+  private JsonObject getEventJsonFromDb(String eventId) {
+
+    String json ="";
+    JsonObject jsonEvent = null;
+
     try {
-      cacheFile.createNewFile(); /*creates if not extant*/
-      fileWriter = new FileWriter(cacheFile);
-      fileWriter.write("{\n\"events\": [\n");
-      Iterator<JsonObject> itty = events.values().iterator();
-      while ( itty.hasNext() ) {
-        JsonObject jo = itty.next();
-        fileWriter.write(jo.toString());
-        if (itty.hasNext()) {
-          fileWriter.write(",");
-        }
-        fileWriter.write(System.lineSeparator());
-      }
-      fileWriter.write("]");
-      fileWriter.write("\n}");
-      fileWriter.flush();
-      fileWriter.close();
-    } catch (IOException e) {
-      System.out.println("error writing to file " + e.getMessage());
+      String sql = "SELECT * FROM EVENT WHERE EVENT_ID="+eventId+";"; //what is the query?
+      Statement stmt = con.createStatement();
+      ResultSet rs = stmt.executeQuery(sql);
+      if (rs.next()) {
+        json = rs.getString("json");
+        jsonEvent = JsonParser.parseString(json).getAsJsonObject();
+      } 
+    } catch (SQLException se) {
+      System.out.println("error retrieving eventbrite event data from eventbrite.db");
+      System.out.println(se.getMessage());
     }
-    return;
+
+    return jsonEvent;
+
   }
 
   /* Get event data from Event Brite API */
@@ -145,10 +133,6 @@ public class EventCache {
 
     return eventJson;
 
-  }
-
-  public void notifyTermination() {
-    saveCacheToFile();
   }
 
 }

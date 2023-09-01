@@ -1,3 +1,7 @@
+
+
+# app db
+
 DB_FILE="app.db"; 
 echo " Nuking previous DB"
 # delete and create new db file
@@ -30,5 +34,16 @@ sqlite3 $DB_FILE "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME
 #sqlite3 $DB_FILE "INSERT INTO EVENT (DESCRIPTION) VALUES ('knitting with the boys')"
 
 
-# show sample tables
-sqlite3 $DB_FILE "SELECT * FROM EVENT;"
+# eventbrite db
+EB_DB_FILE="eventbrite.db"; 
+echo " Nuking previous DB"
+# delete and create new db file
+rm $EB_DB_FILE;
+sqlite3 $EB_DB_FILE ";"
+
+# create tables
+echo " Creating EVENTBRITE EVENT TABLE "
+sqlite3 $EB_DB_FILE "CREATE TABLE EVENT("\
+"ID INTEGER PRIMARY KEY AUTOINCREMENT,"\
+"EVENT_ID TEXT NOT NULL,"\
+"JSON STRING NOT NULL);"

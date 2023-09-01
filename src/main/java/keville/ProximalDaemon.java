@@ -48,8 +48,8 @@ public class ProximalDaemon
         //List<Event> allEvents = eventService.getEvents(eventFilter);
 
         //scan events optional
-        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventCache,props); //asbury
-        //EventbriteScanner.scan();
+        EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventService,props); //asbury
+        EventbriteScanner.scan();
         //EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
 
         int port = 9876;

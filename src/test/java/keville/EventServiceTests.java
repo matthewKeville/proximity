@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
 
 import java.util.Properties;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class EventServiceTests
 {
@@ -144,7 +144,7 @@ public class EventServiceTests
           EventTypeEnum.DEBUG,
           "createEventCreatesEvent",
           "a test for Junit",
-          LocalDateTime.now(),
+          Instant.now(),
           0.0,
           0.0,
           "Trenton",

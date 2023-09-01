@@ -145,7 +145,8 @@ public class EventbriteScanner implements EventScanner {
       System.out.println("found "+pages);
 
 
-      int maxPagesToScrub = 3;//10;
+      int maxPagesToScrub = 1;//10;
+      int maxNewEvents = 10;//10; //for testing
       int pageLoadDelay_ms = 1000;/*1 sec*/
       if (pages == 0) {
         maxPagesToScrub = 1;
@@ -207,7 +208,10 @@ public class EventbriteScanner implements EventScanner {
         .filter(ei -> !eventService.exists(EventTypeEnum.EVENTBRITE,ei))
         .map(ei -> createEventFrom(ei))
         .filter(e -> e != null)
+        .limit(maxNewEvents)
         .collect(Collectors.toList());
+
+      System.out.println("processing " + events.size() + " new events | limit " + maxNewEvents );
 
       eventService.createEvents(events);
 
@@ -235,7 +239,8 @@ public class EventbriteScanner implements EventScanner {
     } 
      
     JsonObject eventStartJson = eventJson.getAsJsonObject("start");
-    LocalDateTime start = DateTimeUtils.ISOInstantToLocalDateTime(eventStartJson.get("utc").getAsString());
+    String timestring = eventStartJson.get("utc").getAsString();
+    Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
 
     String venueId = "";
     JsonElement venueIdElement = eventJson.get("venue_id");

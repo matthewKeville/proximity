@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.JavascriptExecutor;
@@ -174,9 +177,9 @@ public class MeetupScanner implements EventScanner {
       String eventDescription = eventJson.get("description").getAsString();
       System.out.println("description is " + eventDescription.substring(Math.min(30,eventDescription.length())));
 
-      //start
-      LocalDateTime start = DateTimeUtils.ISOInstantToLocalDateTime(eventJson.get("startDate").getAsString());
-      System.out.println(start.toString());
+
+      String timestring = eventJson.get("startDate").getAsString();
+      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
 
       JsonObject location = eventJson.getAsJsonObject("location");
       JsonObject geo = location.getAsJsonObject("geo");

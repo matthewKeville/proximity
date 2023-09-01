@@ -15,6 +15,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.ResultSet;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
 public class EventService {
 
   private Connection con;
@@ -181,7 +184,9 @@ public class EventService {
       String startTimeString = rs.getString("start_time");
       System.out.println("starttimestring");
       System.out.println(startTimeString);
-      LocalDateTime start = DateTimeUtils.ISOInstantToLocalDateTime(startTimeString);
+
+      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimeString));
+
       double longitude = rs.getDouble("longitude");                            
       double latitude = rs.getDouble("latitude");                            
       String city = rs.getString("city");
