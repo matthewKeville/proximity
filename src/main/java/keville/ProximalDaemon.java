@@ -24,6 +24,7 @@ public class ProximalDaemon
     static Properties props;
     //static EventCache eventCache;
     static EventService eventService;
+    static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
 
     static {
       initialize();
@@ -48,8 +49,8 @@ public class ProximalDaemon
         //List<Event> allEvents = eventService.getEvents(eventFilter);
 
         //scan events optional
-        EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventService,props); //asbury
-        EventbriteScanner.scan();
+        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventService,props); //asbury
+        //EventbriteScanner.scan();
         //EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
 
         int port = 9876;
@@ -71,8 +72,7 @@ public class ProximalDaemon
             if (request.equals("List")) {
 
               String filterString = (String) ois.readObject();
-              System.out.println("request :" + request );
-              System.out.println("filterString :" + filterString );
+              LOG.info("Recieved List Request with filter string : " + filterString);
 
               oos.writeObject("Okay");
               oos.writeObject(events);
@@ -89,8 +89,8 @@ public class ProximalDaemon
           server.close();
 
         } catch (IOException | ClassNotFoundException e) {
-          System.out.println("the server encountered an error");
-          System.out.println(e.getMessage());
+          LOG.error("Server error encountered");
+          LOG.error(e.getMessage());
         }
 
     }
@@ -102,24 +102,25 @@ public class ProximalDaemon
       try {
         File customProperties = new File("./custom.properties");
         if (customProperties.exists()) {
-          System.out.println("found custom properties");
+          LOG.info("custom properties found");
           props.load(new FileInputStream("./custom.properties"));
         } else {
-          System.out.println("default configuration");
+          LOG.info("no custom properties located, using defaults");
           props.load(new FileInputStream("./default.properties"));
         }
       } catch (Exception e) {
-        System.out.println(e.getMessage());
-        System.out.println("Unable to load app.properties configuration\naborting");
+        LOG.error("Unable to load app.properties configuration\naborting");
+        LOG.error(e.getMessage());
         System.exit(1);
       }
 
       //minimal configuration met?
       if (props.getProperty("event_brite_api_key").isEmpty()) {
-        System.err.println("You must provide an event_brite_api_key");
+        LOG.info("You must provide an event_brite_api_key");
+        LOG.error("no event_brite_api_key found");
         System.exit(2);
       }
-      System.out.println("using api_key : "+props.getProperty("event_brite_api_key"));
+      LOG.info("using api_key : "+props.getProperty("event_brite_api_key"));
 
       eventService = new EventService(props);
     }

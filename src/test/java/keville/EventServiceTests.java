@@ -29,6 +29,7 @@ public class EventServiceTests
     private static Properties props;
     private static EventService eventService;
     private static Connection con;
+    private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventServiceTests.class);
 
     /*
      * Create external db connection (external to EventService)
@@ -42,7 +43,7 @@ public class EventServiceTests
 
       File dbFile = new File("test.db");
       if (!dbFile.delete()) {
-        System.out.println(" test setup was unable to delete previous database file test.db");
+        LOG.error(" test setup was unable to delete previous database file test.db");
       }
 
       //establish connection
@@ -54,9 +55,9 @@ public class EventServiceTests
 
       try {
         con = DriverManager.getConnection(connectionString);
-        System.out.println("connected to " + connectionString);
+        LOG.info("connected to " + connectionString);
       } catch (SQLException e) {
-        System.out.println(e.getMessage());
+        LOG.error(e.getMessage());
         System.exit(5);
       }
 
@@ -102,7 +103,8 @@ public class EventServiceTests
         stmt.executeUpdate(sql3);
 
       } catch (SQLException e) {
-        System.out.println(e.getMessage());
+        LOG.error("error creating testing data in sqlite database");
+        LOG.error(e.getMessage());
       }
 
     }

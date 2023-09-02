@@ -1,23 +1,18 @@
 package keville.util;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class GeoUtils {
+
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(GeoUtils.class);
 
   /* return a bounding box  that is circumsribed by the circle defined by (lon,lat,radius) */
   public static Map<String,Double> radialBbox(double lat,double lon,double radius /* miles */ ) {
@@ -53,10 +48,12 @@ public class GeoUtils {
       .GET()
       .build();
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      System.out.println(String.format("request returned %d",getResponse.statusCode()));
+      LOG.warn("ajsdkfjasd");
+      LOG.debug("kajsdfa");
+      LOG.info(String.format("request returned %d",getResponse.statusCode()));
       response = getResponse.body();
     } catch (Exception e) {
-      System.out.println(String.format("error sending request %s",e.getMessage()));
+      LOG.error(String.format("error sending request %s",e.getMessage()));
     }
 
     /*

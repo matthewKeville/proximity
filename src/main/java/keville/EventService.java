@@ -1,14 +1,11 @@
 package keville;
 
-import keville.util.DateTimeUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -22,18 +19,19 @@ public class EventService {
 
   private Connection con;
   private String connectionString;
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventService.class);
 
   public EventService(Properties properties) {
     
     connectionString = properties.getProperty("connection_string");
-    System.out.println("connecting to " + connectionString);
+    LOG.info("connecting to " + connectionString);
 
     try {
       con = DriverManager.getConnection(connectionString);
-      System.out.println("connected to " + connectionString);
+      LOG.info("connected to " + connectionString);
     } catch (SQLException e) {
-      System.out.println("Critical error : unable to read events from database app.db");
-      System.out.println(e.getMessage());
+      LOG.error("Critical error : unable to read events from database app.db");
+      LOG.error(e.getMessage());
       System.exit(5);
     }
 
@@ -51,7 +49,8 @@ public class EventService {
         return event;
       } 
     } catch (SQLException e) {
-      System.out.println(e.getMessage());
+      LOG.error("An error occurred retrieving an event from the database");
+      LOG.error(e.getMessage());
     }
     return null;
   }
@@ -72,7 +71,8 @@ public class EventService {
         allEvents.add(event);
       }
     } catch (SQLException e) {
-      System.out.println(e.getMessage());
+      LOG.error("An error occurred retrieving events from the database");
+      LOG.error(e.getMessage());
     }
 
     //filter
@@ -107,7 +107,9 @@ public class EventService {
         return (rs.getString("event_id").equals(eventId) && rs.getString("source").equals(type.toString()));
       }
     } catch (SQLException e) {
-      System.out.println("error checking event existance\n" +e.getMessage());
+      LOG.error("An error occurred checking if an event exists { type, eventId } = { " + 
+          type + " , " + eventId + " } ");
+      LOG.error(e.getMessage());
     }
     return false;
   }
@@ -140,13 +142,15 @@ public class EventService {
         + "'" + event.url + "'"                       //"'NJ'"
         +");";                                        //google.com
 
-      System.out.println(sql);
+      LOG.info(sql);
       Statement stmt = con.createStatement();
       int rowsUpdated = stmt.executeUpdate(sql);
       return rowsUpdated == 1;
 
     } catch (SQLException e) {
-      System.out.println(e.getMessage());
+      LOG.error("an error occurred creating an event in the database");
+      LOG.error("event : \n" + event.toString());
+      LOG.error(e.getMessage());
     }
 
     return false;
@@ -173,17 +177,16 @@ public class EventService {
       try {
         eventType = EventTypeEnum.valueOf(source);
       } catch (IllegalArgumentException iae) {
-        System.out.println("mismatch between EventTypeEnum string in database and EventTypeEnum types");
-        System.out.println("offending string : " + source);
-        System.out.println(iae.getMessage());
+        LOG.error("error converting event row to Event object");
+        LOG.error("mismatch between EventTypeEnum string in database and EventTypeEnum types");
+        LOG.error("offending string : " + source);
+        LOG.error(iae.getMessage());
       }
       int id = rs.getInt("id");
       String eventId = rs.getString("event_id");
       String name = rs.getString("name");
       String description = rs.getString("description");
       String startTimeString = rs.getString("start_time");
-      System.out.println("starttimestring");
-      System.out.println(startTimeString);
 
       Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimeString));
 
@@ -194,7 +197,8 @@ public class EventService {
       String url = rs.getString("url");
       event = new Event(id,eventId,eventType,name,description,start,longitude,latitude,city,state,url);
     } catch (SQLException se) {
-      System.out.println(se.getMessage());
+      LOG.error("an error occured converting event row to Event object");
+      LOG.error(se.getMessage());
     }
     return event;
   }

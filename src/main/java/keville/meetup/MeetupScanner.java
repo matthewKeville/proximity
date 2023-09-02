@@ -3,21 +3,14 @@ package keville.meetup;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
-import keville.util.DateTimeUtils;
 
 import java.io.Writer;
 import java.io.StringWriter;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
 
-import java.util.stream.Collectors;
-import java.util.Properties;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +39,7 @@ public class MeetupScanner implements EventScanner {
   private keville.EventService eventService;
   private String city;
   private String state;
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScanner.class);
 
   /* 
    * this is very wrong city,state or lat / long in Eventbrite
@@ -61,7 +55,7 @@ public class MeetupScanner implements EventScanner {
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
-      System.out.println("scan job started on port "+proxy.getPort());
+      LOG.info("Scan started on port "+proxy.getPort());
       Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
@@ -79,7 +73,8 @@ public class MeetupScanner implements EventScanner {
       String stateString = state; //"nj"; //lower
       String distanceString = "fiveMiles"; //need a distance otr infintite scrolling
       String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS&distance=%s",countryString,stateString,cityString,distanceString);
-      System.out.println(targetUrl);
+
+      LOG.info("targetting url \n" + targetUrl);
 
       driver.get(targetUrl);
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
@@ -99,7 +94,8 @@ public class MeetupScanner implements EventScanner {
         try {
           Thread.sleep(750/*ms*/); //potentially too fast?
         } catch (Exception e) {
-          System.out.println(e.getMessage());
+          LOG.error("error encountered trying to sleep thread");
+          LOG.error(e.getMessage());
         }
       }
       
@@ -127,7 +123,7 @@ public class MeetupScanner implements EventScanner {
         }
         //filter event_id from rawContent
       } catch (Exception e ) {
-        System.out.println("unexpected har data");
+        LOG.error("unexpected har data");
       }
 
       // meetup sends a json where fields are delineated by \" instead of "
@@ -170,13 +166,8 @@ public class MeetupScanner implements EventScanner {
 
       String eventId = eventBriteJsonId(eventJson);
       String url = eventJson.get("url").getAsString(); 
-
       String eventName = eventJson.get("name").getAsString();
-      System.out.println("event eventName is : " + eventName);
-
       String eventDescription = eventJson.get("description").getAsString();
-      System.out.println("description is " + eventDescription.substring(Math.min(30,eventDescription.length())));
-
 
       String timestring = eventJson.get("startDate").getAsString();
       Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
@@ -187,8 +178,6 @@ public class MeetupScanner implements EventScanner {
       double latitude = Double.parseDouble(latitudeString);
       String longitudeString = geo.get("longitude").getAsString();
       double longitude = Double.parseDouble(longitudeString);
-      System.out.println("lat " + latitude);
-      System.out.println("lat " + longitude);
 
       // -> Location -> Address (Type==PostalAddress) -> addressLocality (city)
       // -> Location -> Address (Type==PostalAddress) -> addressRegion   (state)
@@ -199,13 +188,8 @@ public class MeetupScanner implements EventScanner {
         city = address.get("addressLocality").getAsString();
         state = address.get("addressRegion").getAsString();
       } else {
-        System.out.println("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
+        LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
       }
-
-      System.out.println("city " + city);
-      System.out.println("state " + state);
-
-      System.out.println("url is : " + url);
 
     return new Event(
         eventId,

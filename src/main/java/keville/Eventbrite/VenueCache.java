@@ -31,6 +31,8 @@ public class VenueCache {
   private HttpClient httpClient;
   private String BEARER_TOKEN;
 
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(VenueCache.class);
+
   public VenueCache(Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
@@ -42,10 +44,10 @@ public class VenueCache {
     /* is this in the cache?  or do we need to retrieve it ? */
     JsonObject venueJson = null;
     if (venues.containsKey(venueId)) {
-      System.out.println(String.format("local hit on venue %s",venueId));
+      LOG.info(String.format("local hit on venue %s",venueId));
       venueJson = venues.get(venueId);
     } else {
-      System.out.println(String.format("local miss on venue %s",venueId));
+      LOG.info(String.format("local miss on venue %s",venueId));
       venueJson = getVenue(venueId);
       venues.put(venueId,venueJson);
     }
@@ -54,13 +56,13 @@ public class VenueCache {
 
   /* load cached venues if any */
   private void loadCacheFromFile() {
-    System.out.println("loading local venue cache");
+    LOG.info("loading local venue cache");
     File cacheFile = new File(cacheFilePath);
     if (!cacheFile.exists() ) {
-      System.out.println("no local venue cache found");
+      LOG.info("no local venue cache found");
       return;
     }
-    System.out.println("found local venue cache");
+    LOG.info("found local venue cache");
     Scanner cacheFileScanner;
     String json = "";
     try {
@@ -69,14 +71,14 @@ public class VenueCache {
         json+=cacheFileScanner.nextLine(); 
       }
     } catch (Exception e) {
-      System.out.println("Error reading venue cache file :" + e.getMessage());
+      LOG.error("Error reading venue cache file :" + e.getMessage());
     }
     
     /* populate venue map */
     if (!json.equals("")) {
       JsonObject venueJsonList = JsonParser.parseString(json).getAsJsonObject();
       JsonArray venuesArray = venueJsonList.getAsJsonArray("venues");
-      System.out.println(String.format("found %d venues in cache",venuesArray.size()));
+      LOG.info(String.format("found %d venues in cache",venuesArray.size()));
       for (JsonElement jo : venuesArray) {
         JsonObject venue = jo.getAsJsonObject();
         String venueIdString = venue.get("id").getAsString();
@@ -88,7 +90,7 @@ public class VenueCache {
   }
 
   private void saveCacheToFile() {
-    System.out.println("saving local venue cache");
+    LOG.info("saving local venue cache");
     File cacheFile = new File(cacheFilePath);
     FileWriter fileWriter;
     try {
@@ -109,7 +111,7 @@ public class VenueCache {
       fileWriter.flush();
       fileWriter.close();
     } catch (IOException e) {
-      System.out.println("error writing to file " + e.getMessage());
+      LOG.error("error writing to file " + e.getMessage());
     }
     return;
   }
@@ -128,17 +130,17 @@ public class VenueCache {
       .GET()
       .build();
     } catch (URISyntaxException e) {
-      System.out.println(String.format("error building request: %s",e.getMessage()));
+      LOG.error(String.format("error building request: %s",e.getMessage()));
       return null;
     }
 
     try {
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      System.out.println(String.format("request returned %d",getResponse.statusCode()));
+      LOG.info(String.format("request returned %d",getResponse.statusCode()));
       venueJson = JsonParser.parseString(getResponse.body()).getAsJsonObject();
     } catch (Exception e) {
       /*Interrupted / IO*/
-      System.out.println(String.format("error sending request %s",e.getMessage()));
+      LOG.error(String.format("error sending request %s",e.getMessage()));
     }
 
     return venueJson;

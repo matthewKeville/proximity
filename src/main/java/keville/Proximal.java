@@ -1,6 +1,5 @@
 package keville;
 
-import java.util.stream.Collectors;
 import java.util.List;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,9 +8,12 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class Proximal {
+
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(Proximal.class);
+
   public static void main(String[] args) {
 
-    System.out.println("Proximal version 0.1");
+    LOG.info("Proximal version 0.1");
   
     try {
 
@@ -24,7 +26,7 @@ public class Proximal {
       socket = new Socket(host.getHostName(), 9876);
       socket.setSoTimeout(5000/*ms*/);
       oos = new ObjectOutputStream(socket.getOutputStream());
-      System.out.println("Sending request to Socket Server");
+      LOG.info("Sending request to Socket Server");
 
       oos.writeObject("List"); //List request
       oos.writeObject("");//empty filter string
@@ -36,21 +38,21 @@ public class Proximal {
       //read payload
       if ( message.equals("Okay") ) {
 
-        System.out.println("Server Response: "+message);
+        LOG.info("Server Response: "+message);
         List<Event> events = (List<Event>) ois.readObject();
         for (Event e : events ) {
-          //System.out.println(e.toString()+"\n");
           System.out.println(e.toColorString()+"\n");
         }
 
       } else if ( message.equals("Unknown") ) {
 
-        System.out.println("Server Response: "+message);
+        LOG.info("Server says unknown request: "+message);
 
       } else {
 
-        System.out.println("Server Response: "+message);
-        System.out.println("miscommunication w/ target server");
+        LOG.info("miscommunication w/ target server");
+        LOG.info("Server Response: "+message);
+        LOG.info("miscommunication w/ target server");
 
       }
 
@@ -62,8 +64,8 @@ public class Proximal {
         IOException|
         ClassNotFoundException e
     ) {
-      System.out.println("error connecting to server");
-      System.out.println(e.getMessage());
+      LOG.error("error connecting to server");
+      LOG.error(e.getMessage());
     }
 
   }

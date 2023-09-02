@@ -29,20 +29,22 @@ public class EventCache {
   private Connection con;
   private String connectionString;
 
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
+
   public EventCache (Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
 
     //connectionString = properties.getProperty("connection_string");
     connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
-    System.out.println("connecting to " + connectionString);
+    LOG.info("connecting to " + connectionString);
 
     try {
       con = DriverManager.getConnection(connectionString);
-      System.out.println("connected to " + connectionString);
+      LOG.info("connected to " + connectionString);
     } catch (SQLException e) {
-      System.out.println("Critical error : unable to read events from database : " + connectionString);
-      System.out.println(e.getMessage());
+      LOG.error("Critical error : unable to read events from database : " + connectionString);
+      LOG.error(e.getMessage());
       System.exit(5);
     }
 
@@ -51,14 +53,16 @@ public class EventCache {
   public JsonObject get(String eventId) {
     JsonObject eventJson = getEventJsonFromDb(eventId);
     if ( (eventJson == null) ) {
-      System.out.println(String.format("local miss on event %s",eventId));
+      LOG.info(String.format("local miss on event %s",eventId));
       eventJson = getEventFromApi(eventId);
       if (eventJson != null ) {
         createEventJsonInDb(eventId, eventJson);
       } else {
-        System.err.println("eventbrite api generated a null eventjson");
+        LOG.error("eventbrite api generated a null eventjson");
       }
-    }    
+    } else {
+      LOG.info(String.format("local hit on event %s",eventId));
+    }
     return eventJson;
   }
 
@@ -70,13 +74,13 @@ public class EventCache {
         + "'" + eventJson.toString() + "'"    
         +");";                                        
 
-      System.out.println(sql);
+      LOG.info(sql);
       Statement stmt = con.createStatement();
       int rowsUpdated = stmt.executeUpdate(sql);
       return rowsUpdated == 1;
     } catch (SQLException se)  {
-      System.out.println("error adding eventbrite event data to eventbrite.db");
-      System.out.println(se.getMessage());
+      LOG.error("error adding eventbrite event data to eventbrite.db");
+      LOG.error(se.getMessage());
     }
     return false;
   }
@@ -96,8 +100,8 @@ public class EventCache {
         jsonEvent = JsonParser.parseString(json).getAsJsonObject();
       } 
     } catch (SQLException se) {
-      System.out.println("error retrieving eventbrite event data from eventbrite.db");
-      System.out.println(se.getMessage());
+      LOG.error("error retrieving eventbrite event data from eventbrite.db");
+      LOG.error(se.getMessage());
     }
 
     return jsonEvent;
@@ -118,17 +122,18 @@ public class EventCache {
       .GET()
       .build();
     } catch (URISyntaxException e) {
-      System.out.println(String.format("error building request: %s",e.getMessage()));
+      LOG.error("error constructing api endpoint url");
+      LOG.error(String.format("error building request: %s",e.getMessage()));
       return null;
     }
 
     try {
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      System.out.println(String.format("request returned %d",getResponse.statusCode()));
+      LOG.info(String.format("request returned %d",getResponse.statusCode()));
       eventJson = JsonParser.parseString(getResponse.body()).getAsJsonObject();
     } catch (Exception e) {
       /*Interrupted / IO*/
-      System.out.println(String.format("error sending request %s",e.getMessage()));
+      LOG.error(String.format("error sending request %s",e.getMessage()));
     }
 
     return eventJson;

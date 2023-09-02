@@ -51,6 +51,8 @@ import com.google.gson.JsonObject;
 public class EventbriteScanner implements EventScanner {
 
 
+  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScanner.class);
+
   /* return a bounding box  that is circumsribed by the circle defined by (lon,lat,radius) */
   static Map<String,Double> radialBbox(double lat,double lon,double radius /* miles */ ) {
     double km = radius * 1.60934;
@@ -66,7 +68,7 @@ public class EventbriteScanner implements EventScanner {
 
   static String eventMapUrl(double lat,double lon,double radius,int page) {
     if (page <= 0 ) {
-      System.err.println("non positive page indices are undefined");
+      LOG.error("non positive page indices are undefined");
       return "";
     }
     Map<String,Double> map = radialBbox(lat,lon,radius);
@@ -103,11 +105,11 @@ public class EventbriteScanner implements EventScanner {
       int pages = 0;
 
       List<String> eventIds = new ArrayList<String>();
-      System.out.println(String.format("beginning scan on %f,%f ", latitude, longitude));
+      LOG.info(String.format("beginning scan on %f,%f ", latitude, longitude));
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
-      System.out.println("scan job started on port "+proxy.getPort());
+      LOG.info("scan job started on port "+proxy.getPort());
       Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
@@ -121,7 +123,7 @@ public class EventbriteScanner implements EventScanner {
       proxy.newHar("eventScanHar");
 
       String targetUrl = eventMapUrl(latitude,longitude,radius);
-      System.out.println(targetUrl);
+      LOG.info(targetUrl);
 
       // Hit first search page
       driver.get(targetUrl);
@@ -131,18 +133,17 @@ public class EventbriteScanner implements EventScanner {
       String xPageOfKElementXPath = "/html/body/div[2]/div/div[2]/div/div/div/div[1]/div/main/div/div/section[1]/div/section/div/div/footer/div/div/ul/li[2]";
       WebElement xPageOfKElement = driver.findElement(By.xpath(xPageOfKElementXPath));
       if (xPageOfKElementXPath != null) {
-        //System.out.println(xPageOfKElement.getText());
         String[] splits = xPageOfKElement.getText().split(" "); 
         if (splits.length != 3) {
-          System.out.println("expected 3 splits for xPageOfKElement string but found "+(splits.length));
-          System.out.println(xPageOfKElement.getText());
+          LOG.error("expected 3 splits for xPageOfKElement string but found "+(splits.length));
+          LOG.error(xPageOfKElement.getText());
         } else {
           pages = Integer.parseInt(splits[2]);
         }
       } else {
-        System.out.println("unable to determine how many pages are available");
+        LOG.error("unable to determine how many pages are available");
       }
-      System.out.println("found "+pages);
+      LOG.info("found "+pages);
 
 
       int maxPagesToScrub = 1;//10;
@@ -151,19 +152,20 @@ public class EventbriteScanner implements EventScanner {
       if (pages == 0) {
         maxPagesToScrub = 1;
       } else {
-        System.out.println("multi page scrub");
+        LOG.info("multi page scrub");
         maxPagesToScrub = Math.min(maxPagesToScrub,pages);
       }
 
       //navigate to the remaing maxPagesToScrub-1 pages
       for ( int i = 1; i < maxPagesToScrub; i++ ) {
         targetUrl = eventMapUrl(latitude,longitude,radius,i+1);
-        System.out.println(targetUrl);
+        LOG.info(targetUrl);
         driver.get(targetUrl);
         try {
         Thread.sleep(pageLoadDelay_ms);
         } catch (Exception e) {
-          System.out.println(e.getMessage());
+          LOG.error("error sleeping thread");
+          LOG.error(e.getMessage());
         }
 
         // Scroll to the bottom of the page
@@ -189,7 +191,6 @@ public class EventbriteScanner implements EventScanner {
         Pattern pat = Pattern.compile("(?<=eventbrite_event_id\\\\\":\\\\\").*?(?=\\\\\",\\\\\"start)"); //what an ungodly creation
         Matcher mat = pat.matcher(rawContent);
         while (mat.find()) {
-          //System.out.println(mat.group());
           eventIds.add(mat.group());
         }
         //filter event_id from rawContent
@@ -211,7 +212,7 @@ public class EventbriteScanner implements EventScanner {
         .limit(maxNewEvents)
         .collect(Collectors.toList());
 
-      System.out.println("processing " + events.size() + " new events | limit " + maxNewEvents );
+      LOG.info("processing " + events.size() + " new events | limit " + maxNewEvents );
 
       eventService.createEvents(events);
 
@@ -226,7 +227,7 @@ public class EventbriteScanner implements EventScanner {
 
     JsonObject eventJson = eventCache.get(eventId);
     if (eventJson == null) {
-      System.err.println("error generating domain event for eventbrite id : " + eventId);
+      LOG.error("error generating domain event for eventbrite id : " + eventId);
       return null;
     }
 
@@ -266,7 +267,7 @@ public class EventbriteScanner implements EventScanner {
         state = stateJson.getAsString();
       }
     } else {
-      System.out.println("Venue: no venue information");
+      LOG.info("Venue: no venue information");
     }
 
     String url = eventJson.get("url").getAsString();
