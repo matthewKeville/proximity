@@ -44,14 +44,14 @@ public class ProximalDaemon
               currentLocation.get("longitude"),
             10.0));
 
-        //Load known events into memory
-        List<Event> events = eventService.getEvents();
-        //List<Event> allEvents = eventService.getEvents(eventFilter);
 
         //scan events optional
         //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventService,props); //asbury
         //EventbriteScanner.scan();
-        //EventScanner meetupScanner = new MeetupScanner("Belmar","nj",eventCache); //asbury park
+
+        //Load known events into memory
+        List<Event> events = eventService.getEvents();
+        //List<Event> allEvents = eventService.getEvents(eventFilter);
 
         int port = 9876;
         boolean run = true;

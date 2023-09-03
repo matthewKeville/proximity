@@ -1,0 +1,10 @@
+target/*
+.classpath
+.factorypath
+.project
+.settings
+logs/
+eventbrite.db
+eventbrite.db-journal
+app.db
+custom.properties
