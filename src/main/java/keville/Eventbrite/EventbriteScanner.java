@@ -115,6 +115,7 @@ public class EventbriteScanner implements EventScanner {
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
       ChromeOptions options = new ChromeOptions();
+      options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 
@@ -146,8 +147,8 @@ public class EventbriteScanner implements EventScanner {
       LOG.info("found "+pages);
 
 
-      int maxPagesToScrub = 1;//10;
-      int maxNewEvents = 10;//10; //for testing
+      int maxPagesToScrub = 5;//10;
+      int maxNewEvents = 50;//
       int pageLoadDelay_ms = 1000;/*1 sec*/
       if (pages == 0) {
         maxPagesToScrub = 1;
@@ -173,11 +174,6 @@ public class EventbriteScanner implements EventScanner {
         js.executeScript("window.scrollBy(0,document.body.scrollHeight)", "");
 
       }
-
-
-      
-      // Cleanup
-
 
       // get the HAR data
       Har har = proxy.getHar();
