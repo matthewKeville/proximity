@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.time.Instant;
@@ -41,9 +42,9 @@ public class EventService {
   public Event getEvent(/* pk id */int id) {
     Event event;
     try {
-      String sql = "SELECT * FROM EVENT WHERE ID="+id+";"; //what is the query?
-      Statement stmt = con.createStatement();
-      ResultSet rs = stmt.executeQuery(sql);
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE ID=?;"); //what is the query?
+      ps.setString(1,Integer.toString(id));
+      ResultSet rs = ps.executeQuery();
       if (rs.next()) {
         event  = eventRowToEvent(rs);
         return event;
@@ -63,8 +64,9 @@ public class EventService {
      */
     List<Event> allEvents = new ArrayList<Event>();
     try {
-      String sql = "select * from event";
+      String sql = "SELECT * FROM EVENT;";
       Statement stmt = con.createStatement();
+
       ResultSet rs = stmt.executeQuery(sql);
       while ( rs.next() ) {
         Event event  = eventRowToEvent(rs);
@@ -97,11 +99,10 @@ public class EventService {
    */
   public boolean exists(EventTypeEnum type, String eventId) {
     try {
-      String sql = "SELECT * FROM EVENT WHERE "
-        + "EVENT_ID='" + eventId + "' AND "
-        + "SOURCE='"   + type.toString() + "';";
-      Statement stmt = con.createStatement();
-      ResultSet rs = stmt.executeQuery(sql);
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
+      ps.setString(1,eventId);
+      ps.setString(2,type.toString());
+      ResultSet rs = ps.executeQuery();
       if ( rs.next() ) {
         //redundant?
         return (rs.getString("event_id").equals(eventId) && rs.getString("source").equals(type.toString()));
@@ -131,20 +132,18 @@ public class EventService {
     if ( exists(event.eventType,event.eventId) ) { return false; }
 
     try {
-      String sql = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE,URL)" 
-        + "VALUES (" + "'" + event.eventId + "', "    //"'asd43',"
-        + "'" + event.eventType.toString() + "', "    //"'DEBUG',"
-        + "'" + event.name + "', "                    //"'yoga',"
-        + "'" + event.description + "', "             //"'sunset yoga in bradley beach',"
-        + "'" + event.start.toString() + "', "        //"'2023-08-30T21:00:00Z',"
-        + "'" + event.city + "', "                    //"'Bradley',"
-        + "'" + event.state + "', "                   //"'NJ'"
-        + "'" + event.url + "'"                       //"'NJ'"
-        +");";                                        //google.com
-
-      LOG.info(sql);
-      Statement stmt = con.createStatement();
-      int rowsUpdated = stmt.executeUpdate(sql);
+      String queryTemplate = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE,URL)" +
+        " VALUES ( ? , ? , ? , ? , ?, ?, ? , ?);";
+      PreparedStatement ps = con.prepareStatement(queryTemplate);
+      ps.setString(1,event.eventId);
+      ps.setString(2,event.eventType.toString());
+      ps.setString(3,event.name);
+      ps.setString(4,event.description);
+      ps.setString(5,event.start.toString());
+      ps.setString(6,event.city);
+      ps.setString(7,event.state);
+      ps.setString(8,event.url);
+      int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
     } catch (SQLException e) {

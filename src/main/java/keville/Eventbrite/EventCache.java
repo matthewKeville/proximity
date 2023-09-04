@@ -1,7 +1,6 @@
 package keville.Eventbrite;
 
 import java.util.Properties;
-import java.util.Map;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,29 +15,23 @@ import com.google.gson.JsonParser;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class EventCache {
 
   private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
-
   private HttpClient httpClient;
   private String BEARER_TOKEN;
-
   private Connection con;
   private String connectionString;
-
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
   public EventCache (Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
-
-    //connectionString = properties.getProperty("connection_string");
     connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
     LOG.info("connecting to " + connectionString);
-
     try {
       con = DriverManager.getConnection(connectionString);
       LOG.info("connected to " + connectionString);
@@ -69,14 +62,12 @@ public class EventCache {
   private boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
 
     try {
-      String sql = "INSERT INTO EVENT (EVENT_ID,JSON)" 
-        + "VALUES (" + "'" + eventId + "', "    
-        + "'" + eventJson.toString() + "'"    
-        +");";                                        
-
-      LOG.info(sql);
-      Statement stmt = con.createStatement();
-      int rowsUpdated = stmt.executeUpdate(sql);
+      String queryTemplate = "INSERT INTO EVENT (EVENT_ID, JSON) "
+        + " VALUES (?,?);";
+      PreparedStatement ps = con.prepareStatement(queryTemplate);
+      ps.setString(1,eventId);
+      ps.setString(2,eventJson.toString());
+      int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
     } catch (SQLException se)  {
       LOG.error("error adding eventbrite event data to eventbrite.db");
@@ -92,9 +83,9 @@ public class EventCache {
     JsonObject jsonEvent = null;
 
     try {
-      String sql = "SELECT * FROM EVENT WHERE EVENT_ID="+eventId+";"; //what is the query?
-      Statement stmt = con.createStatement();
-      ResultSet rs = stmt.executeQuery(sql);
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=?;");
+      ps.setString(1,eventId);
+      ResultSet rs = ps.executeQuery();
       if (rs.next()) {
         json = rs.getString("json");
         jsonEvent = JsonParser.parseString(json).getAsJsonObject();
@@ -105,10 +96,8 @@ public class EventCache {
     }
 
     return jsonEvent;
-
   }
 
-  /* Get event data from Event Brite API */
   private JsonObject getEventFromApi(String eventId) {
 
     HttpRequest getRequest;

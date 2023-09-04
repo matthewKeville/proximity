@@ -1,14 +1,6 @@
 package keville.Eventbrite;
 
 import java.util.Properties;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Scanner;
-import java.util.Iterator;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,36 +9,29 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class VenueCache {
 
   private static String venueBaseUri = "https://www.eventbriteapi.com/v3/venues/";
-
   private HttpClient httpClient;
   private String BEARER_TOKEN;
-
   private Connection con;
   private String connectionString;
-
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(VenueCache.class);
 
   public VenueCache(Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
-
     connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
     LOG.info("connecting to " + connectionString);
-
     try {
       con = DriverManager.getConnection(connectionString);
       LOG.info("connected to " + connectionString);
@@ -55,7 +40,6 @@ public class VenueCache {
       LOG.error(e.getMessage());
       System.exit(5);
     }
-
   }
 
   public JsonObject get(String venueId) {
@@ -77,14 +61,11 @@ public class VenueCache {
   private boolean createVenueJsonInDb(String venueId, JsonObject venueJson) {
 
     try {
-      String sql = "INSERT INTO VENUE (VENUE_ID,JSON)" 
-        + "VALUES (" + "'" + venueId + "', "    
-        + "'" + venueJson.toString() + "'"    
-        +");";                                        
-
-      LOG.info(sql);
-      Statement stmt = con.createStatement();
-      int rowsUpdated = stmt.executeUpdate(sql);
+      String queryTemplate = "INSERT INTO VENUE (VENUE_ID,JSON) VALUES (?,?);";    
+      PreparedStatement ps = con.prepareStatement(queryTemplate);
+      ps.setString(1,venueId);
+      ps.setString(2,venueJson.toString());
+      int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
     } catch (SQLException se)  {
       LOG.error("error adding eventbrite venue data to eventbrite.db");
@@ -99,9 +80,9 @@ public class VenueCache {
     JsonObject jsonVenue = null;
 
     try {
-      String sql = "SELECT * FROM VENUE WHERE VENUE_ID="+venueId+";";
-      Statement stmt = con.createStatement();
-      ResultSet rs = stmt.executeQuery(sql);
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM VENUE WHERE VENUE_ID=?;");
+      ps.setString(1,venueId);
+      ResultSet rs = ps.executeQuery();
       if (rs.next()) {
         json = rs.getString("json");
         jsonVenue = JsonParser.parseString(json).getAsJsonObject();
@@ -110,12 +91,9 @@ public class VenueCache {
       LOG.error("error retrieving eventbrite venue data from eventbrite.db");
       LOG.error(se.getMessage());
     }
-
     return jsonVenue;
-
   }
 
-  /* Get venue data from venue Brite API */
   private JsonObject getVenueFromApi(String venueId) {
 
     HttpRequest getRequest;
