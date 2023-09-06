@@ -23,23 +23,11 @@ public class VenueCache {
   private static String venueBaseUri = "https://www.eventbriteapi.com/v3/venues/";
   private HttpClient httpClient;
   private String BEARER_TOKEN;
-  private Connection con;
-  private String connectionString;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(VenueCache.class);
 
   public VenueCache(Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
-    connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
-    LOG.info("connecting to " + connectionString);
-    try {
-      con = DriverManager.getConnection(connectionString);
-      LOG.info("connected to " + connectionString);
-    } catch (SQLException e) {
-      LOG.error("Critical error : unable to read venues from database : " + connectionString);
-      LOG.error(e.getMessage());
-      System.exit(5);
-    }
   }
 
   public JsonObject get(String venueId) {
@@ -58,8 +46,33 @@ public class VenueCache {
     return venueJson;
   }
 
+  private Connection getDbConnection() {
+    Connection con  = null;
+    String connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
+    LOG.debug("connecting to " + connectionString);
+    try {
+      con = DriverManager.getConnection(connectionString);
+      LOG.debug("connected to " + connectionString);
+    } catch (SQLException e) {
+      LOG.error("Critical error : unable to read venues from database : " + connectionString);
+      LOG.error(e.getMessage());
+      System.exit(5);
+    }
+    return con;
+  }
+
+  private void closeDbConnection(Connection con) {
+    try {
+      con.close();
+    } catch (Exception e) {
+      LOG.error("unable to close db connection");
+      LOG.error(e.getMessage());
+    }
+  }
+
   private boolean createVenueJsonInDb(String venueId, JsonObject venueJson) {
 
+    Connection con = getDbConnection();
     try {
       String queryTemplate = "INSERT INTO VENUE (VENUE_ID,JSON) VALUES (?,?);";    
       PreparedStatement ps = con.prepareStatement(queryTemplate);
@@ -70,7 +83,10 @@ public class VenueCache {
     } catch (SQLException se)  {
       LOG.error("error adding eventbrite venue data to eventbrite.db");
       LOG.error(se.getMessage());
+    } finally {
+      closeDbConnection(con);
     }
+
     return false;
   }
 
@@ -78,6 +94,7 @@ public class VenueCache {
 
     String json ="";
     JsonObject jsonVenue = null;
+    Connection con = getDbConnection();
 
     try {
       PreparedStatement ps = con.prepareStatement("SELECT * FROM VENUE WHERE VENUE_ID=?;");
@@ -90,7 +107,10 @@ public class VenueCache {
     } catch (SQLException se) {
       LOG.error("error retrieving eventbrite venue data from eventbrite.db");
       LOG.error(se.getMessage());
+    } finally {
+      closeDbConnection(con);
     }
+
     return jsonVenue;
   }
 

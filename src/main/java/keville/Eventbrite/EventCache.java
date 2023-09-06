@@ -23,24 +23,11 @@ public class EventCache {
   private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
   private HttpClient httpClient;
   private String BEARER_TOKEN;
-  private Connection con;
-  private String connectionString;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
   public EventCache (Properties properties) {
     BEARER_TOKEN = properties.getProperty("event_brite_api_key");
     httpClient = HttpClient.newHttpClient();
-    connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
-    LOG.info("connecting to " + connectionString);
-    try {
-      con = DriverManager.getConnection(connectionString);
-      LOG.info("connected to " + connectionString);
-    } catch (SQLException e) {
-      LOG.error("Critical error : unable to read events from database : " + connectionString);
-      LOG.error(e.getMessage());
-      System.exit(5);
-    }
-
   }
 
   public JsonObject get(String eventId) {
@@ -59,8 +46,33 @@ public class EventCache {
     return eventJson;
   }
 
+  private Connection getDbConnection() {
+    Connection con  = null;
+    String connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
+    LOG.debug("connecting to " + connectionString);
+    try {
+      con = DriverManager.getConnection(connectionString);
+      LOG.debug("connected to " + connectionString);
+    } catch (SQLException e) {
+      LOG.error("Critical error : unable to read events from database : " + connectionString);
+      LOG.error(e.getMessage());
+      System.exit(5);
+    }
+    return con;
+  }
+
+  private void closeDbConnection(Connection con) {
+    try {
+      con.close();
+    } catch (Exception e) {
+      LOG.error("unable to close db connection");
+      LOG.error(e.getMessage());
+    }
+  }
+
   private boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
 
+    Connection con = getDbConnection();
     try {
       String queryTemplate = "INSERT INTO EVENT (EVENT_ID, JSON) "
         + " VALUES (?,?);";
@@ -72,6 +84,8 @@ public class EventCache {
     } catch (SQLException se)  {
       LOG.error("error adding eventbrite event data to eventbrite.db");
       LOG.error(se.getMessage());
+    } finally {
+      closeDbConnection(con);
     }
     return false;
   }
@@ -81,6 +95,7 @@ public class EventCache {
 
     String json ="";
     JsonObject jsonEvent = null;
+    Connection con = getDbConnection();
 
     try {
       PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=?;");
@@ -93,6 +108,8 @@ public class EventCache {
     } catch (SQLException se) {
       LOG.error("error retrieving eventbrite event data from eventbrite.db");
       LOG.error(se.getMessage());
+    } finally {
+      closeDbConnection(con);
     }
 
     return jsonEvent;
