@@ -31,26 +31,26 @@
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
+    <!--
     <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-java</artifactId>
         <version>4.10.0</version>
     </dependency>
-
-    <!--
+    -->
+    
     <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-java</artifactId>
         <version>4.12.1</version>
     </dependency>
-    -->
 
     <!-- https://github.com/lightbody/browsermob-proxy -->
+
     <dependency>
       <groupId>net.lightbody.bmp</groupId>
       <artifactId>browsermob-core</artifactId>
       <version>2.1.5</version>
-        <!--<scope>test</scope>-->
     </dependency>
 
     <!-- https://stackoverflow.com/questions/71095560/java-lang-nosuchmethoderror-com-google-common-collect-immutablemap-error-when -->
@@ -77,8 +77,6 @@
     </dependency>
 
 
-
-    <!-- slf4j -->
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -86,30 +84,6 @@
       <version>2.0.7</version>
     </dependency>
 
-    <!--
-      Simple implementation for slf4j
-    -->
-    <!-- https://stackoverflow.com/questions/7421612/slf4j-failed-to-load-class-org-slf4j-impl-staticloggerbinder -->
-    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
-    <!-- this provider is insufficient -->
-    <!--
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>2.0.7</version>
-      </dependency>
-    -->
-
-    <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
-    <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.4.11</version>
-    </dependency>
-
-    <!-- my brain broke trying to get log4j2 and slf4j to play nice, sl4j-simple is my impl for now -->
-
-    <!--
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
@@ -126,8 +100,6 @@
       <artifactId>log4j-core</artifactId>
       <version>2.20.0</version>
       </dependency>
-    -->
-
 
   </dependencies>
 
@@ -175,6 +147,7 @@
         </plugin>
 
         <!-- https://stackoverflow.com/questions/8252107/is-it-possible-to-execute-two-different-maven-exec-maven-plugin-in-a-single-pom -->
+        <!-- https://stackoverflow.com/questions/3231797/specify-system-property-to-maven-project -->
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
@@ -192,6 +165,10 @@
                   <argument></argument>
                 </arguments>
                 <systemProperties>
+                  <systemProperty>
+                        <key>log4j.configurationFile</key>
+                        <value>log4j2.xml</value>
+                  </systemProperty>
                 </systemProperties>
               </configuration>
             </execution>
@@ -207,7 +184,11 @@
                   <argument></argument>
                 </arguments>
                 <systemProperties>
-                </systemProperties>
+                  <systemProperty>
+                        <key>log4j.configurationFile</key>
+                        <value>log4j2.xml</value>
+                  </systemProperty>
+                </systemProperties>/
               </configuration>
             </execution>
 

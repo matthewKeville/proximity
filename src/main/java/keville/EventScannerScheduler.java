@@ -87,7 +87,7 @@ public class EventScannerScheduler implements Runnable {
     jobs.add(new EventScanJob(
           EventTypeEnum.EVENTBRITE,
           5.0,
-          40.1784,74.0218,
+          40.1784,-74.0218,
           60//300 // every 5 minutes 
     ));
 

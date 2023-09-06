@@ -79,28 +79,22 @@ public class EventbriteScanner implements EventScanner {
 
       List<String> eventIds = new ArrayList<String>();
       LOG.info(String.format("beginning scan on %f,%f ", latitude, longitude));
-      
+
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
-      proxy.start(0); /* can concurrent instances use the same port? */
+      proxy.start(0); // can concurrent instances use the same port?
       LOG.info("scan job started on port "+proxy.getPort());
       Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
-      LOG.info("after proxy setup");
-
       ChromeOptions options = new ChromeOptions();
-      options.addArguments("headless");
+      options.addArguments("headless"); //should be programmatic
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
-
-      LOG.info("after chrome options construction");
 
       WebDriver driver = new ChromeDriver(options);
       proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
       proxy.newHar("eventScanHar");
-
-      LOG.info("after Web Driver instantiation");
 
       String targetUrl = eventMapUrl(latitude,longitude,radius);
       LOG.info("target url is " + targetUrl);

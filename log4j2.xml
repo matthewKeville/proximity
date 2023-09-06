@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+  <Appenders>
+    <Console name="Console">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+    <File name="LOGFILE" fileName="logs/log.l4j">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </File>
+  </Appenders>
+
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="LOGFILE"/>
+    </Root>
+    <Logger name="net.lightbody.bmp" level="error" additivity="false">
+      <AppenderRef ref="LOGFILE"/>
+    </Logger>
+    <Logger name="org.littleshoot.proxy" level="error" additivity="false">
+      <AppenderRef ref="LOGFILE"/>
+    </Logger>
+  </Loggers>
+</Configuration>
