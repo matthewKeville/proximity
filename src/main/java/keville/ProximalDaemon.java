@@ -14,17 +14,15 @@ import java.io.FileInputStream;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.List;
-import java.util.Arrays;
 
 
 public class ProximalDaemon 
 {
     static Properties props;
-    //static EventCache eventCache;
     static EventService eventService;
     static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
+    static Thread scheduleThread;
 
     static {
       initialize();
@@ -43,15 +41,6 @@ public class ProximalDaemon
               currentLocation.get("latitude"),
               currentLocation.get("longitude"),
             10.0));
-
-
-        //scan events optional
-        //EventScanner EventbriteScanner = new EventbriteScanner(40.2204,-74.0121,20.0,eventService,props); //asbury
-        //EventbriteScanner.scan();
-
-        //Load known events into memory
-        List<Event> events = eventService.getEvents();
-        //List<Event> allEvents = eventService.getEvents(eventFilter);
 
         int port = 9876;
         boolean run = true;
@@ -73,6 +62,9 @@ public class ProximalDaemon
 
               String filterString = (String) ois.readObject();
               LOG.info("Recieved List Request with filter string : " + filterString);
+
+              //Load known events into memory
+              List<Event> events = eventService.getEvents();
 
               oos.writeObject("Okay");
               oos.writeObject(events);
@@ -123,6 +115,11 @@ public class ProximalDaemon
       LOG.info("using api_key : "+props.getProperty("event_brite_api_key"));
 
       eventService = new EventService(props);
+
+      EventScannerScheduler scheduler = new EventScannerScheduler(eventService, props);
+      scheduleThread = new Thread(scheduler, "EventScannerScheduler");
+      scheduleThread.start();
+
     }
 
 }

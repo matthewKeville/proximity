@@ -7,4 +7,5 @@ logs/
 eventbrite.db
 eventbrite.db-journal
 app.db
+test.db
 custom.properties

@@ -1,5 +1,6 @@
 package keville.util;
 
+import keville.Location;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -8,6 +9,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 
 public class GeoUtils {
@@ -71,5 +75,45 @@ public class GeoUtils {
     return geoLocation;
 
   }
- 
+
+  public static Location getLocationFromGeoCoordinates(double latitude, double longitude) {
+    Location result = null;
+    HttpClient httpClient = HttpClient.newHttpClient();
+    HttpRequest getRequest;
+    String response = "";
+    
+    LOG.info(" attempting reverse geocode on lat = " + latitude + " and lon = " + longitude);
+
+    try {
+    URI uri = new URI("https://geocode.maps.co/reverse?lat=" + latitude + "&lon=" + longitude ); /*without terminal '/' we get a 301 */
+    getRequest = HttpRequest.newBuilder()
+      .uri(uri) 
+      .GET()
+      .build();
+      HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
+      LOG.info(String.format("request returned %d",getResponse.statusCode()));
+      response = getResponse.body();
+    } catch (Exception e) {
+      LOG.error(String.format("error sending request %s",e.getMessage()));
+    }
+
+    String displayString = "";
+
+    try {
+      JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+      JsonObject address = json.getAsJsonObject("address");
+      displayString = json.get("display_name").getAsString();
+      String state = address.get("state").getAsString();
+      String city = address.get("town").getAsString();
+      result = new Location(latitude, longitude, state, city);
+    } catch (Exception e) {
+      LOG.error(" unable to reverse geocode lat= " + latitude + " lon= " + latitude + " into a Location ");
+      LOG.error(" location display name : " + displayString );
+      LOG.error(e.getMessage());
+    }
+
+    return result;
+    
+  }
+
 }

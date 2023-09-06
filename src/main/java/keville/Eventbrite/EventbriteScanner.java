@@ -3,33 +3,26 @@ package keville.Eventbrite;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
-import keville.util.DateTimeUtils;
+
+import keville.util.GeoUtils;
 
 import keville.Eventbrite.VenueCache;
 import keville.Eventbrite.EventCache;
 
-import java.io.IOException;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.Writer;
 import java.io.StringWriter;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import java.util.stream.Collectors;
 import java.util.Properties;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
@@ -51,27 +44,17 @@ import com.google.gson.JsonObject;
 public class EventbriteScanner implements EventScanner {
 
 
+  private keville.EventService eventService;
+  private EventCache eventCache;
+  private VenueCache venueCache;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScanner.class);
-
-  /* return a bounding box  that is circumsribed by the circle defined by (lon,lat,radius) */
-  static Map<String,Double> radialBbox(double lat,double lon,double radius /* miles */ ) {
-    double km = radius * 1.60934;
-    double deg = km * 90.0 /*deg*/ / 10_000.0 /*km*/;
-
-    Map<String,Double> map = new HashMap<String,Double>();
-    map.put("ulat",(lat-deg));
-    map.put("ulon",(lon-deg));
-    map.put("blat",(lat+deg));
-    map.put("blon",(lon+deg));
-    return map;
-  }
 
   static String eventMapUrl(double lat,double lon,double radius,int page) {
     if (page <= 0 ) {
       LOG.error("non positive page indices are undefined");
       return "";
     }
-    Map<String,Double> map = radialBbox(lat,lon,radius);
+    Map<String,Double> map = GeoUtils.radialBbox(lat,lon,radius);
     String site = "https://www.eventbrite.com/";
     String locationPrefix = "d/united-states/belmar-new/"; /* I don't think /united-states/ matters i.e. what's inside / / */
     String mapPrefix = String.format("?page=%d&bbox=",page);  //"?page=1&bbox=";
@@ -82,24 +65,14 @@ public class EventbriteScanner implements EventScanner {
     return eventMapUrl(lat,lon,radius,1);
   }
 
-  private double latitude;
-  private double longitude;
-  private double radius; /*in miles*/
 
-  private keville.EventService eventService;
-  private EventCache eventCache;
-  private VenueCache venueCache;
-
-  public EventbriteScanner(double latitude,double longitude,double radius, keville.EventService eventService, Properties props) {
+  public EventbriteScanner(keville.EventService eventService, Properties props) {
     this.eventService = eventService;
-    this.latitude = latitude;
-    this.longitude = longitude;
-    this.radius = radius; /*in miles*/
     venueCache = new VenueCache(props);
     eventCache = new EventCache(props);
   }
 
-  public int scan() {
+  public int scan(double latitude, double longitude, double radius) {
 
       int page  = 0;
       int pages = 0;
@@ -114,17 +87,23 @@ public class EventbriteScanner implements EventScanner {
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
+      LOG.info("after proxy setup");
+
       ChromeOptions options = new ChromeOptions();
       options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 
+      LOG.info("after chrome options construction");
+
       WebDriver driver = new ChromeDriver(options);
       proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
       proxy.newHar("eventScanHar");
 
+      LOG.info("after Web Driver instantiation");
+
       String targetUrl = eventMapUrl(latitude,longitude,radius);
-      LOG.info(targetUrl);
+      LOG.info("target url is " + targetUrl);
 
       // Hit first search page
       driver.get(targetUrl);

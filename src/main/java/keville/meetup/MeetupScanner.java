@@ -1,5 +1,7 @@
 package keville.meetup;
 
+import keville.util.GeoUtils;
+import keville.Location;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Properties;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -37,21 +40,22 @@ import com.google.gson.JsonObject;
 public class MeetupScanner implements EventScanner {
 
   private keville.EventService eventService;
-  private String city;
-  private String state;
+  private Properties props;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScanner.class);
 
   /* 
    * this is very wrong city,state or lat / long in Eventbrite
    * cleary I need some Location interace 
    */
-  public MeetupScanner(String city,String state, keville.EventService eventService) {
+  public MeetupScanner(keville.EventService eventService, Properties props) {
     this.eventService = eventService;
-    this.city = city;
-    this.state = state;
+    this.props = props;
   }
 
-  public int scan() {
+  public int scan(double latitude, double longitude, double radius) {
+
+      //My meetup scrubbing protocol requires huamn readable address formats ( city & state )
+      Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
@@ -69,8 +73,8 @@ public class MeetupScanner implements EventScanner {
       proxy.newHar("eventScanHar");
 
       String countryString = "us"; //lower country code
-      String cityString = city; //"Belmar"; // First Cap and lowercase
-      String stateString = state; //"nj"; //lower
+      String cityString = location.city; //"Belmar"; // First Cap and lowercase
+      String stateString = location.state; //"nj"; //lower
       String distanceString = "fiveMiles"; //need a distance otr infintite scrolling
       String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS&distance=%s",countryString,stateString,cityString,distanceString);
 

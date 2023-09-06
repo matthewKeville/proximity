@@ -1,10 +1,8 @@
 package keville;
 
-import java.util.List;
-
 public interface EventScanner  {
 
-  /* return a list of found eventIds */
-  int scan();
+  //int scan();
+  int scan(double latitude,double longitude, double radius);
 
 }
