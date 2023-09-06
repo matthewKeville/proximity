@@ -128,7 +128,7 @@ public class EventService {
 
     //do not create duplicates
     if ( exists(event.eventType,event.eventId) ) { 
-      LOG.warn(" event : " + "eventid: " + event.eventId + " id: " + event.id + "\n was requested to be created , but already exists ");
+      LOG.warn(" event - " + "eventid : " +  event.id + "\n\t was requested to be created , but already exists ");
       return false; 
     }
 
@@ -172,7 +172,7 @@ public class EventService {
       }
       allPass &= success;
     }
-    LOG.info("Only created  " + (events.size() - fails) + " of " + events.size() + " events ");
+    LOG.info("created  " + (events.size() - fails) + " of " + events.size() + " events for createEvents ");
     return allPass;
   }
 

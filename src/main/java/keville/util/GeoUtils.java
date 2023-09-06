@@ -52,8 +52,6 @@ public class GeoUtils {
       .GET()
       .build();
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      LOG.warn("ajsdkfjasd");
-      LOG.debug("kajsdfa");
       LOG.info(String.format("request returned %d",getResponse.statusCode()));
       response = getResponse.body();
     } catch (Exception e) {

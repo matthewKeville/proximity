@@ -175,6 +175,7 @@ public class EventbriteScanner implements EventScanner {
       // Only process new event ids
       List<Event> events = eventIds
         .stream()
+        .distinct() // this method of eventId collection generates duplicates
         .filter(ei -> !eventService.exists(EventTypeEnum.EVENTBRITE,ei))
         .map(ei -> createEventFrom(ei))
         .filter(e -> e != null)
