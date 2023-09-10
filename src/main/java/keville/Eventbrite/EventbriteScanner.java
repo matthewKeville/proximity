@@ -6,9 +6,6 @@ import keville.EventTypeEnum;
 
 import keville.util.GeoUtils;
 
-import keville.Eventbrite.VenueCache;
-import keville.Eventbrite.EventCache;
-
 import java.io.Writer;
 import java.io.StringWriter;
 
@@ -20,9 +17,6 @@ import java.util.stream.Collectors;
 import java.util.Properties;
 import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.By;
@@ -77,7 +71,6 @@ public class EventbriteScanner implements EventScanner {
       int page  = 0;
       int pages = 0;
 
-      List<String> eventIds = new ArrayList<String>();
       LOG.info(String.format("beginning scan on %f,%f ", latitude, longitude));
 
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
@@ -119,7 +112,6 @@ public class EventbriteScanner implements EventScanner {
       }
       LOG.info("found "+pages);
 
-
       int maxPagesToScrub = 5;//10;
       int maxNewEvents = 50;//
       int pageLoadDelay_ms = 1000;/*1 sec*/
@@ -148,29 +140,22 @@ public class EventbriteScanner implements EventScanner {
 
       }
 
-      // get the HAR data
       Har har = proxy.getHar();
+      Writer harStringWriter = new StringWriter();
 
-      Writer stringWriter = new StringWriter();
       try {
-        har.writeTo(stringWriter);
-        String rawContent = stringWriter.toString();
-        //   \":\"456523472997\",\"
-        //Pattern pat = Pattern.compile("(?<=eventbrite_event_id).*?(?=start)");
-        Pattern pat = Pattern.compile("(?<=eventbrite_event_id\\\\\":\\\\\").*?(?=\\\\\",\\\\\"start)"); //what an ungodly creation
-        Matcher mat = pat.matcher(rawContent);
-        while (mat.find()) {
-          eventIds.add(mat.group());
-        }
-        //filter event_id from rawContent
-      } catch (Exception e ) {
-
+        har.writeTo(harStringWriter);
+      } catch (Exception e) {
+        LOG.error("unable to extract HAR data as string");
+        LOG.error(e.getMessage());
       }
 
       if (driver != null) {
         proxy.stop();
         driver.quit();
       }
+
+      List<String> eventIds = EventbriteHarUtil.extractEventIds(harStringWriter.toString());
 
       // Only process new event ids
       List<Event> events = eventIds

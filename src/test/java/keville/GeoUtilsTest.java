@@ -10,16 +10,17 @@ public class GeoUtilsTest
 
     private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(GeoUtilsTest.class);
 
+    //this is not comprehensive
     @Test
     public void getLocationFromGeoCoordinatesReturnsCorrectLocation() {
       double lat = 40.171200;
       double lon = -74.071700;
       keville.Location result = GeoUtils.getLocationFromGeoCoordinates(lat,lon);
 
-      String expectedCity = "Wall Township";
+      String expectedTown = "Wall Township";
       String expectedState = "New Jersey";
 
       assertEquals(expectedState,result.state);
-      assertEquals(expectedCity,result.city);
+      assertEquals(expectedTown,result.town);
     }
 }

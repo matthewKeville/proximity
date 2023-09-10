@@ -96,17 +96,45 @@ public class GeoUtils {
     }
 
     String displayString = "";
+    String state = null;
+    String town = null;
+    String village = null;
 
     try {
       JsonObject json = JsonParser.parseString(response).getAsJsonObject();
       JsonObject address = json.getAsJsonObject("address");
       displayString = json.get("display_name").getAsString();
-      String state = address.get("state").getAsString();
-      String city = address.get("town").getAsString();
-      result = new Location(latitude, longitude, state, city);
+    
+      //state extract
+      try {
+        state = address.get("state").getAsString();
+      } catch (Exception e) {
+        LOG.warn("this geocoordinate does not map to a state");
+      }
+
+      //town extract
+      try {
+        town = address.get("town").getAsString();
+      } catch (Exception e) {
+        LOG.warn("this geocoordinate does not map to a town");
+      }
+
+      //village extract
+      try {
+        village = address.get("village").getAsString();
+      } catch (Exception e) {
+        LOG.warn("this geocoordinate does not map to a village");
+      }
+
+      result = new Location(latitude, longitude, state, town, village);
+
     } catch (Exception e) {
-      LOG.error(" unable to reverse geocode lat= " + latitude + " lon= " + latitude + " into a Location ");
-      LOG.error(" location display name : " + displayString );
+
+      LOG.error(" unable to reverse geocode lat=" + latitude + "  , lon=" + latitude + " into a Location ");
+      LOG.error(" display name : " + displayString );
+      LOG.error(" state : " + state );
+      LOG.error(" town : " + town );
+      LOG.error(" village : " + village );
       LOG.error(e.getMessage());
     }
 

@@ -39,7 +39,6 @@ public class EventScannerScheduler implements Runnable {
 
       LOG.info("evaluating job list");
 
-      //check if a scan job should run
       for ( EventScanJob esj : jobs ) {
         if ( shouldRunNow(esj)) {
           LOG.info("new scan job started");
@@ -49,8 +48,8 @@ public class EventScannerScheduler implements Runnable {
             case EVENTBRITE:
               eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
               break;
-            case MEETUP: //broken this commit
-              //meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
+            case MEETUP: 
+              meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
               break;
             case DEBUG:
               //pass
@@ -83,22 +82,21 @@ public class EventScannerScheduler implements Runnable {
   /* populate jobs with data stored on LFS */
   private void loadScanJobs() {
 
-    //dummy list for testing
+    //  dummy list for testing
+    //  to be replaced by a json file 
     jobs.add(new EventScanJob(
           EventTypeEnum.EVENTBRITE,
           5.0,
           40.1784,-74.0218,
-          60//300 // every 5 minutes 
+          180   // every 3 minutes 
     ));
 
-    /*
     jobs.add(new EventScanJob(
-          EventTypeEnum.EVENTBRITE,
+          EventTypeEnum.MEETUP,
           3.0,
-          20.1784,74.0218,
-          600 // every 10 minutes 
+          40.1784,-74.0218,
+          120   // every 2 minutes 
     ));
-    */
 
   }
 
