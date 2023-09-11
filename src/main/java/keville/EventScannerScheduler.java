@@ -7,6 +7,7 @@ import java.time.Instant;
 
 import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
+import keville.AllEvents.AllEventsScanner;
 
 public class EventScannerScheduler implements Runnable {
 
@@ -18,6 +19,7 @@ public class EventScannerScheduler implements Runnable {
 
   private EventbriteScanner eventbriteScanner;
   private MeetupScanner meetupScanner;
+  private AllEventsScanner allEventsScanner;
 
 
   public EventScannerScheduler(EventService eventService, Properties props) {
@@ -26,6 +28,7 @@ public class EventScannerScheduler implements Runnable {
 
     eventbriteScanner = new EventbriteScanner(eventService, props);
     meetupScanner = new MeetupScanner(eventService, props);
+    allEventsScanner = new AllEventsScanner(eventService, props);
 
     jobs = new ArrayList<EventScanJob>();
     loadScanJobs();
@@ -45,6 +48,9 @@ public class EventScannerScheduler implements Runnable {
           LOG.info(esj.toString());
           //do the scan
           switch ( esj.source ) {
+            case ALLEVENTS: 
+              allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              break;
             case EVENTBRITE:
               eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
               break;
@@ -84,6 +90,7 @@ public class EventScannerScheduler implements Runnable {
 
     //  dummy list for testing
     //  to be replaced by a json file 
+    /*
     jobs.add(new EventScanJob(
           EventTypeEnum.EVENTBRITE,
           5.0,
@@ -96,6 +103,14 @@ public class EventScannerScheduler implements Runnable {
           3.0,
           40.1784,-74.0218,
           120   // every 2 minutes 
+    ));
+    */
+
+    jobs.add(new EventScanJob(
+          EventTypeEnum.ALLEVENTS,
+          3.0,
+          40.1784,-74.0218,
+          60   
     ));
 
   }

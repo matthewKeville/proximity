@@ -2,5 +2,6 @@ package keville;
 public enum EventTypeEnum {
   DEBUG,
   EVENTBRITE,
-  MEETUP;
+  MEETUP,
+  ALLEVENTS;
 }
