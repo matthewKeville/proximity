@@ -74,7 +74,9 @@ public class AllEventsScanner implements EventScanner {
       LOG.info("targetting initial url \n" + targetUrl);
       driver.get(targetUrl);
 
+      //////////////////////////////////////////////////////////
       // TODO expand result set until no more results appear
+      //////////////////////////////////////////////////////////
 
         //scroll down until we are at the same level as view more button
 
@@ -91,28 +93,27 @@ public class AllEventsScanner implements EventScanner {
       }
       proxy.endHar();
 
-      // extract the url from event stub to access the page where we can get the full event data set
+      // extract the event stub data (incomplete data set for events)
 
-      List<String> eventStubJsonPayloads = AllEventsHarUtil.extractEventStubJsonPayloads(harStringWriter.toString());
+      String eventStubsJson= AllEventsHarUtil.extractEventStubsJson(harStringWriter.toString(),targetUrl);
 
       List<String> eventUrls = new ArrayList<String>();
-      for ( String eventStubJsonPayload : eventStubJsonPayloads ) {
+      JsonArray eventStubs = JsonParser.parseString(eventStubsJson).getAsJsonArray();
 
-        JsonArray eventStubs = JsonParser.parseString(eventStubJsonPayload).getAsJsonArray();
-        for ( JsonElement eventStub : eventStubs ) {
-          String url = eventStub.getAsJsonObject().get("url").getAsString();
-          eventUrls.add(url);
-        }
-
-      }
-
-      LOG.info("found " + eventUrls.size() + " event urls ");
       List<Event> newEvents = new ArrayList<Event>();
-      for ( String eu : eventUrls ) {
-        LOG.info("scrapping event data from : " + eu);
-        // scrubEventDataFromUrl(Driver driver,Proxy proxy,String url);
-      }
+      LOG.info("found " + eventStubs.size() + " event stubs ");
+      for ( JsonElement eventStub : eventStubs ) {
 
+        //create stub event in place of full event
+        JsonObject eventStubJson = eventStub.getAsJsonObject();
+        newEvents.add(createEventStubFrom(eventStubJson));
+
+        /*
+        String url = eventStub.getAsJsonObject().get("url").getAsString();
+        // scrubEventDataFromUrl(Driver driver,Proxy proxy,String url);
+        */
+
+      }
 
       //close web driver
 
@@ -124,7 +125,7 @@ public class AllEventsScanner implements EventScanner {
       // send new events to event service
 
       newEvents = newEvents.stream()
-        .distinct() //not sure what the behaviour is here
+        .distinct()
         .collect(Collectors.toList());
       eventService.createEvents(newEvents);
 
@@ -134,10 +135,84 @@ public class AllEventsScanner implements EventScanner {
   }
 
   /*
+     This is a stub for a protocol that would visit event stub urls and grab the full event data
+  */
+  /*
   private Event scrubEventDataFromUrl(Driver driver,Proxy proxy,String url) {
   
   }
   */
+
+
+  /* 
+     this is a limited Event object that is missing other fields are
+     required to really be an 'Event' such as Time (instead of just date) and a formal
+     description. 
+
+     For testing purposes, I will use this limited Event as an Event, while I run tests
+     to see if full Event collection is feasible or desirable when the Event update protocol
+     has yet to be formulated. The main reason why I am reticent to grab the full data is
+     it would require a new web request per event which could seem suspicious to allEvents.in
+  */
+  private Event createEventStubFrom(JsonObject eventJson) {
+
+      String url = eventJson.get("url").getAsString(); 
+      String eventId = extractIdFromUrl(url);
+      String eventName = eventJson.get("name").getAsString();
+
+      String eventDescription = "unsupported for allevents.in";
+
+      // we must convert this partial Date to a ISO_INSTANT (stub only has DATE not DATETIME)
+      //stubs have a date : "2023-09-12"
+      //Event expects and ISO Instant : "2023-09-12T23:00:00.000Z"
+      String startDateString = eventJson.get("startDate").getAsString();
+      String fakeTime = "T00:00:00.000Z";
+      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startDateString+fakeTime));
+  
+
+      JsonObject location = eventJson.getAsJsonObject("location");
+      String locationType = location.get("@type").getAsString();
+
+      double latitude = 0;
+      double longitude = 0;
+      String city = null;
+      String state = null;
+      if ( locationType.equals("Place") ) {
+        
+        JsonObject geo = location.getAsJsonObject("geo");
+        String latitudeString = geo.get("latitude").getAsString();
+        String longitudeString = geo.get("longitude").getAsString();
+        latitude = Double.parseDouble(latitudeString);
+        longitude = Double.parseDouble(longitudeString);
+
+        JsonObject address = location.getAsJsonObject("address");
+        if ( address.get("@type").getAsString().equals("PostalAddress") ) {
+          city = address.get("addressLocality").getAsString();
+          state = address.get("addressRegion").getAsString();
+        } else {
+          LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
+        }
+
+      } else if ( locationType.equals("VirtualLocation") ) {
+        LOG.warn("found an event with a VirtualLocation which is currently unsupported");
+        LOG.error("created an event with fake geo location data");
+      } else {
+        LOG.error("found an event with an unhandled Location type : " + locationType);
+      }
+
+    return new Event(
+        eventId,
+        EventTypeEnum.ALLEVENTS,
+        eventName,
+        eventDescription,
+        start,
+        longitude,
+        latitude,
+        city,
+        state,
+        url
+        );
+  }
 
 
   /*
@@ -197,15 +272,6 @@ public class AllEventsScanner implements EventScanner {
   }
   */
 
-  //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097
-  //assuming the last bit is the eventId
-  private String extractIdFromUrl(String url) {
-    String [] splits = url.split("/");
-    if ( splits.length == 0 ) {
-      LOG.error("could not extract event id from url");
-    } 
-    return splits[splits.length-1];
-  }
 
   private String createTargetUrl(Location location) {
 
@@ -238,6 +304,16 @@ public class AllEventsScanner implements EventScanner {
       String targetUrl = "https://allevents.in/" + locationString + "/all";
 
       return targetUrl;
+  }
+
+  //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097
+  //assuming the last bit is the eventId
+  private String extractIdFromUrl(String url) {
+    String [] splits = url.split("/");
+    if ( splits.length == 0 ) {
+      LOG.error("could not extract event id from url");
+    } 
+    return splits[splits.length-1];
   }
 
 }

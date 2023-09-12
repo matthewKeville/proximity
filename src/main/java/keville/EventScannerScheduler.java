@@ -13,7 +13,7 @@ public class EventScannerScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
-  private int timeStepMS = 60000;
+  private int timeStepMS = 10000; //10 sec //60000;
   private Properties props;
   private EventService eventService;
 
@@ -88,30 +88,30 @@ public class EventScannerScheduler implements Runnable {
   /* populate jobs with data stored on LFS */
   private void loadScanJobs() {
 
-    //  dummy list for testing
-    //  to be replaced by a json file 
-    /*
     jobs.add(new EventScanJob(
           EventTypeEnum.EVENTBRITE,
           5.0,
           40.1784,-74.0218,
-          180   // every 3 minutes 
+          30   // every 3 minutes 
     ));
 
+    /*
     jobs.add(new EventScanJob(
           EventTypeEnum.MEETUP,
           3.0,
           40.1784,-74.0218,
-          120   // every 2 minutes 
+          30   // every 2 minutes 
     ));
     */
 
+    /*
     jobs.add(new EventScanJob(
           EventTypeEnum.ALLEVENTS,
           3.0,
           40.1784,-74.0218,
           30   
     ));
+    */
 
   }
 
