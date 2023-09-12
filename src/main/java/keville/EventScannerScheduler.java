@@ -110,7 +110,7 @@ public class EventScannerScheduler implements Runnable {
           EventTypeEnum.ALLEVENTS,
           3.0,
           40.1784,-74.0218,
-          60   
+          30   
     ));
 
   }

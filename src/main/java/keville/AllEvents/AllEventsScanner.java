@@ -91,43 +91,28 @@ public class AllEventsScanner implements EventScanner {
       }
       proxy.endHar();
 
-      // evaluate the events listed on the event search page by visiting the individual event urls
+      // extract the url from event stub to access the page where we can get the full event data set
 
-      proxy.newHar("eventScrubHar");
+      List<String> eventStubJsonPayloads = AllEventsHarUtil.extractEventStubJsonPayloads(harStringWriter.toString());
 
-      String partialEventsDataJson = AllEventsHarUtil.extractEventsJson(harStringWriter.toString());
-      
-      LOG.info("live meta event json");
-      LOG.info(partialEventsDataJson);
-      LOG.info("live meta event json");
+      List<String> eventUrls = new ArrayList<String>();
+      for ( String eventStubJsonPayload : eventStubJsonPayloads ) {
 
-      List<Event> newEvents = new ArrayList<Event>();
-
-      /*
-
-      if (!partialEventsDataJson.equals("")) {
-        JsonArray eventsArray = JsonParser.parseString(partialEventsDataJson).getAsJsonArray();
-        for (JsonElement jo : eventsArray) {
-
-          JsonObject event = jo.getAsJsonObject();
-          String url = event.get("url").getAsString();
-          String eventId = extractIdFromUrl(url);
-
-          // process HAR data from individual event pages
-          
-          if (!eventService.exists(EventTypeEnum.ALLEVENTS,eventId)) {
-            Event potentialNewEvent = scrapeEventFromEventUrl(driver, url);
-            if ( potentialNewEvent != null ) {
-              newEvents.add(potentialNewEvent);
-            }
-          }
-
+        JsonArray eventStubs = JsonParser.parseString(eventStubJsonPayload).getAsJsonArray();
+        for ( JsonElement eventStub : eventStubs ) {
+          String url = eventStub.getAsJsonObject().get("url").getAsString();
+          eventUrls.add(url);
         }
-      } else {
-
-        LOG.info("error fetching full event data");
 
       }
+
+      LOG.info("found " + eventUrls.size() + " event urls ");
+      List<Event> newEvents = new ArrayList<Event>();
+      for ( String eu : eventUrls ) {
+        LOG.info("scrapping event data from : " + eu);
+        // scrubEventDataFromUrl(Driver driver,Proxy proxy,String url);
+      }
+
 
       //close web driver
 
@@ -138,30 +123,26 @@ public class AllEventsScanner implements EventScanner {
 
       // send new events to event service
 
-
       newEvents = newEvents.stream()
         .distinct() //not sure what the behaviour is here
         .collect(Collectors.toList());
       eventService.createEvents(newEvents);
 
-      LOG.info(" allEvents scanner generated " + newEvents.size() + " potential new events " );
-
-
-      */
+      LOG.info(" allEvents scanner generated " + newEvents.size() + " new events " );
 
       return newEvents.size();
   }
 
-  private Event scrapeEventFromEventUrl(WebDriver driver,String url) {
-    return null;
+  /*
+  private Event scrubEventDataFromUrl(Driver driver,Proxy proxy,String url) {
+  
   }
+  */
 
-  //  transform local event format to Event object
-  //  TODO : this should be tryToCreateEventFrom and possibly return an Event or nothing
-  //    if the data passed does not qualitfy for an event
+
+  /*
   private Event createEventFrom(JsonObject eventJson) {
 
-    /*
       String eventId = eventBriteJsonId(eventJson);
       String url = eventJson.get("url").getAsString(); 
       String eventName = eventJson.get("name").getAsString();
@@ -212,9 +193,9 @@ public class AllEventsScanner implements EventScanner {
         state,
         url
         );
-    */
     return null;
   }
+  */
 
   //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097
   //assuming the last bit is the eventId
@@ -227,7 +208,6 @@ public class AllEventsScanner implements EventScanner {
   }
 
   private String createTargetUrl(Location location) {
-
 
       if ( location.state == null ) {
         LOG.warn("allevents scrubbing needs a valid US state, state is null");

@@ -6,10 +6,12 @@ import keville.AllEvents.AllEventsHarUtil;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 import org.junit.BeforeClass;
 
 import java.util.Properties;
+import java.util.List;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,11 +45,9 @@ public class AllEventsScannerTests
         System.exit(1);
       }
 
-      if (props.getProperty("allevents_har_sample").isEmpty()) {
-        LOG.info("You must provide a path to a allevents har sample to run this testing suite");
-        LOG.error("allevents_har_sample is null");
-        System.exit(2);
-      }
+      String errMsg = " you must supply a path 'allevents_har_sample' in 'testing.properties' to a testing HAR file ";
+      assertNotNull(errMsg,props.getProperty("allevents_har_sample"));
+      assertFalse(errMsg,props.getProperty("allevents_har_sample").isEmpty());
 
       Path harPath = Path.of(props.getProperty("allevents_har_sample"));
       LOG.info("using HAR sample : "+props.getProperty("allevents_har_sample"));
@@ -65,10 +65,12 @@ public class AllEventsScannerTests
     @Test
     public void extractEventsJsonReturnsValidJson()
     {
-      String jsonString = AllEventsHarUtil.extractEventsJson(harString);
-      assertNotEquals(jsonString,"");
-      boolean valid = JSONUtils.isValidJson(jsonString);
-      assertTrue(JSONUtils.isValidJson(jsonString));
+      List<String>  eventJsonPayloads = AllEventsHarUtil.extractEventStubJsonPayloads(harString);
+      assertNotEquals(eventJsonPayloads.size(),0);
+      for ( String eventJsonPayload : eventJsonPayloads ) {
+        assertTrue(JSONUtils.isValidJson(eventJsonPayload));
+      }
+
     }
 
 

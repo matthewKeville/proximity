@@ -2,6 +2,8 @@ package keville.AllEvents;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
 
 import java.io.PrintStream;
 import java.io.FileOutputStream;
@@ -11,36 +13,84 @@ import java.time.Instant;
 
 import java.net.URLDecoder;
 
-import org.apache.commons.text.StringEscapeUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
+
 
 public class AllEventsHarUtil {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AllEventsHarUtil.class);
 
-    public static String extractEventsJson(String harString) {
+    public static List<String> extractEventStubJsonPayloads(String harString) {
 
-      String rawHTML = "";
-
-      // extract contents of "text" field 
-      boolean firstMatch = false;
+      List<String> eventJsonPayloads = new ArrayList<String>();
       
       try {
-        final String regex = "(?<=\\\"mimeType\\\": \\\"application\\/x-www-form-urlencoded\\\",\\n            \\\"text\\\": \\\").*?(?=\\\",\\n            \\\"params\\\")";
-        final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE | Pattern.DOTALL);
-        Matcher mat = pattern.matcher(harString);
-        if (mat.find()) {
-          LOG.debug("found match for urlencoded json data container");
-          rawHTML=mat.group(0);
-          firstMatch = true;
-        } else {
-          LOG.warn("did not find match for urlencoded json data container");
+  
+        //jq '.log.entries[] | select(.request.url=="https://www.facebook.com/tr/") | .request.postData.text'
+        JsonObject harJson = JsonParser.parseString(harString).getAsJsonObject();
+        JsonArray entries = harJson.get("log").getAsJsonObject().get("entries").getAsJsonArray();
+
+        // find entries communicating with facebook pixel
+
+        for (JsonElement jo : entries) {
+
+          JsonObject entry = jo.getAsJsonObject();
+          JsonObject request = entry.get("request").getAsJsonObject();
+          String requestUrl = request.get("url").getAsString();
+
+          if ( requestUrl.equals("https://www.facebook.com/tr/")) {
+
+            LOG.debug("found a web request to facebook");
+
+            // extract postData entry
+
+            JsonObject postData = request.get("postData").getAsJsonObject();
+            String postDataText = postData.get("text").getAsString();
+
+            // urlDecode
+
+            String unencodedPostDataText = "";
+            try {
+              unencodedPostDataText = URLDecoder.decode(postDataText, StandardCharsets.UTF_8.toString() );
+            } catch (Exception e) {
+              LOG.error("unable to decode request postData text");
+              LOG.error(e.getMessage());
+              continue;
+            }
+
+            if ( unencodedPostDataText.equals("") ) {
+              continue;
+            }
+
+            // select JSON-LD string
+            
+            final String regex = "(?<=JSON-LD]=\\[).*?(?=,\\{\\\"@context\\\":\\\"https:\\/\\/schema.org\\\",\\\"@type\\\":\\\"BreadcrumbList)";
+            final Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+            Matcher mat = pattern.matcher(unencodedPostDataText);
+
+            try {
+              if (mat.find()) {
+                eventJsonPayloads.add(mat.group(0));
+              } 
+            } catch ( Exception e ) {
+              LOG.error("error extracting JSON-LD from the unencoded post data text");
+              LOG.error(e.getMessage());
+            }
+
+          }
+
         }
+
       } catch (Exception e ) {
+
+        // assumptions not met
+
         LOG.error("unexpected har data");
         LOG.error(e.getMessage());
-      }
 
-      if ( !firstMatch ) {
         try {
           PrintStream filePrintStream = new PrintStream(new FileOutputStream("logs/AllEvents-failure."+Instant.now().toString()+".har"));
           filePrintStream.print(harString);
@@ -48,56 +98,18 @@ public class AllEventsHarUtil {
         } catch (Exception e2) {
           LOG.error("error trying to save HAR file to LFS");
         }
-        return null;
+
       }
 
-      // urlDecode json data
-      String unencodedHTML = "";
-      try {
-        unencodedHTML = URLDecoder.decode(rawHTML, StandardCharsets.UTF_8.toString() );
-      } catch (Exception e) {
-        LOG.error("unable to unencode");
-        LOG.error(e.getMessage());
+      for ( String json : eventJsonPayloads ) {
+
+        LOG.info("json start");
+        LOG.info(json);
+        LOG.info("json end");
+
       }
 
-
-
-      //  carve out json array 
-      String json = "";
-      boolean secondMatch = false;
-
-      try {
-        final String regex2 = "(?<=JSON-LD]=\\[).*?(?=,\\{\\\"@context\\\":\\\"https:\\/\\/schema.org\\\",\\\"@type\\\":\\\"BreadcrumbList)";
-        final Pattern pattern2 = Pattern.compile(regex2, Pattern.MULTILINE);
-        Matcher mat2 = pattern2.matcher(unencodedHTML);
-        if (mat2.find()) {
-          LOG.debug("found match for json data array");
-          json=mat2.group(0);
-          secondMatch = true;
-        } else {
-          LOG.warn("did not find match for json data array");
-        }
-      } catch (Exception e ) {
-        LOG.error("unexpected har data");
-        LOG.error(e.getMessage());
-      }
-
-      if ( !secondMatch ) {
-        try {
-          PrintStream filePrintStream = new PrintStream(new FileOutputStream("logs/AllEvents-failure."+Instant.now().toString()+".har"));
-          filePrintStream.print(harString);
-          filePrintStream.close();
-        } catch (Exception e2) {
-          LOG.error("error trying to save HAR file to LFS");
-        }
-        return null;
-      }
-
-      LOG.info("json start");
-      LOG.info(json);
-      LOG.info("json end");
-
-      return json;
+      return eventJsonPayloads;
 
   }
 
