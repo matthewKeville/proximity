@@ -5,6 +5,7 @@ import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
 import keville.EventBuilder;
+import keville.SchemaUtil;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
@@ -158,66 +159,9 @@ public class AllEventsScanner implements EventScanner {
   */
   private Event createEventStubFrom(JsonObject eventJson) {
 
-      String url = eventJson.get("url").getAsString(); 
-      String eventId = extractIdFromUrl(url);
-      String eventName = eventJson.get("name").getAsString();
-      String eventDescription = "unsupported for allevents.in";
-
-      // we must convert this partial Date to a ISO_INSTANT (stub only has DATE not DATETIME)
-      //stubs have a date : "2023-09-12"
-      //Event expects and ISO Instant : "2023-09-12T23:00:00.000Z"
-      String startDateString = eventJson.get("startDate").getAsString();
-      String fakeTime = "T00:00:00.000Z";
-      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startDateString+fakeTime));
-  
-
-      JsonObject location = eventJson.getAsJsonObject("location");
-      String locationType = location.get("@type").getAsString();
-
-      boolean virtual = true;
-      double latitude = 0;
-      double longitude = 0;
-      String city = null;
-      String state = null;
-      if ( locationType.equals("Place") ) {
-       
-        virtual = false;
-        JsonObject geo = location.getAsJsonObject("geo");
-        String latitudeString = geo.get("latitude").getAsString();
-        String longitudeString = geo.get("longitude").getAsString();
-        latitude = Double.parseDouble(latitudeString);
-        longitude = Double.parseDouble(longitudeString);
-
-        JsonObject address = location.getAsJsonObject("address");
-
-        if ( address.get("@type").getAsString().equals("PostalAddress") ) {
-
-          city = address.get("addressLocality").getAsString();
-          state = address.get("addressRegion").getAsString();
-
-        } else {
-          LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
-        }
-
-      } else if ( locationType.equals("VirtualLocation") ) {
-        LOG.warn("found an event with a VirtualLocation which is currently unsupported");
-        LOG.error("created an event with fake geo location data");
-      } else {
-        LOG.error("found an event with an unhandled Location type : " + locationType);
-      }
-
-    EventBuilder eb = new EventBuilder();
-    eb.setEventId(eventId);
+    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
     eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
-    eb.setName(eventName);
-    eb.setDescription(eventDescription);
-    eb.setStart(start);
-    eb.setLongitude(longitude);
-    eb.setLatitude(latitude);
-    eb.setCity(city);
-    eb.setState(state);
-    eb.setUrl(url);
-    eb.setVirtual(virtual);
+    eb.setEventId(extractIdFromJson(eventJson)); 
 
     return eb.build();
 
@@ -259,7 +203,10 @@ public class AllEventsScanner implements EventScanner {
 
   //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097
   //assuming the last bit is the eventId
-  private String extractIdFromUrl(String url) {
+  private String extractIdFromJson(JsonObject eventJson) {
+
+    String url = eventJson.get("url").getAsString(); 
+
     String [] splits = url.split("/");
     if ( splits.length == 0 ) {
       LOG.error("could not extract event id from url");

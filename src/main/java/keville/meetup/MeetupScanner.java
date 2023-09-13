@@ -3,6 +3,7 @@ package keville.meetup;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
+import keville.SchemaUtil;
 import keville.EventBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
@@ -41,10 +42,6 @@ public class MeetupScanner implements EventScanner {
   private Properties props;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScanner.class);
 
-  /* 
-   * this is very wrong city,state or lat / long in Eventbrite
-   * cleary I need some Location interace 
-   */
   public MeetupScanner(keville.EventService eventService, Properties props) {
     this.eventService = eventService;
     this.props = props;
@@ -60,6 +57,7 @@ public class MeetupScanner implements EventScanner {
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
       LOG.info("Scan started on port "+proxy.getPort());
+
       Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
@@ -79,24 +77,30 @@ public class MeetupScanner implements EventScanner {
       driver.get(targetUrl);
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
-      // Scroll to the bottom of the page
-      JavascriptExecutor js = (JavascriptExecutor) driver;
 
-      /* this is probably a usefl utility i.e. definition doesn't belong here*/ 
-      // meetup loads as we scroll, but if we scroll to fast it won't load
-      // all the data. So we scroll slowly until we notice we can't scroll anymore
+      /* 
+        meetup loads as we scroll, but if we scroll too fast it won't load
+        all the data. So we scroll slowly until we notice we can't scroll anymore
+        this is probably a useful utility, so definition doesn't belong here 
+      */
+
+      JavascriptExecutor js = (JavascriptExecutor) driver;
       long lastScrollY = (long)js.executeScript("return window.scrollY");
       long scrollY = -1;
+
       while ( scrollY != lastScrollY ) {
+
         lastScrollY = scrollY;
         js.executeScript("window.scrollBy(0,1000)");
         scrollY = (long) js.executeScript("return window.scrollY");
+
         try {
           Thread.sleep(750/*ms*/); //potentially too fast?
         } catch (Exception e) {
           LOG.error("error encountered trying to sleep thread");
           LOG.error(e.getMessage());
         }
+
       }
       
       Har har = proxy.getHar();
@@ -119,27 +123,31 @@ public class MeetupScanner implements EventScanner {
       // package json event data into application Event
       List<Event> newEvents = new ArrayList<Event>();
       if (!jsonData.equals("")) {
+
         JsonArray eventsArray = JsonParser.parseString(jsonData).getAsJsonArray();
+
         for (JsonElement jo : eventsArray) {
+
           JsonObject event = jo.getAsJsonObject();
-          String id = eventBriteJsonId(event);
+          String id = meetupJsonId(event);
+
           // only process new event ids
           if (!eventService.exists(EventTypeEnum.MEETUP,id)) {
             newEvents.add(createEventFrom(event));
           }
         }
+
       } else {
         LOG.info("json data is empty!");
       }
 
       newEvents = newEvents.stream()
-        .distinct() //not sure what the behaviour is here
+        .distinct() 
         .collect(Collectors.toList());
       eventService.createEvents(newEvents);
 
       LOG.info(" meetup scanner generated " + newEvents.size() + " potential new events " );
 
-      //Package into Domain Event
       return newEvents.size();
   }
 
@@ -162,74 +170,19 @@ public class MeetupScanner implements EventScanner {
   }
 
 
-  //  transform local event format to Event object
-  //  this code is a duplicate (almost) of a method for Allevents as they both process Schema
-  //  this should be refactored to a shared utility that converts Schema Location data in domain Locations
   private Event createEventFrom(JsonObject eventJson) {
 
-      String url = eventJson.get("url").getAsString(); 
-      String eventId = eventBriteJsonId(eventJson);
-      String eventName = eventJson.get("name").getAsString();
-      String eventDescription = eventJson.get("description").getAsString();
-
-      String timestring = eventJson.get("startDate").getAsString();
-      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
-
-      JsonObject location = eventJson.getAsJsonObject("location");
-      String locationType = location.get("@type").getAsString();
-
-      boolean virtual = true;
-      double latitude = 0;
-      double longitude = 0;
-      String city = null;
-      String state = null;
-      if ( locationType.equals("Place") ) {
-
-        virtual = false;
-        JsonObject geo = location.getAsJsonObject("geo");
-        String latitudeString = geo.get("latitude").getAsString();
-        String longitudeString = geo.get("longitude").getAsString();
-        latitude = Double.parseDouble(latitudeString);
-        longitude = Double.parseDouble(longitudeString);
-
-        JsonObject address = location.getAsJsonObject("address");
-
-        if ( address.get("@type").getAsString().equals("PostalAddress") ) {
-          
-          city = address.get("addressLocality").getAsString();
-          state = address.get("addressRegion").getAsString();
-
-        } else {
-          LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
-        }
-      } else if ( locationType.equals("VirtualLocation") ) {
-        LOG.warn("found an event with a VirtualLocation which is currently unsupported");
-        LOG.error("created an event with fake geo location data");
-      } else {
-        LOG.error("found an event with an unhandled Location type : " + locationType);
-      }
-
-    EventBuilder eb = new EventBuilder();
-    eb.setEventId(eventId);
+    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
     eb.setEventTypeEnum(EventTypeEnum.MEETUP);
-    eb.setName(eventName);
-    eb.setDescription(eventDescription);
-    eb.setStart(start);
-    eb.setLongitude(longitude);
-    eb.setLatitude(latitude);
-    eb.setCity(city);
-    eb.setState(state);
-    eb.setUrl(url);
-    eb.setVirtual(virtual);
+    eb.setEventId(meetupJsonId(eventJson)); 
 
     return eb.build();
-
   }
 
 
   //I am assuming this last part is the eventId
   //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/
-  private String eventBriteJsonId(JsonObject eventJson) {
+  private String meetupJsonId(JsonObject eventJson) {
       String url = eventJson.get("url").getAsString(); 
       String[] splits = url.split("/");
       return splits[splits.length-1];
