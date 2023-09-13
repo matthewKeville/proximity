@@ -160,7 +160,6 @@ public class AllEventsScanner implements EventScanner {
       String url = eventJson.get("url").getAsString(); 
       String eventId = extractIdFromUrl(url);
       String eventName = eventJson.get("name").getAsString();
-
       String eventDescription = "unsupported for allevents.in";
 
       // we must convert this partial Date to a ISO_INSTANT (stub only has DATE not DATETIME)
@@ -174,12 +173,14 @@ public class AllEventsScanner implements EventScanner {
       JsonObject location = eventJson.getAsJsonObject("location");
       String locationType = location.get("@type").getAsString();
 
+      boolean virtual = true;
       double latitude = 0;
       double longitude = 0;
       String city = null;
       String state = null;
       if ( locationType.equals("Place") ) {
-        
+       
+        virtual = false;
         JsonObject geo = location.getAsJsonObject("geo");
         String latitudeString = geo.get("latitude").getAsString();
         String longitudeString = geo.get("longitude").getAsString();
@@ -187,9 +188,12 @@ public class AllEventsScanner implements EventScanner {
         longitude = Double.parseDouble(longitudeString);
 
         JsonObject address = location.getAsJsonObject("address");
+
         if ( address.get("@type").getAsString().equals("PostalAddress") ) {
+
           city = address.get("addressLocality").getAsString();
           state = address.get("addressRegion").getAsString();
+
         } else {
           LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
         }
@@ -211,7 +215,8 @@ public class AllEventsScanner implements EventScanner {
         latitude,
         city,
         state,
-        url
+        url,
+        virtual
         );
   }
 

@@ -133,8 +133,8 @@ public class EventService {
     }
 
     try {
-      String queryTemplate = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE,URL)" +
-        " VALUES ( ? , ? , ? , ? , ?, ?, ? , ?);";
+      String queryTemplate = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE,URL,VIRTUAL)" +
+        " VALUES ( ? , ? , ? , ? , ?, ?, ? , ?, ?);";
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,event.eventId);
       ps.setString(2,event.eventType.toString());
@@ -144,6 +144,7 @@ public class EventService {
       ps.setString(6,event.city);
       ps.setString(7,event.state);
       ps.setString(8,event.url);
+      ps.setString(9,""+(event.virtual ? 1 : 0));
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
@@ -226,7 +227,8 @@ public class EventService {
       String city = rs.getString("city");
       String state = rs.getString("state");
       String url = rs.getString("url");
-      event = new Event(id,eventId,eventType,name,description,start,longitude,latitude,city,state,url);
+      boolean virtual = rs.getInt("virtual") == 1;
+      event = new Event(id,eventId,eventType,name,description,start,longitude,latitude,city,state,url,virtual);
     } catch (SQLException se) {
       LOG.error("an error occured converting event row to Event object");
       LOG.error(se.getMessage());

@@ -189,10 +189,13 @@ public class EventbriteScanner implements EventScanner {
     String eventName = eventJson.getAsJsonObject("name").get("text").getAsString();
 
     String eventDescription = "";
-    JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
-    if (!eventDescriptionJson.isJsonNull()) {
-      eventDescription = eventDescriptionJson.getAsString();
-    } 
+    if (eventJson.has("summary")) {
+      eventDescription = eventJson.get("summary").toString();
+    /* description is deprecated , but preferred over nothing */
+    } else if (eventJson.has("description")) {
+      JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
+      eventDescription = eventDescriptionJson.toString();
+    }
      
     JsonObject eventStartJson = eventJson.getAsJsonObject("start");
     String timestring = eventStartJson.get("utc").getAsString();
@@ -200,16 +203,20 @@ public class EventbriteScanner implements EventScanner {
 
     String venueId = "";
     JsonElement venueIdElement = eventJson.get("venue_id");
+
+
     if (!venueIdElement.isJsonNull()) {
       venueId = venueIdElement.getAsString();
     }
 
+    boolean virtual = eventJson.get("online_event").getAsString().equals("true");
     double latitude = 0;
     double longitude = 0;
     String city = "";
     String state = "";
     if (!venueId.isEmpty()) {
       JsonObject venue = venueCache.get(venueId);
+
       latitude  = Double.parseDouble(venue.get("latitude").getAsString());
       longitude = Double.parseDouble(venue.get("longitude").getAsString());
       JsonObject address = venue.getAsJsonObject("address");
@@ -236,7 +243,8 @@ public class EventbriteScanner implements EventScanner {
         latitude,
         city,
         state,
-        url
+        url,
+        false
         );
   }
 

@@ -25,6 +25,7 @@ public class Event implements Serializable {
   public String city;
   public String state;
   public String url;
+  public boolean virtual;
 
   public Event() {};
   public Event(
@@ -38,7 +39,8 @@ public class Event implements Serializable {
       double latitude,
       String city,
       String state,
-      String url
+      String url,
+      boolean virtual
       ) {
         this.id = id;
         this.eventId = eventId;
@@ -51,6 +53,7 @@ public class Event implements Serializable {
         this.city = city;
         this.state = state;
         this.url = url;
+        this.virtual = virtual;
       }
 
   /* for events not in db yet */
@@ -64,21 +67,23 @@ public class Event implements Serializable {
       double latitude,
       String city,
       String state,
-      String url
+      String url,
+      boolean virtual
       ) {
-         this(-1,eventId,eventType,name,description,start,longitude,latitude,city,state,url);
+         this(-1,eventId,eventType,name,description,start,longitude,latitude,city,state,url,virtual);
       }
 
   public String toString() {
-    return String.format("Name: %s\nDescription: %s\nStart %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %4.2f,%4.2f\nUrl %s",
-        name,description == null ? "" : description.substring(0,Math.min(description.length(),60)),start.toString(),city,state,eventTypeString(eventType),latitude,longitude,url);
+    return String.format("Name: %s\nDescription: %s\nStart %s\nVirtual %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %4.2f,%4.2f\nUrl %s",
+        name,description == null ? "" : description.substring(0,Math.min(description.length(),60)),start.toString(),virtual,city,state,eventTypeString(eventType),latitude,longitude,url);
   }
 
   public String toColorString() {
-    return String.format("Name: %s\nDescription: %s\nStart %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %s,%s\nUrl %s",
+    return String.format("Name: %s\nDescription: %s\nStart %s\nVirtual %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %s,%s\nUrl %s",
         AnsiColors.colorString(name,AnsiColors.RED),
         AnsiColors.colorString(description == null ? "" : description.substring(0,Math.min(description.length(),60)) ,AnsiColors.GREEN),
         AnsiColors.colorString(start.toString(),AnsiColors.YELLOW),
+        AnsiColors.colorString(Boolean.toString(virtual),AnsiColors.PURPLE_BRIGHT),
         AnsiColors.colorString(city,AnsiColors.BLUE),
         AnsiColors.colorString(state,AnsiColors.BLUE),
         AnsiColors.colorString(eventTypeString(eventType),AnsiColors.PURPLE),
@@ -96,6 +101,8 @@ public class Event implements Serializable {
             return "Eventbrite.com";
       case MEETUP:
             return "meetup.com";
+      case ALLEVENTS:
+            return "allevents.in";
       default:
             return "unknown";
     }

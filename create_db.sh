@@ -22,7 +22,8 @@ sqlite3 $DB_FILE "CREATE TABLE EVENT("\
 "LATITUDE REAL,"\
 "CITY TEXT,"\
 "STATE TEXT,"\
-"URL TEXT);"
+"URL TEXT,"\
+"VIRTUAL INTEGER);"
 
 # create sample data
 echo " Creating sample events "

@@ -162,12 +162,12 @@ public class MeetupScanner implements EventScanner {
 
 
   //  transform local event format to Event object
-  //  TODO : this should be tryToCreateEventFrom and possibly return an Event or nothing
-  //    if the data passed does not qualitfy for an event
+  //  this code is a duplicate (almost) of a method for Allevents as they both process Schema
+  //  this should be refactored to a shared utility that converts Schema Location data in domain Locations
   private Event createEventFrom(JsonObject eventJson) {
 
-      String eventId = eventBriteJsonId(eventJson);
       String url = eventJson.get("url").getAsString(); 
+      String eventId = eventBriteJsonId(eventJson);
       String eventName = eventJson.get("name").getAsString();
       String eventDescription = eventJson.get("description").getAsString();
 
@@ -177,23 +177,27 @@ public class MeetupScanner implements EventScanner {
       JsonObject location = eventJson.getAsJsonObject("location");
       String locationType = location.get("@type").getAsString();
 
+      boolean virtual = true;
       double latitude = 0;
       double longitude = 0;
       String city = null;
       String state = null;
       if ( locationType.equals("Place") ) {
+
+        virtual = false;
         JsonObject geo = location.getAsJsonObject("geo");
         String latitudeString = geo.get("latitude").getAsString();
         String longitudeString = geo.get("longitude").getAsString();
         latitude = Double.parseDouble(latitudeString);
         longitude = Double.parseDouble(longitudeString);
 
-        // -> Location -> Address (Type==PostalAddress) -> addressLocality (city)
-        // -> Location -> Address (Type==PostalAddress) -> addressRegion   (state)
         JsonObject address = location.getAsJsonObject("address");
+
         if ( address.get("@type").getAsString().equals("PostalAddress") ) {
+          
           city = address.get("addressLocality").getAsString();
           state = address.get("addressRegion").getAsString();
+
         } else {
           LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
         }
@@ -214,7 +218,8 @@ public class MeetupScanner implements EventScanner {
         latitude,
         city,
         state,
-        url
+        url,
+        virtual
         );
   }
 
