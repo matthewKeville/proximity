@@ -9,11 +9,15 @@ import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
 import keville.AllEvents.AllEventsScanner;
 
+import java.nio.file.Files;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+
 public class EventScannerScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
-  private int timeStepMS = 10000; //10 sec //60000;
+  private int timeStepMS = 10000; //30
   private Properties props;
   private EventService eventService;
 
@@ -38,12 +42,14 @@ public class EventScannerScheduler implements Runnable {
   //this will run one scan at a time 
   public void run() {
 
+    boolean firstRun = true; //run all jobs on startup
+
     while ( true ) {
 
       LOG.info("evaluating job list");
 
       for ( EventScanJob esj : jobs ) {
-        if ( shouldRunNow(esj)) {
+        if ( firstRun || shouldRunNow(esj)) {
           LOG.info("new scan job started");
           LOG.info(esj.toString());
           //do the scan
@@ -58,7 +64,6 @@ public class EventScannerScheduler implements Runnable {
               meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
               break;
             case DEBUG:
-              //pass
               break;
             default:
               LOG.warn("This EventType case has not been programmed explicitly and is not evaluated");
@@ -67,6 +72,10 @@ public class EventScannerScheduler implements Runnable {
           LOG.info("scan job complete");
           LOG.info(esj.toString());
         }
+      }
+
+      if ( firstRun ) {
+        firstRun = false;
       }
 
       try {
@@ -88,30 +97,33 @@ public class EventScannerScheduler implements Runnable {
   /* populate jobs with data stored on LFS */
   private void loadScanJobs() {
 
-    jobs.add(new EventScanJob(
-          EventTypeEnum.EVENTBRITE,
-          5.0,
-          40.1784,-74.0218,
-          30   // every 3 minutes 
-    ));
+    Path jobFilePath = FileSystems.getDefault().getPath("scan-jobs.csv");
 
-    /*
-    jobs.add(new EventScanJob(
-          EventTypeEnum.MEETUP,
-          3.0,
-          40.1784,-74.0218,
-          30   // every 2 minutes 
-    ));
-    */
+    try {
 
-    /*
-    jobs.add(new EventScanJob(
-          EventTypeEnum.ALLEVENTS,
-          3.0,
-          40.1784,-74.0218,
-          30   
-    ));
-    */
+      for ( String jobRow : Files.readAllLines(jobFilePath) ) {
+
+        //EventTypeEnum,radius,lat,lon,delay(s)
+        String[] fields = jobRow.split(",");
+        if ( fields.length != 5 ) {
+          LOG.warn("invalid scan job at \n\t" + jobRow);
+          continue;
+        }
+
+        EventTypeEnum type = EventTypeEnum.valueOf(fields[0]);
+        double radius = Double.parseDouble(fields[1]);
+        double latitude = Double.parseDouble(fields[2]);
+        double longitude = Double.parseDouble(fields[3]);
+        int delay = Integer.parseInt(fields[4]);
+
+        EventScanJob esj = new EventScanJob(type,radius,latitude,longitude,delay);
+        jobs.add(esj);
+
+      }
+    } catch (Exception e) {
+      LOG.error("error reading scan jobs from scan-jobs.csv");
+      LOG.error(e.getMessage());
+    }
 
   }
 

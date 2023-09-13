@@ -64,7 +64,7 @@ public class MeetupScanner implements EventScanner {
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
       ChromeOptions options = new ChromeOptions();
-      //TODO set headless (or headless toggle)
+      options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 

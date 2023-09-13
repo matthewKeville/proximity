@@ -65,6 +65,7 @@ public class AllEventsScanner implements EventScanner {
       ChromeOptions options = new ChromeOptions();
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+      options.addArguments("headless");
 
       WebDriver driver = new ChromeDriver(options);
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
