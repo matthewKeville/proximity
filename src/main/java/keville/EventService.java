@@ -228,7 +228,21 @@ public class EventService {
       String state = rs.getString("state");
       String url = rs.getString("url");
       boolean virtual = rs.getInt("virtual") == 1;
-      event = new Event(id,eventId,eventType,name,description,start,longitude,latitude,city,state,url,virtual);
+
+      EventBuilder eb = new EventBuilder();
+      eb.setId(id);
+      eb.setEventTypeEnum(eventType);
+      eb.setName(name);
+      eb.setDescription(description);
+      eb.setStart(start);
+      eb.setLongitude(longitude);
+      eb.setLatitude(latitude);
+      eb.setCity(city);
+      eb.setState(state);
+      eb.setUrl(url);
+      eb.setVirtual(virtual);
+      event = eb.build();
+
     } catch (SQLException se) {
       LOG.error("an error occured converting event row to Event object");
       LOG.error(se.getMessage());

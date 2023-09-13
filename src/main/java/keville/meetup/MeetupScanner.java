@@ -3,6 +3,7 @@ package keville.meetup;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
+import keville.EventBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
@@ -208,20 +209,23 @@ public class MeetupScanner implements EventScanner {
         LOG.error("found an event with an unhandled Location type : " + locationType);
       }
 
-    return new Event(
-        eventId,
-        EventTypeEnum.MEETUP,
-        eventName,
-        eventDescription,
-        start,
-        longitude,
-        latitude,
-        city,
-        state,
-        url,
-        virtual
-        );
+    EventBuilder eb = new EventBuilder();
+    eb.setEventId(eventId);
+    eb.setEventTypeEnum(EventTypeEnum.MEETUP);
+    eb.setName(eventName);
+    eb.setDescription(eventDescription);
+    eb.setStart(start);
+    eb.setLongitude(longitude);
+    eb.setLatitude(latitude);
+    eb.setCity(city);
+    eb.setState(state);
+    eb.setUrl(url);
+    eb.setVirtual(virtual);
+
+    return eb.build();
+
   }
+
 
   //I am assuming this last part is the eventId
   //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/

@@ -2,7 +2,6 @@ package keville;
 
 import keville.util.AnsiColors;
 import keville.util.GeoUtils;
-import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.io.Serializable;
@@ -11,67 +10,47 @@ import java.util.function.Predicate;
 
 
 public class Event implements Serializable {
+
   public EventTypeEnum eventType; 
   public int id;
   public String eventId;
   public String name;
   public String description;
-  //public LocalDateTime start;
   public Instant start;
   public double longitude;
   public double latitude;
-  //these are not consistent across the world and leaving them empty/null feels
-  //lazy. This is temporary.
   public String city;
   public String state;
   public String url;
   public boolean virtual;
 
-  public Event() {};
   public Event(
-      int id,      //pk in db
-      String eventId, //from source location 
-      EventTypeEnum eventType,
-      String name,
-      String description,
-      Instant start,
-      double longitude,
-      double latitude,
-      String city,
-      String state,
-      String url,
-      boolean virtual
-      ) {
-        this.id = id;
-        this.eventId = eventId;
-        this.eventType = eventType;
-        this.name = name;
-        this.description = description;
-        this.start = start;
-        this.longitude = longitude;
-        this.latitude = latitude;
-        this.city = city;
-        this.state = state;
-        this.url = url;
-        this.virtual = virtual;
-      }
-
-  /* for events not in db yet */
-  public Event(
-      String eventId, //from source location 
-      EventTypeEnum eventType,
-      String name,
-      String description,
-      Instant start,
-      double longitude,
-      double latitude,
-      String city,
-      String state,
-      String url,
-      boolean virtual
-      ) {
-         this(-1,eventId,eventType,name,description,start,longitude,latitude,city,state,url,virtual);
-      }
+    int id,      //pk in db
+    String eventId, //from source location 
+    EventTypeEnum eventType,
+    String name,
+    String description,
+    Instant start,
+    double longitude,
+    double latitude,
+    String city,
+    String state,
+    String url,
+    boolean virtual
+    ) {
+      this.id = id;
+      this.eventId = eventId;
+      this.eventType = eventType;
+      this.name = name;
+      this.description = description;
+      this.start = start;
+      this.longitude = longitude;
+      this.latitude = latitude;
+      this.city = city;
+      this.state = state;
+      this.url = url;
+      this.virtual = virtual;
+    }
 
   public String toString() {
     return String.format("Name: %s\nDescription: %s\nStart %s\nVirtual %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %4.2f,%4.2f\nUrl %s",

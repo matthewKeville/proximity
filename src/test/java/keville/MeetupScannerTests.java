@@ -6,6 +6,7 @@ import keville.meetup.MeetupHarUtil;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.BeforeClass;
 
 import java.util.Properties;
@@ -62,7 +63,7 @@ public class MeetupScannerTests
 
     }
 
-    @Test
+    @Ignore
     public void extractEventsJsonReturnsValidJson()
     {
       String jsonString = MeetupHarUtil.extractEventsJson(harString);

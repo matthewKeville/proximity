@@ -4,6 +4,7 @@ import keville.USStateAndTerritoryCodes;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
+import keville.EventBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
@@ -205,78 +206,22 @@ public class AllEventsScanner implements EventScanner {
         LOG.error("found an event with an unhandled Location type : " + locationType);
       }
 
-    return new Event(
-        eventId,
-        EventTypeEnum.ALLEVENTS,
-        eventName,
-        eventDescription,
-        start,
-        longitude,
-        latitude,
-        city,
-        state,
-        url,
-        virtual
-        );
+    EventBuilder eb = new EventBuilder();
+    eb.setEventId(eventId);
+    eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
+    eb.setName(eventName);
+    eb.setDescription(eventDescription);
+    eb.setStart(start);
+    eb.setLongitude(longitude);
+    eb.setLatitude(latitude);
+    eb.setCity(city);
+    eb.setState(state);
+    eb.setUrl(url);
+    eb.setVirtual(virtual);
+
+    return eb.build();
+
   }
-
-
-  /*
-  private Event createEventFrom(JsonObject eventJson) {
-
-      String eventId = eventBriteJsonId(eventJson);
-      String url = eventJson.get("url").getAsString(); 
-      String eventName = eventJson.get("name").getAsString();
-      String eventDescription = eventJson.get("description").getAsString();
-
-      String timestring = eventJson.get("startDate").getAsString();
-      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
-
-      JsonObject location = eventJson.getAsJsonObject("location");
-      String locationType = location.get("@type").getAsString();
-
-      double latitude = 0;
-      double longitude = 0;
-      String city = null;
-      String state = null;
-      if ( locationType.equals("Place") ) {
-        JsonObject geo = location.getAsJsonObject("geo");
-        String latitudeString = geo.get("latitude").getAsString();
-        String longitudeString = geo.get("longitude").getAsString();
-        latitude = Double.parseDouble(latitudeString);
-        longitude = Double.parseDouble(longitudeString);
-
-        // -> Location -> Address (Type==PostalAddress) -> addressLocality (city)
-        // -> Location -> Address (Type==PostalAddress) -> addressRegion   (state)
-        JsonObject address = location.getAsJsonObject("address");
-        if ( address.get("@type").getAsString().equals("PostalAddress") ) {
-          city = address.get("addressLocality").getAsString();
-          state = address.get("addressRegion").getAsString();
-        } else {
-          LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
-        }
-      } else if ( locationType.equals("VirtualLocation") ) {
-        LOG.warn("found an event with a VirtualLocation which is currently unsupported");
-        LOG.error("created an event with fake geo location data");
-      } else {
-        LOG.error("found an event with an unhandled Location type : " + locationType);
-      }
-
-    return new Event(
-        eventId,
-        EventTypeEnum.MEETUP,
-        eventName,
-        eventDescription,
-        start,
-        longitude,
-        latitude,
-        city,
-        state,
-        url
-        );
-    return null;
-  }
-  */
 
 
   private String createTargetUrl(Location location) {

@@ -76,7 +76,8 @@ public class EventServiceTests
           "LATITUDE REAL," +
           "CITY TEXT," + 
           "STATE TEXT," + 
-          "URL TEXT);";
+          "URL TEXT," +
+          "VIRTUAL INTEGER);";
 
         Statement stmt = con.createStatement();
         stmt.executeUpdate(sql0);
@@ -141,20 +142,22 @@ public class EventServiceTests
 
     @Test
     public void createEventCreatesEvent() {
-      Event event = new Event(
-          "test-event-12",
-          EventTypeEnum.DEBUG,
-          "createEventCreatesEvent",
-          "a test for Junit",
-          Instant.now(),
-          0.0,
-          0.0,
-          "Trenton",
-          "New Jersey",
-          "https://google.com"
-          );
-      assertTrue(eventService.createEvent(event));
 
+      EventBuilder eb = new EventBuilder();
+      eb.setEventId("test-event-12");
+      eb.setEventTypeEnum(EventTypeEnum.DEBUG);
+      eb.setName("createEventCreatesEvent");
+      eb.setDescription("a test for junit");
+      eb.setStart(Instant.now());
+      eb.setLatitude(0.0);
+      eb.setLongitude(0.0);
+      eb.setCity("Trenton");
+      eb.setState("New Jersey");
+      eb.setUrl("https://google.com");
+      eb.setVirtual(false);
+      Event event = eb.build();
+
+      assertTrue(eventService.createEvent(event));
 
     }
 

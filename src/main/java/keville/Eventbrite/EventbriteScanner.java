@@ -1,6 +1,7 @@
 package keville.Eventbrite;
 
 import keville.Event;
+import keville.EventBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
@@ -234,18 +235,21 @@ public class EventbriteScanner implements EventScanner {
 
     String url = eventJson.get("url").getAsString();
 
-    return new Event(eventId,
-        EventTypeEnum.EVENTBRITE,
-        eventName,
-        eventDescription,
-        start,
-        longitude,
-        latitude,
-        city,
-        state,
-        url,
-        false
-        );
+    EventBuilder eb = new EventBuilder();
+    eb.setEventId(eventId);
+    eb.setEventTypeEnum(EventTypeEnum.EVENTBRITE);
+    eb.setName(eventName);
+    eb.setDescription(eventDescription);
+    eb.setStart(start);
+    eb.setLongitude(longitude);
+    eb.setLatitude(latitude);
+    eb.setCity(city);
+    eb.setState(state);
+    eb.setUrl(url);
+    eb.setVirtual(virtual);
+
+    return eb.build();
+
   }
 
 
