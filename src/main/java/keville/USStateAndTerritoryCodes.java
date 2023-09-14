@@ -86,4 +86,14 @@ public class USStateAndTerritoryCodes {
 
   }
 
+  public static boolean isANSILStateCode(String state) {
+    for ( String regionKey : regions.keySet() ) {
+      USRegion region = regions.get(regionKey);
+      if ( region.ANSIL.equals(state) )  {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }

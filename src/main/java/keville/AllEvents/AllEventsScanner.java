@@ -54,6 +54,7 @@ public class AllEventsScanner implements EventScanner {
       String targetUrl = createTargetUrl(location);
       if ( targetUrl == null ) {
         LOG.error("unusable target url , aborting scan ");
+        LOG.error("location\n" + location.toString());
         return 0;
       }
       
@@ -170,35 +171,34 @@ public class AllEventsScanner implements EventScanner {
 
   private String createTargetUrl(Location location) {
 
-      if ( location.state == null ) {
-        LOG.warn("allevents scrubbing needs a valid US state, state is null");
+
+      if ( location.locality == null || location.region == null || location.country == null ) {
         return null;
       }
 
-      String ANSIStateCode = USStateAndTerritoryCodes.getANSILcode(location.state);
-      if ( ANSIStateCode == null ) {
-        LOG.warn("allevents scrubbing needs a valid ANSI US state code, state " + location.state  + " is not recognized by USStateAndTerritoryCodes");
+      if ( !USStateAndTerritoryCodes.isANSILStateCode(location.region) )  {
+        LOG.warn("AllEvents needs an ANSIL state code " + location.region + " is not one");
         return null;
       }
-
-      String locality = "";
-      if ( location.town != null ) {
-        locality = location.town;
-      } else if ( location.village != null ) {
-        locality = location.village;
-      } else {
-        LOG.warn("locality needed to scrape AllEvents.in");
-        LOG.warn("town & village are both empty");
+     
+      if ( !location.country.equals("us") ) {
+        String warnMsg = "AllEvents scraping has only been tested in the us, searching against"
+            .concat("\n\tcountry :  ").concat( location.country)
+            .concat("\n\tregion :  ").concat(location.region)
+            .concat("\n\tlocality :  ").concat(location.locality)
+            .concat("\nis undefined behaviour ");
+        LOG.warn(warnMsg);
       }
-  
-      // note this url needs lowercase for state and locality otr 404 returned
-      // note this url needs 2 letter state code
-        // https://allevents.in/Belmar-New Jersey/all  fails
-        // https://allevents.in/belmar-nj/all  succeeds
-      String locationString = locality.toLowerCase() + "-" + ANSIStateCode.toLowerCase(); //toms river-nj //jackson-nj //jackson-ms
+
+      //lowercase city , ANSI region code
+      // https://allevents.in/Belmar-New Jersey/all   fails
+      // https://allevents.in/belmar-nj/all           succeeds
+      String locationString = location.locality.toLowerCase() + "-" + location.region.toLowerCase(); 
       String targetUrl = "https://allevents.in/" + locationString + "/all";
 
       return targetUrl;
+
+
   }
 
   //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097

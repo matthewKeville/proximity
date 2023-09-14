@@ -51,8 +51,6 @@ public class MeetupScanner implements EventScanner {
 
       //My meetup scrubbing protocol requires huamn readable address formats ( city & state )
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
-      LOG.info("location constructed from latitude and longitude");
-      LOG.info(location.toString());
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
@@ -72,6 +70,11 @@ public class MeetupScanner implements EventScanner {
       proxy.newHar("eventScanHar");
 
       String targetUrl = createTargetUrl(location); //TBD pass in radius
+      if ( targetUrl == null ) {
+        LOG.error("unusable target url , aborting scan ");
+        LOG.error("location\n" + location.toString());
+        return 0;
+      }
       LOG.info("targetting url \n" + targetUrl);
 
       driver.get(targetUrl);
@@ -153,18 +156,22 @@ public class MeetupScanner implements EventScanner {
 
   private String createTargetUrl(Location location) {
 
-      String countryString = "us";          // 2 letter lowercase code | Ex. "us"       TODO: add country to Location
-      String stateString = location.state;  // 2 letter lowercase code | Ex. "nj"
-      String localeString = "";             // This is the name of what I call a 'city' but the api I use maps this to town / village / city ...
-      if ( location.town != null ) {
-        localeString = location.town;    // First Cap and Lowercase | Ex. "Belmar" 
-      } else if ( location.village != null ) {
-        localeString = location.village;    // First Cap and Lowercase | Ex. "Belmar" 
-      } else {
-        LOG.warn("location : lat=" + location.latitude + " lon=" + location.longitude + " does not map to a town or village as expected for meetup.com ");
+      //         "belmar"                       "nj"                    "us"
+      if ( location.locality == null || location.region == null || location.country == null ) {
+        return null;
       }
+     
+      if ( !location.country.equals("us") ) {
+        String warnMsg = "Meetup scraping has only been tested in the us, searching against"
+            .concat("\n\tcountry :  ").concat( location.country)
+            .concat("\n\tregion :  ").concat(location.region)
+            .concat("\n\tlocality :  ").concat(location.locality)
+            .concat("\nis undefined behaviour ");
+        LOG.warn(warnMsg);
+      }
+
       String distanceString = "fiveMiles";  // english distance string | Ex. "fiveMiles" TODO: make programmatic
-      String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS&distance=%s",countryString,stateString,localeString,distanceString);
+      String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS&distance=%s",location.country,location.region,location.locality,distanceString);
 
       return targetUrl;
   }

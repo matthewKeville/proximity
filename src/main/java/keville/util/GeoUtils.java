@@ -1,6 +1,9 @@
 package keville.util;
 
 import keville.Location;
+import keville.LocationBuilder;
+import keville.USStateAndTerritoryCodes;
+
 import java.util.Map;
 import java.util.HashMap;
 
@@ -75,6 +78,7 @@ public class GeoUtils {
   }
 
   public static Location getLocationFromGeoCoordinates(double latitude, double longitude) {
+
     Location result = null;
     HttpClient httpClient = HttpClient.newHttpClient();
     HttpRequest getRequest;
@@ -83,59 +87,62 @@ public class GeoUtils {
     LOG.info(" attempting reverse geocode on lat = " + latitude + " and lon = " + longitude);
 
     try {
-    URI uri = new URI("https://geocode.maps.co/reverse?lat=" + latitude + "&lon=" + longitude ); /*without terminal '/' we get a 301 */
-    getRequest = HttpRequest.newBuilder()
-      .uri(uri) 
-      .GET()
-      .build();
+
+      URI uri = new URI("https://geocode.maps.co/reverse?lat=" + latitude + "&lon=" + longitude ); /*without terminal '/' we get a 301 */
+      getRequest = HttpRequest.newBuilder()
+        .uri(uri) 
+        .GET()
+        .build();
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
       LOG.info(String.format("request returned %d",getResponse.statusCode()));
       response = getResponse.body();
+
     } catch (Exception e) {
       LOG.error(String.format("error sending request %s",e.getMessage()));
     }
 
-    String displayString = "";
-    String state = null;
-    String town = null;
-    String village = null;
 
     try {
+
       JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+      if ( !json.has("address"))  {
+        LOG.warn("geo code did not map to an address");
+        return result;
+      }
+
       JsonObject address = json.getAsJsonObject("address");
-      displayString = json.get("display_name").getAsString();
-    
-      //state extract
-      try {
+      
+      String state = null;
+      if ( address.has("state") ) {
         state = address.get("state").getAsString();
-      } catch (Exception e) {
-        LOG.warn("this geocoordinate does not map to a state");
+        state = USStateAndTerritoryCodes.getANSILcode(state); //we want "nj" not "New Jersey"
       }
 
-      //town extract
-      try {
-        town = address.get("town").getAsString();
-      } catch (Exception e) {
-        LOG.warn("this geocoordinate does not map to a town");
+      String locality = null; 
+      if ( address.has("village") )  {
+        locality = address.get("village").getAsString();
+      } else if ( address.has("town") ) {
+        locality = address.get("town").getAsString();
+      } else {
+        LOG.warn("Failed to find a town or village for the geocoordinate : ( " + latitude + " , " + longitude + ")" );
       }
 
-      //village extract
-      try {
-        village = address.get("village").getAsString();
-      } catch (Exception e) {
-        LOG.warn("this geocoordinate does not map to a village");
-      }
 
-      result = new Location(latitude, longitude, state, town, village);
+      LocationBuilder lb = new LocationBuilder();
+      lb.setLatitude(latitude);
+      lb.setLongitude(longitude);
+      LOG.warn("spoofing country field, api returns country in name format instead of ANSIL standard");
+      lb.setCountry("us");
+      lb.setRegion(state);
+      lb.setLocality(locality);
+      result =  lb.build();
 
     } catch (Exception e) {
 
       LOG.error(" unable to reverse geocode lat=" + latitude + "  , lon=" + latitude + " into a Location ");
-      LOG.error(" display name : " + displayString );
-      LOG.error(" state : " + state );
-      LOG.error(" town : " + town );
-      LOG.error(" village : " + village );
       LOG.error(e.getMessage());
+
     }
 
     return result;
