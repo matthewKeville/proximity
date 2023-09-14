@@ -133,18 +133,31 @@ public class EventService {
     }
 
     try {
-      String queryTemplate = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE,URL,VIRTUAL)" +
-        " VALUES ( ? , ? , ? , ? , ?, ?, ? , ?, ?);";
+
+
+    String queryTemplate = "INSERT INTO EVENT (" +
+      "EVENT_ID,SOURCE,NAME," +
+      "DESCRIPTION,START_TIME,LOCATION_NAME," +
+      "COUNTRY,REGION,LOCALITY," +
+      "STREET_ADDRESS,LATITUDE,LONGITUDE," +
+      "URL,VIRTUAL" +
+      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,event.eventId);
       ps.setString(2,event.eventType.toString());
       ps.setString(3,event.name);
       ps.setString(4,event.description);
       ps.setString(5,event.start.toString());
-      ps.setString(6,event.city);
-      ps.setString(7,event.state);
-      ps.setString(8,event.url);
-      ps.setString(9,""+(event.virtual ? 1 : 0));
+      ps.setString(6,event.location.name);
+      ps.setString(7,event.location.country);
+      ps.setString(8,event.location.region);
+      ps.setString(9,event.location.locality);
+      ps.setString(10,event.location.streetAddress);
+      ps.setDouble(11,event.location.longitude);
+      ps.setDouble(12,event.location.latitude);
+      ps.setString(13,event.url);
+      ps.setString(14,""+(event.virtual ? 1 : 0));
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
@@ -202,52 +215,85 @@ public class EventService {
 
   // convert sqllite row to domain Event map
   private Event eventRowToEvent(ResultSet rs) {
-    Event event = null;
+
+    EventBuilder eb = new EventBuilder();
+    LocationBuilder lb = new LocationBuilder();
+
     try {
+    
       String source = rs.getString("source");
-      EventTypeEnum eventType = null;
-      try {
-        eventType = EventTypeEnum.valueOf(source);
-      } catch (IllegalArgumentException iae) {
-        LOG.error("error converting event row to Event object");
-        LOG.error("mismatch between EventTypeEnum string in database and EventTypeEnum types");
-        LOG.error("offending string : " + source);
-        LOG.error(iae.getMessage());
+      if ( !rs.wasNull() )  {
+        try {
+          eb.setEventTypeEnum(EventTypeEnum.valueOf(source));
+        } catch (IllegalArgumentException iae) {
+          LOG.error("mismatch between EventTypeEnum string in database and EventTypeEnum types");
+          LOG.error("offending string : " + source);
+          LOG.error(iae.getMessage());
+        }
       }
-      int id = rs.getInt("id");
-      String eventId = rs.getString("event_id");
+
+      eb.setId(rs.getInt("id")); //NOT NULL
+      eb.setEventId(rs.getString("event_id")); //NOT NULL
+
       String name = rs.getString("name");
+      if ( !rs.wasNull() ) {
+        eb.setName(name);
+      }
+
       String description = rs.getString("description");
+      if ( !rs.wasNull() ) {
+        eb.setDescription(description);
+      }
+
       String startTimeString = rs.getString("start_time");
+      if ( !rs.wasNull() ) {
+        Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimeString));
+        eb.setStart(start);
+      }
 
-      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimeString));
+      String locationName = rs.getString("location_name");
+      if ( !rs.wasNull() ) {
+        lb.setName(locationName);
+      }
 
-      double longitude = rs.getDouble("longitude");                            
-      double latitude = rs.getDouble("latitude");                            
-      String city = rs.getString("city");
-      String state = rs.getString("state");
+      String country = rs.getString("country");
+      if ( !rs.wasNull() ) {
+        lb.setCountry(country);
+      }
+
+      String region = rs.getString("region");
+      if ( !rs.wasNull() ) {
+        lb.setRegion(region);
+      }
+
+      String locality = rs.getString("locality");
+      if ( !rs.wasNull() ) {
+        lb.setLocality(locality);
+      }
+
+      Double longitude = rs.getDouble("longitude");                            
+      Double latitude = rs.getDouble("latitude");                            
+      if ( !rs.wasNull() ) { //assuming these are always coupled
+        lb.setLatitude(latitude); 
+        lb.setLongitude(longitude); 
+      }
+
+
       String url = rs.getString("url");
-      boolean virtual = rs.getInt("virtual") == 1;
+      if ( !rs.wasNull() ) {
+        eb.setUrl(url);
+      }
 
-      EventBuilder eb = new EventBuilder();
-      eb.setId(id);
-      eb.setEventTypeEnum(eventType);
-      eb.setName(name);
-      eb.setDescription(description);
-      eb.setStart(start);
-      eb.setLongitude(longitude);
-      eb.setLatitude(latitude);
-      eb.setCity(city);
-      eb.setState(state);
-      eb.setUrl(url);
-      eb.setVirtual(virtual);
-      event = eb.build();
+      int virtual = rs.getInt("virtual");
+      eb.setVirtual(!rs.wasNull() && (virtual == 1));
+      eb.setLocation(lb.build());
 
     } catch (SQLException se) {
       LOG.error("an error occured converting event row to Event object");
       LOG.error(se.getMessage());
     }
-    return event;
+
+    return eb.build();
   }
 
 }

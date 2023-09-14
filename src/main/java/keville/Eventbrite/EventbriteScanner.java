@@ -2,6 +2,7 @@ package keville.Eventbrite;
 
 import keville.Event;
 import keville.EventBuilder;
+import keville.LocationBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
@@ -181,72 +182,94 @@ public class EventbriteScanner implements EventScanner {
   /* transform local event format to Event object */
   private Event createEventFrom(String eventId) {
 
+    EventBuilder eb = new EventBuilder();
+    LocationBuilder lb = new LocationBuilder();
+
     JsonObject eventJson = eventCache.get(eventId);
     if (eventJson == null) {
-      LOG.error("error generating domain event for eventbrite id : " + eventId);
+      LOG.error("error creating Event from eventbrite id : " + eventId + "\n\t unable to find eventJson in eventcache");
       return null;
     }
 
-    String eventName = eventJson.getAsJsonObject("name").get("text").getAsString();
-
-    String eventDescription = "";
-    if (eventJson.has("summary")) {
-      eventDescription = eventJson.get("summary").toString();
-    /* description is deprecated , but preferred over nothing */
-    } else if (eventJson.has("description")) {
-      JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
-      eventDescription = eventDescriptionJson.toString();
+    if ( eventJson.has("name") ) {
+      eb.setName(eventJson.getAsJsonObject("name").get("text").getAsString());
     }
-     
-    JsonObject eventStartJson = eventJson.getAsJsonObject("start");
-    String timestring = eventStartJson.get("utc").getAsString();
-    Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
+
+    // description is deprecated , but preferred over nothing
+    if (eventJson.has("summary")) {
+      eb.setDescription(eventJson.get("summary").toString());
+    } else if (eventJson.has("description")) {  
+      JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
+      eb.setDescription(eventDescriptionJson.toString());
+    }
+    
+    if ( eventJson.has("start") ) {
+      JsonObject eventStartJson = eventJson.getAsJsonObject("start");
+      String timestring = eventStartJson.get("utc").getAsString();
+      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
+      eb.setStart(start);
+    }
 
     String venueId = "";
     JsonElement venueIdElement = eventJson.get("venue_id");
-
-
     if (!venueIdElement.isJsonNull()) {
       venueId = venueIdElement.getAsString();
     }
 
-    boolean virtual = eventJson.get("online_event").getAsString().equals("true");
-    double latitude = 0;
-    double longitude = 0;
-    String city = "";
-    String state = "";
     if (!venueId.isEmpty()) {
-      JsonObject venue = venueCache.get(venueId);
 
-      latitude  = Double.parseDouble(venue.get("latitude").getAsString());
-      longitude = Double.parseDouble(venue.get("longitude").getAsString());
-      JsonObject address = venue.getAsJsonObject("address");
-      JsonElement cityJson = address.get("city");
-      if (cityJson  != null && !cityJson.isJsonNull() )  {
-        city = cityJson.getAsString();
+      JsonObject venueJson = venueCache.get(venueId);
+
+      if ( venueJson.has("latitude") && venueJson.has("longitude") ) {
+        Double latitude  = Double.parseDouble(venueJson.get("latitude").getAsString());
+        Double longitude = Double.parseDouble(venueJson.get("longitude").getAsString());
+        lb.setLatitude(latitude);
+        lb.setLongitude(longitude);
       }
-      JsonElement stateJson = address.get("region");
-      if (stateJson != null && !stateJson.isJsonNull() )  {
-        state = stateJson.getAsString();
+
+      if ( venueJson.has("address") ) {
+
+        JsonObject address = venueJson.getAsJsonObject("address");
+
+        if ( address.has("city") ) {
+          JsonObject cityJson = address.get("city").getAsJsonObject();
+          if (cityJson != null && !cityJson.isJsonNull() )  {
+            lb.setLocality(cityJson.getAsString());
+          }
+        }
+
+        if ( address.has("region") ) {
+          JsonObject regionJson = address.get("region").getAsJsonObject();
+          if (regionJson != null && !regionJson.isJsonNull() )  {
+            lb.setRegion(regionJson.getAsString());
+          }
+        }
+
+        if ( address.has("country") ) {
+          JsonObject countryJson = address.get("country").getAsJsonObject();
+          if (countryJson != null && !countryJson.isJsonNull() )  {
+            lb.setCountry(countryJson.getAsString());
+          }
+        }
+
       }
+
+
     } else {
+
       LOG.info("Venue: no venue information");
+
     }
 
-    String url = eventJson.get("url").getAsString();
-
-    EventBuilder eb = new EventBuilder();
-    eb.setEventId(eventId);
-    eb.setEventTypeEnum(EventTypeEnum.EVENTBRITE);
-    eb.setName(eventName);
-    eb.setDescription(eventDescription);
-    eb.setStart(start);
-    eb.setLongitude(longitude);
-    eb.setLatitude(latitude);
-    eb.setCity(city);
-    eb.setState(state);
-    eb.setUrl(url);
+    //intentional short circuit
+    boolean virtual = eventJson.has("online_event") && eventJson.get("online_event").getAsString().equals("true");
     eb.setVirtual(virtual);
+
+    if ( eventJson.has("url") ) {
+      eb.setUrl(eventJson.get("url").getAsString());
+    }
+
+    eb.setLocation(lb.build());
 
     return eb.build();
 

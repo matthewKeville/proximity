@@ -34,6 +34,7 @@ public class ProximalDaemon
         Map<String,Double> currentLocation = GeoUtils.getClientGeolocation(); 
         
         //Assemble a test filter
+        /*
         Predicate<Event> eventFilter;
         eventFilter = Event.WithinDaysFromNow(2);
         eventFilter = eventFilter.and(
@@ -41,6 +42,7 @@ public class ProximalDaemon
               currentLocation.get("latitude"),
               currentLocation.get("longitude"),
             10.0));
+        */
 
         int port = 9876;
         boolean run = true;

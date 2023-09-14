@@ -8,87 +8,74 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.function.Predicate;
 
-
 public class Event implements Serializable {
 
-  public EventTypeEnum eventType; 
+  public EventTypeEnum eventType;
   public int id;
   public String eventId;
   public String name;
   public String description;
   public Instant start;
-  public double longitude;
-  public double latitude;
-  public String city;
-  public String state;
+  public Location location;
   public String url;
   public boolean virtual;
 
   public Event(
-    int id,      //pk in db
-    String eventId, //from source location 
-    EventTypeEnum eventType,
-    String name,
-    String description,
-    Instant start,
-    double longitude,
-    double latitude,
-    String city,
-    String state,
-    String url,
-    boolean virtual
-    ) {
-      this.id = id;
-      this.eventId = eventId;
-      this.eventType = eventType;
-      this.name = name;
-      this.description = description;
-      this.start = start;
-      this.longitude = longitude;
-      this.latitude = latitude;
-      this.city = city;
-      this.state = state;
-      this.url = url;
-      this.virtual = virtual;
-    }
+      int id, // pk in db
+      String eventId, // from source location
+      EventTypeEnum eventType,
+      String name,
+      String description,
+      Instant start,
+      Location location,
+      String url,
+      boolean virtual) {
+    this.id = id;
+    this.eventId = eventId;
+    this.eventType = eventType;
+    this.name = name;
+    this.description = description;
+    this.start = start;
+    this.location = location;
+    this.url = url;
+    this.virtual = virtual;
+  }
 
   public String toString() {
-    return String.format("Name: %s\nDescription: %s\nStart %s\nVirtual %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %4.2f,%4.2f\nUrl %s",
-        name,description == null ? "" : description.substring(0,Math.min(description.length(),60)),start.toString(),virtual,city,state,eventTypeString(eventType),latitude,longitude,url);
+    return String.format(
+        "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
+        name, description == null ? "" : description.substring(0, Math.min(description.length(), 60)), start.toString(),
+        virtual,eventTypeString(eventType),url);
   }
 
   public String toColorString() {
-    return String.format("Name: %s\nDescription: %s\nStart %s\nVirtual %s\nLocale : %s,%s\nSource : %s\nLat , Lon: %s,%s\nUrl %s",
-        AnsiColors.colorString(name,AnsiColors.RED),
-        AnsiColors.colorString(description == null ? "" : description.substring(0,Math.min(description.length(),60)) ,AnsiColors.GREEN),
-        AnsiColors.colorString(start.toString(),AnsiColors.YELLOW),
-        AnsiColors.colorString(Boolean.toString(virtual),AnsiColors.PURPLE_BRIGHT),
-        AnsiColors.colorString(city,AnsiColors.BLUE),
-        AnsiColors.colorString(state,AnsiColors.BLUE),
-        AnsiColors.colorString(eventTypeString(eventType),AnsiColors.PURPLE),
-        AnsiColors.colorString(((Double) latitude).toString(),AnsiColors.CYAN),
-        AnsiColors.colorString(((Double) longitude).toString(),AnsiColors.CYAN),
-        AnsiColors.colorString(url,AnsiColors.WHITE));
+    return String.format(
+        "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
+        AnsiColors.colorString(name, AnsiColors.RED),
+        AnsiColors.colorString(description == null ? "" : description.substring(0, Math.min(description.length(), 60)),
+            AnsiColors.GREEN),
+        AnsiColors.colorString(start.toString(), AnsiColors.YELLOW),
+        AnsiColors.colorString(Boolean.toString(virtual), AnsiColors.PURPLE_BRIGHT),
+        AnsiColors.colorString(eventTypeString(eventType), AnsiColors.PURPLE),
+        AnsiColors.colorString(url, AnsiColors.WHITE));
 
   }
-
-
 
   public static String eventTypeString(EventTypeEnum type) {
     switch (type) {
       case EVENTBRITE:
-            return "Eventbrite.com";
+        return "Eventbrite.com";
       case MEETUP:
-            return "meetup.com";
+        return "meetup.com";
       case ALLEVENTS:
-            return "allevents.in";
+        return "allevents.in";
       default:
-            return "unknown";
+        return "unknown";
     }
   }
 
   // location filters
- 
+  /*
   public static Predicate<Event> CityFilter(String city) {
     return new Predicate<Event>() {
       public boolean test(Event event) {
@@ -101,24 +88,25 @@ public class Event implements Serializable {
     return new Predicate<Event>() {
       public boolean test(Event event) {
         return cities.stream()
-          .anyMatch(c -> c.equals(event.city));
+            .anyMatch(c -> c.equals(event.city));
       }
     };
   }
 
-  public static Predicate<Event> WithinKMilesOf(double lat,double lon,double miles) {
+  public static Predicate<Event> WithinKMilesOf(double lat, double lon, double miles) {
     return new Predicate<Event>() {
       public boolean test(Event event) {
-        return GeoUtils.isWithinMilesOf(miles,lat,lon,event.latitude,event.longitude);
+        return GeoUtils.isWithinMilesOf(miles, lat, lon, event.latitude, event.longitude);
       }
     };
   }
 
-  //temporal filters
-  
-  public static Predicate<Event> DateRangeFilter(ZonedDateTime start,ZonedDateTime end) {
+  // temporal filters
+
+  public static Predicate<Event> DateRangeFilter(ZonedDateTime start, ZonedDateTime end) {
     return new Predicate<Event>() {
-      //in the future if event end is Event , then this should use start & end for evaluation
+      // in the future if event end is Event , then this should use start & end for
+      // evaluation
       public boolean test(Event event) {
         return event.start.isBefore(end.toInstant()) && event.start.isAfter(start.toInstant());
       }
@@ -126,10 +114,10 @@ public class Event implements Serializable {
   }
 
   public static Predicate<Event> WithinDaysFromNow(int days) {
-    //LocalDateTime now = LocalDateTime.now();
+    // LocalDateTime now = LocalDateTime.now();
     ZonedDateTime now = ZonedDateTime.now();
-    return DateRangeFilter(now,now.plusDays(days));
+    return DateRangeFilter(now, now.plusDays(days));
   }
-
+  */
 
 }

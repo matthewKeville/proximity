@@ -10,15 +10,9 @@ public class EventBuilder {
   private String eventId;
   private String name;
   private String description;
-
   private Instant start;
-
+  private Location location;
   private boolean virtual;
-  private double longitude;
-  private double latitude;
-  private String city;
-  private String state;
-
   private String url;
 
   public EventBuilder() {
@@ -49,24 +43,12 @@ public class EventBuilder {
     this.start = start;
   }
 
+  public void setLocation(Location location) {
+    this.location = location;
+  }
+
   public void setVirtual(boolean virtual) {
     this.virtual = virtual;
-  }
-
-  public void setLongitude(double longitude) {
-    this.longitude = longitude;
-  }
-
-  public void setLatitude(double latitude) {
-    this.latitude = latitude;
-  }
-
-  public void setCity(String city) {
-    this.city = city;
-  }
-
-  public void setState(String state){
-    this.state = state;
   }
 
   public void setUrl(String url){
@@ -81,10 +63,7 @@ public class EventBuilder {
       name,
       description,
       start,
-      longitude,
-      latitude,
-      city,
-      state,
+      location,
       url,
       virtual
     );

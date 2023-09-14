@@ -14,6 +14,7 @@ public class SchemaUtil {
  public static EventBuilder createEventFromSchemaEvent(JsonObject eventJson) {
 
       EventBuilder eb = new EventBuilder();
+      LocationBuilder lb = new LocationBuilder();
 
       String timestring = eventJson.get("startDate").getAsString(); // DateTime or Date
       if ( timestring.length() == 10 ) {  // ex: 2023‐09‐13
@@ -33,20 +34,34 @@ public class SchemaUtil {
 
       if ( location.get("@type").getAsString().equals("Place") ) {
 
+        if ( location.has("name") ) {
+          lb.setName(location.get("name").getAsString());
+        }
+
         JsonObject geo = location.getAsJsonObject("geo");
         String latitudeString = geo.get("latitude").getAsString();
         String longitudeString = geo.get("longitude").getAsString();
 
-        eb.setLatitude(Double.parseDouble(latitudeString));
-        eb.setLongitude(Double.parseDouble(longitudeString));
+        lb.setLatitude(Double.parseDouble(latitudeString));
+        lb.setLongitude(Double.parseDouble(longitudeString));
+
         eb.setVirtual(false);
 
         JsonObject address = location.getAsJsonObject("address");
 
         if ( address.get("@type").getAsString().equals("PostalAddress") ) {
+    
+          if ( address.has("addressCountry") ) {
+            lb.setCountry(address.get("addressCountry").getAsString());
+          }
 
-          eb.setCity(address.get("addressLocality").getAsString());
-          eb.setState(address.get("addressRegion").getAsString());
+          if ( address.has("addressRegion") ) {
+            lb.setRegion(address.get("addressRegion").getAsString());
+          }
+
+          if ( address.has("addressLocality") ) {
+            lb.setLocality(address.get("addressLocality").getAsString());
+          }
 
         } else {
 
@@ -65,6 +80,7 @@ public class SchemaUtil {
       }
 
     eb.setUrl(eventJson.get("url").getAsString()); 
+    eb.setLocation(lb.build());
 
     return eb;
 
