@@ -71,7 +71,6 @@ public class EventbriteScanner implements EventScanner {
   public int scan(double latitude, double longitude, double radius) {
 
       int page  = 0;
-      int pages = 0;
 
       LOG.info(String.format("beginning scan on %f,%f ", latitude, longitude));
 
@@ -99,20 +98,25 @@ public class EventbriteScanner implements EventScanner {
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
 
       // find the total number of result pages
-      String xPageOfKElementXPath = "/html/body/div[2]/div/div[2]/div/div/div/div[1]/div/main/div/div/section[1]/div/section/div/div/footer/div/div/ul/li[2]";
-      WebElement xPageOfKElement = driver.findElement(By.xpath(xPageOfKElementXPath));
-      if (xPageOfKElementXPath != null) {
-        String[] splits = xPageOfKElement.getText().split(" "); 
-        if (splits.length != 3) {
-          LOG.error("expected 3 splits for xPageOfKElement string but found "+(splits.length));
-          LOG.error(xPageOfKElement.getText());
-        } else {
-          pages = Integer.parseInt(splits[2]);
-        }
-      } else {
-        LOG.error("unable to determine how many pages are available");
+      int pages = 0;
+      try {
+        String xPageOfKElementXPath = "/html/body/div[2]/div/div[2]/div/div/div/div[1]/div/main/div/div/section[1]/div/section/div/div/footer/div/div/ul/li[2]";
+        WebElement xPageOfKElement = driver.findElement(By.xpath(xPageOfKElementXPath));
+        if (xPageOfKElementXPath != null) {
+          String[] splits = xPageOfKElement.getText().split(" "); 
+          if (splits.length != 3) {
+            LOG.error("expected 3 splits for xPageOfKElement string but found "+(splits.length));
+            LOG.error(xPageOfKElement.getText());
+          } else {
+            pages = Integer.parseInt(splits[2]);
+          }
+        } 
+        LOG.info("found "+pages);
+      } catch (Exception e) {
+        LOG.error("unable to find the number of result pages");
+        LOG.error(e.getMessage());
+        LOG.error("defaulting to 1");
       }
-      LOG.info("found "+pages);
 
       int maxPagesToScrub = 5;//10;
       int maxNewEvents = 50;//
@@ -183,6 +187,8 @@ public class EventbriteScanner implements EventScanner {
   private Event createEventFrom(String eventId) {
 
     EventBuilder eb = new EventBuilder();
+    eb.setEventId(eventId);
+
     LocationBuilder lb = new LocationBuilder();
 
     JsonObject eventJson = eventCache.get(eventId);
@@ -231,29 +237,19 @@ public class EventbriteScanner implements EventScanner {
 
         JsonObject address = venueJson.getAsJsonObject("address");
 
-        if ( address.has("city") ) {
-          JsonObject cityJson = address.get("city").getAsJsonObject();
-          if (cityJson != null && !cityJson.isJsonNull() )  {
-            lb.setLocality(cityJson.getAsString());
-          }
+        if ( address.has("country") ) {
+            lb.setCountry(address.get("country").getAsString());
         }
 
         if ( address.has("region") ) {
-          JsonObject regionJson = address.get("region").getAsJsonObject();
-          if (regionJson != null && !regionJson.isJsonNull() )  {
-            lb.setRegion(regionJson.getAsString());
-          }
+            lb.setRegion(address.get("region").getAsString());
         }
 
-        if ( address.has("country") ) {
-          JsonObject countryJson = address.get("country").getAsJsonObject();
-          if (countryJson != null && !countryJson.isJsonNull() )  {
-            lb.setCountry(countryJson.getAsString());
-          }
+        if ( address.has("city") ) {
+            lb.setLocality(address.get("city").getAsString());
         }
 
       }
-
 
     } else {
 
@@ -270,6 +266,7 @@ public class EventbriteScanner implements EventScanner {
     }
 
     eb.setLocation(lb.build());
+    eb.setEventTypeEnum(EventTypeEnum.EVENTBRITE);
 
     return eb.build();
 

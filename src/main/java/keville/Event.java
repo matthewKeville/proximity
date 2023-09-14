@@ -18,6 +18,7 @@ public class Event implements Serializable {
   public Instant start;
   public Location location;
   public String url;
+  public String organizer;
   public boolean virtual;
 
   public Event(
@@ -28,6 +29,7 @@ public class Event implements Serializable {
       String description,
       Instant start,
       Location location,
+      String organizer,
       String url,
       boolean virtual) {
     this.id = id;
@@ -37,6 +39,7 @@ public class Event implements Serializable {
     this.description = description;
     this.start = start;
     this.location = location;
+    this.organizer = organizer;
     this.url = url;
     this.virtual = virtual;
   }

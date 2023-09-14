@@ -22,6 +22,7 @@ sqlite3 $DB_FILE "CREATE TABLE EVENT("\
 "STREET_ADDRESS TEXT,"\
 "LONGITUDE REAL,"\
 "LATITUDE REAL,"\
+"ORGANIZER TEXT,"\
 "URL TEXT,"\
 "VIRTUAL INTEGER);"
 
@@ -33,9 +34,9 @@ sqlite3 $DB_FILE "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME
 
 # maximal event
 sqlite3 $DB_FILE "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,"\
-"LOCATION_NAME,COUNTRY,REGION,LOCALITY,STREET_ADDRESS,LATITUDE,LONGITUDE,URL,VIRTUAL)"\
+"LOCATION_NAME,COUNTRY,REGION,LOCALITY,STREET_ADDRESS,LATITUDE,LONGITUDE,ORGANIZER,URL,VIRTUAL)"\
 "VALUES ('asd43', 'DEBUG','yoga','sunset yoga in bradley beach','2023-08-30T21:00:00Z',"\
-"'Bradley Pavillon','us','nj','bradley beach','23 fake st','234.23','235.43','https://google.com','0')"
+"'Bradley Pavillon','us','nj','bradley beach','23 fake st','234.23','235.43','matthewKeville','https://google.com','0')"
 
 ##############################################
 # Eventbrite DB

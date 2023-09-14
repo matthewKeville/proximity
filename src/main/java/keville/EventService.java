@@ -140,8 +140,8 @@ public class EventService {
       "DESCRIPTION,START_TIME,LOCATION_NAME," +
       "COUNTRY,REGION,LOCALITY," +
       "STREET_ADDRESS,LATITUDE,LONGITUDE," +
-      "URL,VIRTUAL" +
-      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "ORGANIZER,URL,VIRTUAL" +
+      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,event.eventId);
@@ -156,8 +156,9 @@ public class EventService {
       ps.setString(10,event.location.streetAddress);
       ps.setDouble(11,event.location.longitude);
       ps.setDouble(12,event.location.latitude);
-      ps.setString(13,event.url);
-      ps.setString(14,""+(event.virtual ? 1 : 0));
+      ps.setString(13,event.organizer);
+      ps.setString(14,event.url);
+      ps.setString(15,""+(event.virtual ? 1 : 0));
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
@@ -278,6 +279,10 @@ public class EventService {
         lb.setLongitude(longitude); 
       }
 
+      String organizer = rs.getString("organizer");
+      if ( !rs.wasNull() ) {
+        eb.setOrganizer(organizer);
+      }
 
       String url = rs.getString("url");
       if ( !rs.wasNull() ) {

@@ -12,8 +12,9 @@ public class EventBuilder {
   private String description;
   private Instant start;
   private Location location;
-  private boolean virtual;
+  private String organizer;
   private String url;
+  private boolean virtual;
 
   public EventBuilder() {
     id = -1;
@@ -47,12 +48,17 @@ public class EventBuilder {
     this.location = location;
   }
 
-  public void setVirtual(boolean virtual) {
-    this.virtual = virtual;
-  }
 
   public void setUrl(String url){
     this.url = url;
+  }
+
+  public void setOrganizer(String organizer){
+    this.organizer = organizer;
+  }
+
+  public void setVirtual(boolean virtual) {
+    this.virtual = virtual;
   }
 
   public Event build() {
@@ -64,6 +70,7 @@ public class EventBuilder {
       description,
       start,
       location,
+      organizer,
       url,
       virtual
     );

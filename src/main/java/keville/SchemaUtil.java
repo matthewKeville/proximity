@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
 
 // Transform https://schema.org/ entities into Domain entities
 
@@ -68,6 +70,7 @@ public class SchemaUtil {
           LOG.info("unable to determine addressLocality and addressRegion because unknown Address Type " + address.get("@type").getAsString());
 
         }
+
       } else if ( location.get("@type").getAsString().equals("VirtualLocation") ) {
 
         eb.setVirtual(true);
@@ -78,6 +81,42 @@ public class SchemaUtil {
         LOG.error("found an event with an unhandled Location type : " + location.get("@type").getAsString());
 
       }
+
+    if ( eventJson.has("organizer") ) {
+
+      JsonElement organizerElement = eventJson.get("organizer");
+      JsonObject organizer = null;
+
+      if ( organizerElement.isJsonArray() ) {
+
+        JsonArray organizers = organizerElement.getAsJsonArray();
+
+        if ( organizers.size() == 1 ) {
+
+          organizer = organizers.get(0).getAsJsonObject();
+        } else if ( organizers.isEmpty() ) {
+
+          LOG.warn("this json schema has a list for organizers that is empty ... ");
+        } else {
+
+          organizer = organizers.get(0).getAsJsonObject();
+          LOG.warn("this json schema has a list for organization containing " + organizers.size());
+          LOG.warn("using the first organizer in the list");
+        }
+
+      } else {
+
+        organizer  = organizerElement.getAsJsonObject();
+
+      }
+
+      if ( organizer != null && organizer.has("name") ) {
+
+        eb.setOrganizer(organizer.get("name").getAsString());
+
+      }
+
+    }
 
     eb.setUrl(eventJson.get("url").getAsString()); 
     eb.setLocation(lb.build());
