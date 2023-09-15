@@ -39,10 +39,8 @@ import com.google.gson.JsonObject;
 
 public class EventbriteScanner implements EventScanner {
 
-
   private keville.EventService eventService;
   private EventCache eventCache;
-  private VenueCache venueCache;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScanner.class);
 
   static String eventMapUrl(double lat,double lon,double radius,int page) {
@@ -64,7 +62,6 @@ public class EventbriteScanner implements EventScanner {
 
   public EventbriteScanner(keville.EventService eventService, Properties props) {
     this.eventService = eventService;
-    venueCache = new VenueCache(props);
     eventCache = new EventCache(props);
   }
 
@@ -216,15 +213,13 @@ public class EventbriteScanner implements EventScanner {
       eb.setStart(start);
     }
 
-    String venueId = "";
-    JsonElement venueIdElement = eventJson.get("venue_id");
-    if (!venueIdElement.isJsonNull()) {
-      venueId = venueIdElement.getAsString();
-    }
+    if ( eventJson.has("venue") && !eventJson.get("venue").isJsonNull() ) {
 
-    if (!venueId.isEmpty()) {
+      JsonObject venueJson = eventJson.get("venue").getAsJsonObject();
 
-      JsonObject venueJson = venueCache.get(venueId);
+      if ( venueJson.has("name") ) {
+        lb.setName(venueJson.get("name").getAsString());
+      }
 
       if ( venueJson.has("latitude") && venueJson.has("longitude") ) {
         Double latitude  = Double.parseDouble(venueJson.get("latitude").getAsString());
@@ -252,9 +247,19 @@ public class EventbriteScanner implements EventScanner {
       }
 
     } else {
+      LOG.warn("unable to find venue data for this event json ... ");
+      LOG.warn(eventJson.toString());
+    }
 
-      LOG.info("Venue: no venue information");
 
+    if (eventJson.has("organizer")) {
+      JsonObject organizer = eventJson.get("organizer").getAsJsonObject();
+      if ( organizer.has("name")) {
+        JsonElement organizerNameElement = organizer.get("name");
+        if ( !organizerNameElement.isJsonNull() ) {
+          eb.setOrganizer(organizerNameElement.getAsString());
+        }
+      }
     }
 
     //intentional short circuit

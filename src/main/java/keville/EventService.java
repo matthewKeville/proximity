@@ -154,8 +154,13 @@ public class EventService {
       ps.setString(8,event.location.region);
       ps.setString(9,event.location.locality);
       ps.setString(10,event.location.streetAddress);
-      ps.setDouble(11,event.location.longitude);
-      ps.setDouble(12,event.location.latitude);
+      if ( event.location.longitude == null || event.location.latitude == null ) {
+        ps.setObject(11,null);
+        ps.setObject(12,null);
+      } else {
+        ps.setDouble(11,event.location.longitude);
+        ps.setDouble(12,event.location.latitude);
+      }
       ps.setString(13,event.organizer);
       ps.setString(14,event.url);
       ps.setString(15,""+(event.virtual ? 1 : 0));

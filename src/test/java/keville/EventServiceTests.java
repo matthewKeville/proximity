@@ -65,6 +65,7 @@ public class EventServiceTests
 
         //create tables
 
+        /*
         String sql0 = "CREATE TABLE EVENT(" +
           "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
           "EVENT_ID TEXT NOT NULL," + 
@@ -78,30 +79,43 @@ public class EventServiceTests
           "STATE TEXT," + 
           "URL TEXT," +
           "VIRTUAL INTEGER);";
+        */
+
+        String sql0 = "CREATE TABLE EVENT(" +
+          "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+          "EVENT_ID TEXT NOT NULL," + 
+          "SOURCE STRING NOT NULL," +
+          "NAME TEXT NOT NULL," + 
+          "DESCRIPTION TEXT," +
+          "START_TIME TEXT NOT NULL," +
+          "LOCATION_NAME TEXT," +
+          "COUNTRY TEXT," +
+          "REGION TEXT," +
+          "LOCALITY TEXT," +
+          "STREET_ADDRESS TEXT," +
+          "LONGITUDE REAL," +
+          "LATITUDE REAL," +
+          "ORGANIZER TEXT," +
+          "URL TEXT," +
+          "VIRTUAL INTEGER);";
 
         Statement stmt = con.createStatement();
         stmt.executeUpdate(sql0);
 
         //populate db with testing data
+    
 
-        String sql1 = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE)" +
-        "VALUES ('aaaa', 'DEBUG','yoga','sunset yoga in bradley beach','2023-08-30T21:00:00Z','Bradley','NJ')";
+        String sql1 = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,REGION,LOCALITY)" +
+        "VALUES ('aaaa', 'DEBUG','yoga','sunset yoga in bradley beach','2023-08-30T21:00:00Z','NJ','Bradley')";
 
-        String sql2 = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE)" +
-        "VALUES ('bbbb', 'DEBUG','free surfing lessons','beginnners surfing lessons provided by asbury community center','2023-08-30T21:00:00Z','Asbury Park','NJ')";
-
-        String sql3 = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,CITY,STATE)" +
-        "VALUES ('cccc', 'DEBUG','knitting','learn to knit like the best of them','2023-08-30T21:00:00Z','Belmar','NJ')";
-
+        String sql2 = "INSERT INTO EVENT (EVENT_ID,SOURCE,NAME,DESCRIPTION,START_TIME,REGION,LOCALITY)" +
+        "VALUES ('bbbb', 'DEBUG','free surfing lessons','beginners surfing lessons provided by asbury community center','2023-08-30T21:00:00Z','NJ','Bradley')";
 
         stmt = con.createStatement();
         stmt.executeUpdate(sql1);
 
         stmt = con.createStatement();
         stmt.executeUpdate(sql2);
-
-        stmt = con.createStatement();
-        stmt.executeUpdate(sql3);
 
       } catch (SQLException e) {
         LOG.error("error creating testing data in sqlite database");
@@ -144,17 +158,22 @@ public class EventServiceTests
     public void createEventCreatesEvent() {
 
       EventBuilder eb = new EventBuilder();
+      LocationBuilder lb = new LocationBuilder();
+
       eb.setEventId("test-event-12");
       eb.setEventTypeEnum(EventTypeEnum.DEBUG);
       eb.setName("createEventCreatesEvent");
       eb.setDescription("a test for junit");
       eb.setStart(Instant.now());
-      eb.setLatitude(0.0);
-      eb.setLongitude(0.0);
-      eb.setCity("Trenton");
-      eb.setState("New Jersey");
+
+      lb.setLatitude(0.0);
+      lb.setLongitude(0.0);
+      lb.setLocality("Trenton");
+      lb.setRegion("New Jersey");
+
       eb.setUrl("https://google.com");
       eb.setVirtual(false);
+      eb.setLocation(lb.build());
       Event event = eb.build();
 
       assertTrue(eventService.createEvent(event));

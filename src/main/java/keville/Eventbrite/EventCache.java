@@ -121,12 +121,15 @@ public class EventCache {
     JsonObject eventJson = null;
 
     try {
-    URI uri = new URI(eventBaseUri+eventId+"/"); /*without terminal '/' we get a 301 */
-    getRequest = HttpRequest.newBuilder()
-      .uri(uri) 
-      .header("Authorization","Bearer "+BEARER_TOKEN)
-      .GET()
-      .build();
+
+      // EB API has expansions that pull in data from other endpoints (organizer & venue)
+      URI uri = new URI(eventBaseUri+eventId+"/"+"?expand=organizer,venue");
+      getRequest = HttpRequest.newBuilder()
+        .uri(uri) 
+        .header("Authorization","Bearer "+BEARER_TOKEN)
+        .GET()
+        .build();
+
     } catch (URISyntaxException e) {
       LOG.error("error constructing api endpoint url");
       LOG.error(String.format("error building request: %s",e.getMessage()));

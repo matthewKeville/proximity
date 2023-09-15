@@ -17,10 +17,10 @@ public class GeoUtilsTest
       double lon = -74.071700;
       keville.Location result = GeoUtils.getLocationFromGeoCoordinates(lat,lon);
 
-      String expectedTown = "Wall Township";
-      String expectedState = "New Jersey";
+      String expectedLocality = "Wall Township";
+      String expectedRegion = "NJ";
 
-      assertEquals(expectedState,result.state);
-      assertEquals(expectedTown,result.town);
+      assertEquals(expectedRegion,result.region);
+      assertEquals(expectedLocality,result.locality);
     }
 }
