@@ -1,0 +1,10 @@
+{
+  "connections": [
+    {
+      "name": "app.db",
+      "adapter": "sqlite3",
+      "filename": "app.db",
+      "projectPaths": ["./"]
+    }
+  ]
+}
