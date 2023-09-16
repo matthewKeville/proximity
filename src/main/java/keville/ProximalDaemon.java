@@ -1,21 +1,17 @@
 package keville;
 
-import keville.Eventbrite.EventbriteScanner;
-import keville.meetup.MeetupScanner;
-import keville.util.GeoUtils;
+import java.time.Instant;
+import keville.gson.InstantAdapter;
 
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Map;
 import java.util.Properties;
-import java.util.function.Predicate;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import static spark.Spark.*;
 
 public class ProximalDaemon 
 {
@@ -30,68 +26,21 @@ public class ProximalDaemon
 
     public static void main( String[] args )
     {
+        List<Event> events = eventService.getEvents();
+        Gson gson = new GsonBuilder()
+          .registerTypeAdapter(Instant.class, new InstantAdapter())
+          .create();
 
-        Map<String,Double> currentLocation = GeoUtils.getClientGeolocation(); 
-        
-        //Assemble a test filter
-        /*
-        Predicate<Event> eventFilter;
-        eventFilter = Event.WithinDaysFromNow(2);
-        eventFilter = eventFilter.and(
-            Event.WithinKMilesOf(
-              currentLocation.get("latitude"),
-              currentLocation.get("longitude"),
-            10.0));
-        */
-
-        int port = 9876;
-        boolean run = true;
-        try {
-
-          ServerSocket server = new ServerSocket(port);
-          while (run) {
-
-            //process one socket request at a time
-
-            Socket socket = server.accept();
-            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
-            //what is the client requesting?
-            String request = (String) ois.readObject();
-
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            if (request.equals("List")) {
-
-              String filterString = (String) ois.readObject();
-              LOG.info("Recieved List Request with filter string : " + filterString);
-
-              //Load known events into memory
-              List<Event> events = eventService.getEvents();
-
-              oos.writeObject("Okay");
-              oos.writeObject(events);
-
-            } else {
-              oos.writeObject("Unknown");
-            }
-
-            ois.close();
-            oos.close();
-            socket.close();
-
-          }
-          server.close();
-
-        } catch (IOException | ClassNotFoundException e) {
-          LOG.error("Server error encountered");
-          LOG.error(e.getMessage());
-        }
+        //spark defaults port to : 4567 
+        get("/events", (req, res) -> gson.toJson(events));
+        get("/event", (req, res) -> gson.toJson(events.get(0)));
 
     }
 
+
     static void initialize() {
 
-      //load configuration w/ respect to custum.properties
+      //load configuration w/ respect to custom.properties
       props = new Properties();
       try {
         File customProperties = new File("./custom.properties");
