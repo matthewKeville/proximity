@@ -44,6 +44,7 @@ public class ProximalDaemon
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
                 .filter(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius))
+                .map( e -> Events.CreateClientEvent(e,settings.latitude,settings.longitude) )
                 .collect(Collectors.toList())
               );
             });

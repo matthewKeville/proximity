@@ -19,6 +19,10 @@ type Event struct {
   Url string
   Organizer string
   Virtual bool
+  // virtual fields
+  Distance float32
+  DaysFromNow int
+  HoursFromNow int
 }
 
 func (e Event) ToString() string {

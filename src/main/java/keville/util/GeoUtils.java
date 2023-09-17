@@ -42,6 +42,13 @@ public class GeoUtils {
     return distGeo < radiusGeo;
   }
 
+  public static double distanceInMiles(double lat0,double lon0,double latf,double lonf) {
+    double distGeo = Math.sqrt( Math.pow(latf - lat0,2.0) + Math.pow(lonf - lon0,2.0) );
+    double distKm = distGeo / 90.0 * 10_000.0;
+    double distMiles = distKm / 1.60934;
+    return distMiles;
+  }
+
   //https://github.com/dcarrillo/whatismyip
   public static Map<String,Double> getClientGeolocation() {
 

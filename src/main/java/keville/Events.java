@@ -1,5 +1,7 @@
 package keville;
 
+import java.time.Instant;
+import java.time.Duration;
 import keville.util.GeoUtils;
 import java.util.function.Predicate;
 
@@ -16,6 +18,19 @@ public class Events {
         return GeoUtils.isWithinMilesOf(miles, lat, lon, event.location.latitude, event.location.longitude);
       }
     };
+  }
+
+  public static ClientEvent CreateClientEvent(Event event,double latitude,double longitude) {
+
+    double distance = 0.0;
+    if ( event.virtual != true ) {
+      distance = GeoUtils.distanceInMiles(event.location.latitude,event.location.longitude,latitude,longitude);
+    } else {
+      LOG.warn("spoofing distance for virtual event");
+    }
+
+    Duration duration = Duration.between(Instant.now(),event.start);
+    return new ClientEvent(event,distance,(int) duration.toDaysPart(), duration.toHoursPart());
   }
 
 
