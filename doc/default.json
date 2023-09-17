@@ -1,0 +1,10 @@
+{
+  "connection_string" :  "jdbc:sqlite:app.db",
+  "radius" : 5.0,
+  "auto" : true,
+  "delay" : 3600,
+  "run_on_restart" : true,
+  "MEETUP" : true,
+  "ALLEVENTS" : true,
+  "EVENTBRITE" : false
+}

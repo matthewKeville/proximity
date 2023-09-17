@@ -1,5 +1,6 @@
 package keville.Eventbrite;
 
+import keville.Settings;
 import keville.Event;
 import keville.EventBuilder;
 import keville.LocationBuilder;
@@ -60,9 +61,9 @@ public class EventbriteScanner implements EventScanner {
   }
 
 
-  public EventbriteScanner(keville.EventService eventService, Properties props) {
+  public EventbriteScanner(keville.EventService eventService, Settings settings) {
     this.eventService = eventService;
-    eventCache = new EventCache(props);
+    eventCache = new EventCache(settings);
   }
 
   public int scan(double latitude, double longitude, double radius) {

@@ -3,7 +3,6 @@ package keville;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import java.sql.Connection;
@@ -21,8 +20,8 @@ public class EventService {
   private String connectionString;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventService.class);
 
-  public EventService(Properties properties) {
-    connectionString = properties.getProperty("connection_string");
+  public EventService(Settings settings) {
+    connectionString = settings.applicationConnectionString;
   }
 
   /* locate an Event row in the database */

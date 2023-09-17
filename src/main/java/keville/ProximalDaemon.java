@@ -1,12 +1,14 @@
 package keville;
 
-import java.time.Instant;
 import keville.gson.InstantAdapter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
 import java.util.List;
+import java.time.Instant;
+
+import java.nio.file.Files;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,10 +17,10 @@ import static spark.Spark.*;
 
 public class ProximalDaemon 
 {
-    static Properties props;
     static EventService eventService;
     static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
     static Thread scheduleThread;
+    static Settings settings;
 
     static {
       initialize();
@@ -37,37 +39,22 @@ public class ProximalDaemon
 
     }
 
-
     static void initialize() {
 
-      //load configuration w/ respect to custom.properties
-      props = new Properties();
+      String settingsFileString = "./custom.json";
+      Path jobFilePath = FileSystems.getDefault().getPath(settingsFileString);
+
       try {
-        File customProperties = new File("./custom.properties");
-        if (customProperties.exists()) {
-          LOG.info("custom properties found");
-          props.load(new FileInputStream("./custom.properties"));
-        } else {
-          LOG.info("no custom properties located, using defaults");
-          props.load(new FileInputStream("./default.properties"));
-        }
+        String jsonString = new String(Files.readAllBytes(jobFilePath),StandardCharsets.UTF_8);
+        settings = Settings.parseSettings(jsonString);
       } catch (Exception e) {
-        LOG.error("Unable to load app.properties configuration\naborting");
+        LOG.error("unable to parse settings : " + jobFilePath.toString());
         LOG.error(e.getMessage());
         System.exit(1);
       }
 
-      //minimal configuration met?
-      if (props.getProperty("event_brite_api_key").isEmpty()) {
-        LOG.info("You must provide an event_brite_api_key");
-        LOG.error("no event_brite_api_key found");
-        System.exit(2);
-      }
-      LOG.info("using api_key : "+props.getProperty("event_brite_api_key"));
-
-      eventService = new EventService(props);
-
-      EventScannerScheduler scheduler = new EventScannerScheduler(eventService, props);
+      eventService = new EventService(settings);
+      EventScannerScheduler scheduler = new EventScannerScheduler(eventService, settings);
       scheduleThread = new Thread(scheduler, "EventScannerScheduler");
       scheduleThread.start();
 

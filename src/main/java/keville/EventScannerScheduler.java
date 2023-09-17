@@ -2,55 +2,45 @@ package keville;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Properties;
 import java.time.Instant;
 
 import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
 import keville.AllEvents.AllEventsScanner;
 
-import java.nio.file.Files;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-
 public class EventScannerScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
-  private int timeStepMS = 10000; //30
-  private Properties props;
-  private EventService eventService;
+  private int timeStepMS = 10000;
 
   private EventbriteScanner eventbriteScanner;
   private MeetupScanner meetupScanner;
   private AllEventsScanner allEventsScanner;
 
 
-  public EventScannerScheduler(EventService eventService, Properties props) {
-    this.eventService = eventService;
-    this.props = props;
+  /* DI would be convenient here, this class doesn't need eventService */
+  public EventScannerScheduler(EventService eventService, Settings settings) {
 
-    eventbriteScanner = new EventbriteScanner(eventService, props);
-    meetupScanner = new MeetupScanner(eventService, props);
-    allEventsScanner = new AllEventsScanner(eventService, props);
+    eventbriteScanner = new EventbriteScanner(eventService, settings);
+    meetupScanner = new MeetupScanner(eventService, settings);
+    allEventsScanner = new AllEventsScanner(eventService, settings);
 
     jobs = new ArrayList<EventScanJob>();
-    loadScanJobs();
+    loadScanJobs(settings);
+
     LOG.info(" found : " + jobs.size() + " jobs ");
   }
 
-  //this will run one scan at a time 
   public void run() {
-
-    boolean firstRun = true; //run all jobs on startup
 
     while ( true ) {
 
       LOG.info("evaluating job list");
 
       for ( EventScanJob esj : jobs ) {
-        if ( firstRun || shouldRunNow(esj)) {
-          LOG.info("new scan job started");
+        if ( shouldRunNow(esj) ) {
+          LOG.info("scan job started");
           LOG.info(esj.toString());
           //do the scan
           switch ( esj.source ) {
@@ -66,16 +56,12 @@ public class EventScannerScheduler implements Runnable {
             case DEBUG:
               break;
             default:
-              LOG.warn("This EventType case has not been programmed explicitly and is not evaluated");
+              LOG.warn("This EventType case has not been programmed explicitly and will not be evaluated");
           }
           esj.lastRun = Instant.now();
           LOG.info("scan job complete");
           LOG.info(esj.toString());
         }
-      }
-
-      if ( firstRun ) {
-        firstRun = false;
       }
 
       try {
@@ -94,35 +80,16 @@ public class EventScannerScheduler implements Runnable {
     return  nextScanStart.isBefore(now);
   }
 
-  /* populate jobs with data stored on LFS */
-  private void loadScanJobs() {
+  private void loadScanJobs(Settings settings) {
 
-    Path jobFilePath = FileSystems.getDefault().getPath("scan-jobs.csv");
-
-    try {
-
-      for ( String jobRow : Files.readAllLines(jobFilePath) ) {
-
-        //EventTypeEnum,radius,lat,lon,delay(s)
-        String[] fields = jobRow.split(",");
-        if ( fields.length != 5 ) {
-          LOG.warn("invalid scan job at \n\t" + jobRow);
-          continue;
-        }
-
-        EventTypeEnum type = EventTypeEnum.valueOf(fields[0]);
-        double radius = Double.parseDouble(fields[1]);
-        double latitude = Double.parseDouble(fields[2]);
-        double longitude = Double.parseDouble(fields[3]);
-        int delay = Integer.parseInt(fields[4]);
-
-        EventScanJob esj = new EventScanJob(type,radius,latitude,longitude,delay);
-        jobs.add(esj);
-
-      }
-    } catch (Exception e) {
-      LOG.error("error reading scan jobs from scan-jobs.csv");
-      LOG.error(e.getMessage());
+    if ( settings.eventbrite ) {
+      jobs.add(new EventScanJob(EventTypeEnum.EVENTBRITE,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
+    }
+    if ( settings.meetup ) {
+      jobs.add(new EventScanJob(EventTypeEnum.MEETUP,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
+    }
+    if ( settings.allevents) {
+      jobs.add(new EventScanJob(EventTypeEnum.ALLEVENTS,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
     }
 
   }

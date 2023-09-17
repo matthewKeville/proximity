@@ -17,14 +17,15 @@ public class EventScanJob {
     double radius,
     double latitude,
     double longitude,
-    long delayInSeconds
+    long delayInSeconds,
+    boolean runOnRestart
     ) {
     this.source = source;
     this.radius = radius;
     this.latitude = latitude;
     this.longitude = longitude;
     this.delayInSeconds = delayInSeconds;
-    lastRun = Instant.now();
+    lastRun = runOnRestart ?  Instant.EPOCH : Instant.now();
   }
 
 

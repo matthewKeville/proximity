@@ -1,5 +1,6 @@
 package keville.meetup;
 
+import keville.Settings;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
@@ -39,12 +40,10 @@ import com.google.gson.JsonObject;
 public class MeetupScanner implements EventScanner {
 
   private keville.EventService eventService;
-  private Properties props;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScanner.class);
 
-  public MeetupScanner(keville.EventService eventService, Properties props) {
+  public MeetupScanner(keville.EventService eventService, Settings settings) {
     this.eventService = eventService;
-    this.props = props;
   }
 
   public int scan(double latitude, double longitude, double radius) {

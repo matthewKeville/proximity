@@ -9,4 +9,5 @@ eventbrite.db-journal
 app.db
 test.db
 custom.properties
+custom.json
 sensitive/*

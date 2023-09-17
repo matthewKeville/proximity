@@ -1,5 +1,7 @@
 package keville.Eventbrite;
 
+import keville.Settings;
+
 import java.util.Properties;
 
 import java.net.URI;
@@ -25,8 +27,8 @@ public class EventCache {
   private String BEARER_TOKEN;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
-  public EventCache (Properties properties) {
-    BEARER_TOKEN = properties.getProperty("event_brite_api_key");
+  public EventCache (Settings settings) {
+    BEARER_TOKEN = settings.eventBriteApiKey;
     httpClient = HttpClient.newHttpClient();
   }
 

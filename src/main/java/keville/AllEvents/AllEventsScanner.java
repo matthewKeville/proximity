@@ -1,5 +1,6 @@
 package keville.AllEvents;
 
+import keville.Settings;
 import keville.USStateAndTerritoryCodes;
 import keville.util.GeoUtils;
 import keville.Location;
@@ -11,18 +12,14 @@ import keville.EventTypeEnum;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import java.io.StringWriter;
 
-import java.time.Instant;
 import java.time.Duration;
-import java.time.format.DateTimeFormatter;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -40,12 +37,10 @@ import com.google.gson.JsonObject;
 public class AllEventsScanner implements EventScanner {
 
   private keville.EventService eventService;
-  private Properties props;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AllEventsScanner.class);
 
-  public AllEventsScanner(keville.EventService eventService, Properties props) {
+  public AllEventsScanner(keville.EventService eventService,Settings settings) {
     this.eventService = eventService;
-    this.props = props;
   }
 
   public int scan(double latitude, double longitude, double radius) {
