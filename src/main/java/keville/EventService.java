@@ -157,8 +157,8 @@ public class EventService {
         ps.setObject(11,null);
         ps.setObject(12,null);
       } else {
-        ps.setDouble(11,event.location.longitude);
-        ps.setDouble(12,event.location.latitude);
+        ps.setDouble(11,event.location.latitude);
+        ps.setDouble(12,event.location.longitude);
       }
       ps.setString(13,event.organizer);
       ps.setString(14,event.url);

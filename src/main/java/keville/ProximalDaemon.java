@@ -2,6 +2,7 @@ package keville;
 
 import keville.gson.InstantAdapter;
 
+import java.util.stream.Collectors;
 import java.util.List;
 import java.time.Instant;
 
@@ -34,7 +35,20 @@ public class ProximalDaemon
           .create();
 
         //spark defaults port to : 4567 
-        get("/events", (req, res) -> gson.toJson(events));
+        
+        get("/events", (request, response) -> 
+            { 
+              LOG.info("recieved GET /events");
+              return gson.toJson(
+                 events
+                .stream()
+                .filter( e -> e.eventType != EventTypeEnum.DEBUG )
+                .filter(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius))
+                .collect(Collectors.toList())
+              );
+            });
+
+
         get("/event", (req, res) -> gson.toJson(events.get(0)));
 
     }

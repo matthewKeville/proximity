@@ -34,10 +34,12 @@ public class GeoUtils {
   }
 
   public static boolean isWithinMilesOf(double miles,double latCenter,double lonCenter,double lat,double lon) {
-    double distGeo = Math.sqrt( Math.pow(latCenter - lat,2.0) + Math.pow(lonCenter - lon,2.0) );
+
     double radiusKm = miles * 1.60934;
-    double radiusDeg = radiusKm * 90.0 /*deg*/ / 10_000.0 /*km*/;
-    return distGeo < radiusDeg;
+    double distGeo = Math.sqrt( Math.pow(latCenter - lat,2.0) + Math.pow(lonCenter - lon,2.0) );
+    double radiusGeo = radiusKm * 90.0 /*deg*/ / 10_000.0 /*km*/;
+
+    return distGeo < radiusGeo;
   }
 
   //https://github.com/dcarrillo/whatismyip

@@ -1,12 +1,8 @@
 package keville;
 
 import keville.util.AnsiColors;
-import keville.util.GeoUtils;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.io.Serializable;
-import java.util.List;
-import java.util.function.Predicate;
 
 public class Event implements Serializable {
 
@@ -76,51 +72,5 @@ public class Event implements Serializable {
         return "unknown";
     }
   }
-
-  // location filters
-  /*
-  public static Predicate<Event> CityFilter(String city) {
-    return new Predicate<Event>() {
-      public boolean test(Event event) {
-        return city.equals(event.city);
-      }
-    };
-  }
-
-  public static Predicate<Event> CitiesFilter(List<String> cities) {
-    return new Predicate<Event>() {
-      public boolean test(Event event) {
-        return cities.stream()
-            .anyMatch(c -> c.equals(event.city));
-      }
-    };
-  }
-
-  public static Predicate<Event> WithinKMilesOf(double lat, double lon, double miles) {
-    return new Predicate<Event>() {
-      public boolean test(Event event) {
-        return GeoUtils.isWithinMilesOf(miles, lat, lon, event.latitude, event.longitude);
-      }
-    };
-  }
-
-  // temporal filters
-
-  public static Predicate<Event> DateRangeFilter(ZonedDateTime start, ZonedDateTime end) {
-    return new Predicate<Event>() {
-      // in the future if event end is Event , then this should use start & end for
-      // evaluation
-      public boolean test(Event event) {
-        return event.start.isBefore(end.toInstant()) && event.start.isAfter(start.toInstant());
-      }
-    };
-  }
-
-  public static Predicate<Event> WithinDaysFromNow(int days) {
-    // LocalDateTime now = LocalDateTime.now();
-    ZonedDateTime now = ZonedDateTime.now();
-    return DateRangeFilter(now, now.plusDays(days));
-  }
-  */
 
 }
