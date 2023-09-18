@@ -219,7 +219,7 @@ func initialModel() model {
     table.NewColumn(columnKeyOnline, "ONLINE", 8),
     table.NewColumn(columnKeyDistance, "DIST", 6),
     table.NewColumn(columnKeyDaysFromNow, "IN DAYS", 7),
-    table.NewColumn(columnKeyName, "NAME", 120),
+    table.NewColumn(columnKeyName, "NAME", 80),
     table.NewColumn(columnKeyRegion, "STATE", 5),
     table.NewColumn(columnKeyLocality, "CITY", 20),
     table.NewColumn(columnKeyMonth, "MONTH", 9),
