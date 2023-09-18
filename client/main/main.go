@@ -23,6 +23,7 @@ const (
   columnKeyDayOfWeek        = "dayOfweek"
   columnKeyDaysFromNow      = "daysFromNow"
   columnKeyDate             = "date"
+  columnKeyTime             = "time"
 )
 
 type model struct {
@@ -102,9 +103,46 @@ func ColorDayOfWeek(t string) string {
   case "Saturday":
     return "6"
   case "Sunday":
-    return "7"
+    return "8"
   }
   return "0"
+}
+
+func ColorMonth(t string) string {
+
+  winter := "030"
+  spring := "090"
+  summer := "142"
+  fall   := "094"
+
+  switch t  {
+  case "January":
+    return winter
+  case "February":
+    return winter
+  case "March":
+    return winter
+  case "April":
+    return spring
+  case "May":
+    return spring
+  case "June":
+    return spring
+  case "July":
+    return summer
+  case "August":
+    return summer
+  case "September":
+    return summer
+  case "October":
+    return fall
+  case "November":
+    return fall
+  case "December":
+    return fall
+  }
+  return "0"
+
 }
 
 func ColorVirtual(v bool) string {
@@ -123,20 +161,24 @@ func ToTableRow(e event.Event) table.Row {
     columnKeyOnline: table.NewStyledCell(
       e.Virtual, lipgloss.NewStyle().
         Foreground(lipgloss.Color(ColorVirtual(e.Virtual)))),
-    columnKeyName: e.Name,
     columnKeyDistance: table.NewStyledCell(
       e.Distance, lipgloss.NewStyle().
         Foreground(lipgloss.Color(ColorEventDistance(e.Distance)))),
-    columnKeyMonth: fmt.Sprintf("%s",e.Start.Month()),
+    columnKeyDaysFromNow: table.NewStyledCell(
+      e.DaysFromNow, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorEventDaysFromNow(e.DaysFromNow)))),
+    columnKeyName: e.Name,
+    //columnKeyMonth: fmt.Sprintf("%s",e.Start.Month()),
+    columnKeyMonth: table.NewStyledCell(
+      e.Start.Month(), lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorMonth(e.Start.Month().String())))),
     columnKeyDayOfWeek: table.NewStyledCell(
       e.Start.Weekday(), lipgloss.NewStyle().
         Foreground(lipgloss.Color(ColorDayOfWeek(e.Start.Weekday().String())))),
     columnKeyRegion: e.Location.Region,
     columnKeyLocality: e.Location.Locality,
-    columnKeyDaysFromNow: table.NewStyledCell(
-      e.DaysFromNow, lipgloss.NewStyle().
-        Foreground(lipgloss.Color(ColorEventDaysFromNow(e.DaysFromNow)))),
     columnKeyDate:  fmt.Sprintf("%d/%d/%d",e.Start.Month(),e.Start.Day(),e.Start.Year()),
+    columnKeyTime:  fmt.Sprintf("%d:%d",e.Start.Local().Hour(),e.Start.Local().Minute()),
   })
 }
 
@@ -175,14 +217,15 @@ func initialModel() model {
   columns := []table.Column{
     table.NewColumn(columnKeyType, "TYPE", 12),
     table.NewColumn(columnKeyOnline, "ONLINE", 8),
-    table.NewColumn(columnKeyName, "NAME", 120),
     table.NewColumn(columnKeyDistance, "DIST", 6),
+    table.NewColumn(columnKeyDaysFromNow, "IN DAYS", 7),
+    table.NewColumn(columnKeyName, "NAME", 120),
     table.NewColumn(columnKeyRegion, "STATE", 5),
     table.NewColumn(columnKeyLocality, "CITY", 20),
     table.NewColumn(columnKeyMonth, "MONTH", 9),
     table.NewColumn(columnKeyDayOfWeek, "DAY OF WEEK", 9),
-    table.NewColumn(columnKeyDaysFromNow, "IN x DAYS", 10),
-    table.NewColumn(columnKeyDate, "Date", 10),
+    table.NewColumn(columnKeyDate, "DATE", 10),
+    table.NewColumn(columnKeyTime, "TIME", 5),
 
   }
 
@@ -239,11 +282,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         switch msg.String() {
 
+        case "t":
+          m.table = m.table.SortByAsc(columnKeyDaysFromNow)
+        case "T":
+          m.table = m.table.SortByDesc(columnKeyDaysFromNow)
+        case "d":
+          m.table = m.table.SortByAsc(columnKeyDistance)
+        case "D":
+          m.table = m.table.SortByDesc(columnKeyDistance)
+
         case "ctrl+c", "q":
             return m, tea.Quit
         }
 
     }
+
 
     return m, tea.Batch(cmds...)
 }
