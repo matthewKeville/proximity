@@ -10,4 +10,5 @@ app.db
 test.db
 custom.properties
 custom.json
+custom.json.bak
 sensitive/*

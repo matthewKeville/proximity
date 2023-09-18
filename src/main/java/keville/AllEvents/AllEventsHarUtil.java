@@ -42,7 +42,7 @@ public class AllEventsHarUtil {
 
         // did the inital request get redirected?
         String redirectURL = response.get("redirectURL").getAsString();
-        LOG.info("redirectURL : " + redirectURL );
+
         if ( !redirectURL.isEmpty() ) {
           LOG.info("using redirect response");
           response = findResponseFromRequestUrl(harString,redirectURL);
@@ -73,9 +73,6 @@ public class AllEventsHarUtil {
             // decode base64
 
             try {
-              LOG.info("coded webpage");
-              LOG.info(base64ResponseText);
-              LOG.info("coded webpage");
               byte[] decodedBytes = Base64.getDecoder().decode(base64ResponseText);
               webpageData = Arrays.toString(decodedBytes);
             } catch (Exception e) {
@@ -145,7 +142,6 @@ public class AllEventsHarUtil {
       JsonObject request = entry.get("request").getAsJsonObject();
       String requestUrl = request.get("url").getAsString();
 
-      LOG.info("url : " + requestUrl);
       if ( requestUrl.equals(targetUrl)) {
         response = entry.get("response").getAsJsonObject();
         LOG.info("found the response matching the request url : " + targetUrl);

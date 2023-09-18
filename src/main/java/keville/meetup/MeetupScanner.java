@@ -46,7 +46,7 @@ public class MeetupScanner implements EventScanner {
     this.eventService = eventService;
   }
 
-  public int scan(double latitude, double longitude, double radius) {
+  public int scan(double latitude, double longitude, double radius) throws Exception {
 
       //My meetup scrubbing protocol requires huamn readable address formats ( city & state )
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
@@ -78,7 +78,6 @@ public class MeetupScanner implements EventScanner {
 
       driver.get(targetUrl);
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
-
 
       /* 
         meetup loads as we scroll, but if we scroll too fast it won't load
@@ -123,6 +122,7 @@ public class MeetupScanner implements EventScanner {
       String jsonData = MeetupHarUtil.extractEventsJson(harStringWriter.toString());
 
       // package json event data into application Event
+      int alreadyExists = 0;
       List<Event> newEvents = new ArrayList<Event>();
       if (!jsonData.equals("")) {
 
@@ -136,6 +136,8 @@ public class MeetupScanner implements EventScanner {
           // only process new event ids
           if (!eventService.exists(EventTypeEnum.MEETUP,id)) {
             newEvents.add(createEventFrom(event));
+          } else {
+            alreadyExists++;
           }
         }
 
@@ -143,12 +145,13 @@ public class MeetupScanner implements EventScanner {
         LOG.info("json data is empty!");
       }
 
+
       newEvents = newEvents.stream()
         .distinct() 
         .collect(Collectors.toList());
       eventService.createEvents(newEvents);
 
-      LOG.info(" meetup scanner generated " + newEvents.size() + " potential new events " );
+      LOG.info(" meetup scanner found  " + newEvents.size() + " potential new events and " + alreadyExists + " known events ");
 
       return newEvents.size();
   }

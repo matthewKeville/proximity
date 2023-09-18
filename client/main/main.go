@@ -162,7 +162,7 @@ func ToTableRow(e event.Event) table.Row {
       e.Virtual, lipgloss.NewStyle().
         Foreground(lipgloss.Color(ColorVirtual(e.Virtual)))),
     columnKeyDistance: table.NewStyledCell(
-      e.Distance, lipgloss.NewStyle().
+      fmt.Sprintf("%.2f",e.Distance), lipgloss.NewStyle().
         Foreground(lipgloss.Color(ColorEventDistance(e.Distance)))),
     columnKeyDaysFromNow: table.NewStyledCell(
       e.DaysFromNow, lipgloss.NewStyle().

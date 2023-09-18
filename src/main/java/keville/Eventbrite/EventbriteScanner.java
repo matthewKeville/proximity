@@ -66,7 +66,7 @@ public class EventbriteScanner implements EventScanner {
     eventCache = new EventCache(settings);
   }
 
-  public int scan(double latitude, double longitude, double radius) {
+  public int scan(double latitude, double longitude, double radius) throws Exception {
 
       int page  = 0;
 

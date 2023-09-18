@@ -17,7 +17,7 @@
     <Logger name="net.lightbody.bmp" level="error" additivity="false">
       <AppenderRef ref="LOGFILE"/>
     </Logger>
-    <Logger name="org.littleshoot.proxy" level="error" additivity="false">
+    <Logger name="org.littleshoot.proxy" level="fatal" additivity="false">
       <AppenderRef ref="LOGFILE"/>
     </Logger>
   </Loggers>

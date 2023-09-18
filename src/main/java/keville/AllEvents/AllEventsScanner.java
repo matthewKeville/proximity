@@ -43,7 +43,7 @@ public class AllEventsScanner implements EventScanner {
     this.eventService = eventService;
   }
 
-  public int scan(double latitude, double longitude, double radius) {
+  public int scan(double latitude, double longitude, double radius) throws Exception {
 
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
       String targetUrl = createTargetUrl(location);
@@ -72,6 +72,7 @@ public class AllEventsScanner implements EventScanner {
 
       LOG.info("targetting initial url \n" + targetUrl);
       driver.get(targetUrl);
+      LOG.info("after driver.get");
 
       //////////////////////////////////////////////////////////
       // TODO expand result set until no more results appear
@@ -95,8 +96,11 @@ public class AllEventsScanner implements EventScanner {
       // extract the event stub data (incomplete data set for events)
 
       String eventStubsJson= AllEventsHarUtil.extractEventStubsJson(harStringWriter.toString(),targetUrl);
+      if ( eventStubsJson ==  null ) {
+        LOG.warn("found no event data from this scan");
+        return 0;
+      }
 
-      List<String> eventUrls = new ArrayList<String>();
       JsonArray eventStubs = JsonParser.parseString(eventStubsJson).getAsJsonArray();
 
       List<Event> newEvents = new ArrayList<Event>();

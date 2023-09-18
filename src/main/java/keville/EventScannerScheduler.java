@@ -45,13 +45,28 @@ public class EventScannerScheduler implements Runnable {
           //do the scan
           switch ( esj.source ) {
             case ALLEVENTS: 
-              allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              try {
+                allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              } catch (Exception e) {
+                LOG.error("scan failed");
+                //LOG.error(e.getMessage());
+              }
               break;
             case EVENTBRITE:
-              eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              try {
+                eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              } catch (Exception e) {
+                LOG.error("scan failed");
+                //LOG.error(e.getMessage());
+              }
               break;
             case MEETUP: 
-              meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              try {
+                meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
+              } catch (Exception e) {
+                LOG.error("scan failed");
+                //LOG.error(e.getMessage());
+              }
               break;
             case DEBUG:
               break;

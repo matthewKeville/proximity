@@ -32,7 +32,7 @@ public class Settings {
     if ( json.get("auto").getAsBoolean() )  {
       Map<String,Double> coords = GeoUtils.getClientGeolocation();
       settings.latitude = coords.get("latitude");
-      settings.latitude = coords.get("longitude");
+      settings.longitude = coords.get("longitude");
       LOG.info("inferred geocoordinate locataion : " + settings.latitude + " , " + settings.longitude);
     } else {
       settings.latitude = json.get("latitude").getAsDouble();
