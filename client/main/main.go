@@ -7,61 +7,137 @@ import (
   "fmt"
   "sort"
   "github.com/charmbracelet/bubbletea"
-  "github.com/charmbracelet/bubbles/table"
+  "github.com/evertras/bubble-table/table"
   "github.com/charmbracelet/lipgloss"
 )
 
-
-var baseStyle = lipgloss.NewStyle().
-  BorderStyle(lipgloss.NormalBorder()).
-  BorderForeground(lipgloss.Color("240"))
+const (
+  columnKeyID               = "id"
+  columnKeyType             = "type"
+  columnKeyOnline           = "online"
+  columnKeyName             = "name"
+  columnKeyDistance         = "distance"
+  columnKeyRegion           = "region"
+  columnKeyLocality         = "locality"
+  columnKeyMonth            = "month"
+  columnKeyDayOfWeek        = "dayOfweek"
+  columnKeyDaysFromNow      = "daysFromNow"
+  columnKeyDate             = "date"
+)
 
 type model struct {
   table table.Model
   events []event.Event
   filterEvents []event.Event
-  showField map[string]bool
 }
 
-func ToTableRows(evs []event.Event,sf map[string]bool) []table.Row {
+
+func ToTableRows(evs []event.Event) []table.Row {
   rows := []table.Row{}
   for _, evt := range evs {
-    rows = append(rows,ToTableRow(evt,sf))
+    rows = append(rows,ToTableRow(evt))
   }
   return rows
 }
 
-func ToTableRow(e event.Event,sf map[string]bool) table.Row {
+// green -> yellow ->  orange -> red
+func ColorEventDistance(dist float32) string {
+  if ( dist < 1.0 ) {
+    return "46"
+  } else if ( dist < 3.0 ) {
+    return "154"
+  } else if ( dist < 5.0 ) {
+    return "226"
+  } else if ( dist < 10.0 ) {
+    return "220"
+  } else if ( dist < 30.0 ) {
+    return "166"
+  } else {
+    return "196"
+  }
+}
 
-  cl := []string{}
+func ColorEventDaysFromNow(days int) string {
+  if ( days < 0 ) {
+    return "016"
+  } else if ( days <= 1 ) {
+    return "46"
+  } else if ( days < 3 ) {
+    return "154"
+  } else if ( days < 5 ) {
+    return "226"
+  } else if ( days < 10 ) {
+    return "220"
+  } else if ( days < 30 ) {
+    return "166"
+  } else {
+    return "196"
+  }
+}
 
-  if (sf["EventType"]) {
-    cl = append(cl,e.EventType)
+func ColorEventType(t string) string {
+  switch t  {
+  case "ALLEVENTS":
+    return  "051" //light blue
+  case "EVENTBRITE":
+    return  "208" //orange
+  case "MEETUP":
+    return  "160" //red
   }
+  return "0"
+}
 
-  if (sf["Name"]) {
-    cl = append(cl,e.Name)
+func ColorDayOfWeek(t string) string {
+  switch t  {
+  case "Monday":
+    return "1"
+  case "Tuesday":
+    return "2"
+  case "Wednesday":
+    return "3"
+  case "Thursday":
+    return "4"
+  case "Friday":
+    return "5"
+  case "Saturday":
+    return "6"
+  case "Sunday":
+    return "7"
   }
-  if (sf["Location.Name"]) {
-    cl = append(cl,e.Location.Name)
+  return "0"
+}
+
+func ColorVirtual(v bool) string {
+  if ( v ) {
+    return "160"
+  } else {
+    return "046"
   }
-  if (sf["Location.Region"]) {
-    cl = append(cl,e.Location.Region)
-  }
-  if (sf["Location.Locality"]) {
-    cl = append(cl,e.Location.Locality)
-  }
-  if (sf["_DistanceMiles"]) { 
-    cl = append(cl,fmt.Sprintf("%f",e.Distance))
-  }
-  if (sf["_DistanceDays"]) {
-    cl = append(cl,fmt.Sprintf("%d",e.DaysFromNow))
-  }
-  if (sf["_Start_Month_Name"]) {
-    cl = append(cl,fmt.Sprintf("%s",e.Start.Month()))
-  }
-  
-  return cl
+}
+
+func ToTableRow(e event.Event) table.Row {
+  return table.NewRow(table.RowData{
+    columnKeyType: table.NewStyledCell(
+      e.EventType, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorEventType(e.EventType)))),
+    columnKeyOnline: table.NewStyledCell(
+      e.Virtual, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorVirtual(e.Virtual)))),
+    columnKeyName: e.Name,
+    columnKeyDistance: table.NewStyledCell(
+      e.Distance, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorEventDistance(e.Distance)))),
+    columnKeyMonth: fmt.Sprintf("%s",e.Start.Month()),
+    columnKeyDayOfWeek: table.NewStyledCell(
+      e.Start.Weekday(), lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorDayOfWeek(e.Start.Weekday().String())))),
+    columnKeyRegion: e.Location.Region,
+    columnKeyLocality: e.Location.Locality,
+    columnKeyDaysFromNow: table.NewStyledCell(
+      e.DaysFromNow, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(ColorEventDaysFromNow(e.DaysFromNow)))),
+    columnKeyDate:  fmt.Sprintf("%d/%d/%d",e.Start.Month(),e.Start.Day(),e.Start.Year()),
+  })
 }
 
 
@@ -90,83 +166,55 @@ func initialModel() model {
 
   const version string = "0.1"
 
-  //what fields will be rendered to the table?
-  sf :=  map[string]bool{}
+  columnHeaderStyle := 
+    lipgloss.NewStyle().
+    Foreground(lipgloss.Color("231")).
+    Bold(true).
+    Align(lipgloss.Center)
+  
+  columns := []table.Column{
+    table.NewColumn(columnKeyType, "TYPE", 12),
+    table.NewColumn(columnKeyOnline, "ONLINE", 8),
+    table.NewColumn(columnKeyName, "NAME", 120),
+    table.NewColumn(columnKeyDistance, "DIST", 6),
+    table.NewColumn(columnKeyRegion, "STATE", 5),
+    table.NewColumn(columnKeyLocality, "CITY", 20),
+    table.NewColumn(columnKeyMonth, "MONTH", 9),
+    table.NewColumn(columnKeyDayOfWeek, "DAY OF WEEK", 9),
+    table.NewColumn(columnKeyDaysFromNow, "IN x DAYS", 10),
+    table.NewColumn(columnKeyDate, "Date", 10),
 
-  // Concrete Fields
-  sf["EventType"] = true;
-  sf["Name"] = true;
-  sf["Description"] = false;
-  sf["Url"] = true;
-  sf["Organizer"] = true;
-  sf["Virtual"] = true;
-  sf["Location.Name"] = true;
-  sf["Location.Country"] = true;
-  sf["Location.Region"] = true;
-  sf["Location.Locality"] = true;
-
-  // Virtual Fields
-  sf["_DistanceMiles"] = true;
-  sf["_DistanceDays"] = true;
-  sf["_Start_Date"] = false;
-  sf["_Start_Month_Name"] = true;
-  sf["_Start_Day"] = true;
-  sf["_Start_Time"] = false;
-
-  columns := []table.Column{}
-
-  if (sf["EventType"]) {
-    columns = append(columns,table.Column{Title: "Source", Width: 20})
-  }
-  if (sf["Name"]) {
-    columns = append(columns,table.Column{Title: "Name", Width: 40})
-  }
-  if (sf["Location.Name"]) {
-    columns = append(columns,table.Column{Title: "Where", Width: 20})
-  }
-  if (sf["Location.Region"]) {
-    columns = append(columns,table.Column{Title: "State", Width: 2})
-  }
-  if (sf["Location.Locality"]) {
-    columns = append(columns,table.Column{Title: "City", Width: 10})
-  }
-  if (sf["_DistanceMiles"]) {
-    columns = append(columns,table.Column{Title: "Dist (m)", Width: 10})
-  }
-  if (sf["_DistanceDays"]) {
-    columns = append(columns,table.Column{Title: "Days from now", Width: 10})
-  }
-  if (sf["_Start_Month_Name"]) {
-    columns = append(columns,table.Column{Title: "Month", Width: 10})
   }
 
-  rows := []table.Row{}
-  for _, evt := range es {
-    rows = append(rows,ToTableRow(evt,sf))
-  }
+  rows := ToTableRows(es)
 
-  t := table.New(
-    table.WithColumns(columns),
-    table.WithRows(rows),
-    table.WithFocused(true),
-    table.WithHeight(30),
-  )
+  keys := table.DefaultKeyMap()
+  keys.RowDown.SetKeys("j", "down")
+  keys.RowUp.SetKeys("k", "up")
 
-  s := table.DefaultStyles()
+  t := table.New(columns).
+    WithRows(rows).
+    HeaderStyle(columnHeaderStyle).
+    //SelectableRows(true).
+    Focused(true).
+    //Border(customBorder).
+    WithKeyMap(keys).
+    WithStaticFooter("A bird in the hand is worth two in the bush.").
+    WithPageSize(20).
+    //WithSelectedText(" ", "✓").
+    WithBaseStyle(
+      lipgloss.NewStyle().
+      BorderForeground(lipgloss.Color("#a38")).
+      Foreground(lipgloss.Color("#a7a")).
+      Align(lipgloss.Left),
+      ).
+    SortByAsc(columnKeyDaysFromNow).
+    WithMissingDataIndicatorStyled(table.StyledCell{
+      Style: lipgloss.NewStyle().Foreground(lipgloss.Color("#faa")),
+      Data:  "😕",
+    })
 
-  s.Header = s.Header.
-    BorderStyle(lipgloss.NormalBorder()).
-    BorderForeground(lipgloss.Color("240")).
-    BorderBottom(true).
-    Bold(false)
-  s.Selected = s.Selected.
-    Foreground(lipgloss.Color("229")).
-    Background(lipgloss.Color("57")).
-    Bold(false)
-
-  t.SetStyles(s)
-
-  return model{t,es,es,sf}
+  return model{t,es,es}
 
 }
 
@@ -175,6 +223,15 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+    var (
+      cmd tea.Cmd
+      cmds []tea.Cmd
+    )
+
+    m.table, cmd  = m.table.Update(msg)
+    cmds = append(cmds, cmd)
+
     // 'type  assertion'
     switch msg := msg.(type) {
 
@@ -182,51 +239,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
         switch msg.String() {
 
-        case "d":
-          sort.Slice(m.filterEvents, func(i, j int) bool {
-            return m.filterEvents[i].Distance < m.filterEvents[j].Distance
-          })
-        case "D":
-          sort.Slice(m.filterEvents, func(i, j int) bool {
-            return m.filterEvents[i].Distance > m.filterEvents[j].Distance
-          })
-        case "t":
-          sort.Slice(m.filterEvents, func(i, j int) bool {
-            return m.filterEvents[i].DaysFromNow < m.filterEvents[j].DaysFromNow
-          })
-        case "T":
-          sort.Slice(m.filterEvents, func(i, j int) bool {
-            return m.filterEvents[i].DaysFromNow > m.filterEvents[j].DaysFromNow
-          })
         case "ctrl+c", "q":
             return m, tea.Quit
-        case "up", "k":
-          m.table.MoveUp(1)
-        case "down", "j":
-          m.table.MoveDown(1)
-        case "enter", " ":
-          m.table.Blur()
         }
 
-        m.table.SetRows(ToTableRows(m.filterEvents,m.showField))
     }
 
-    // Return the updated model to the Bubble Tea runtime for processing.
-    // Note that we're not returning a command.
-    return m, nil
+    return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
 
-    // The header
     s := "Events near you!\n\n"
 
-    s += baseStyle.Render(m.table.View())
+    s += m.table.View()
 
-    // The footer
-    s += "\nPress q to quit.\n"
-
-    // Send the UI for rendering
     return s
 
 }
