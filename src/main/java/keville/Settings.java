@@ -40,9 +40,9 @@ public class Settings {
     }
 
     settings.delay = json.get("delay").getAsInt();
-    settings.meetup  =  json.get("EVENTBRITE").getAsBoolean();
-    settings.allevents = json.get("MEETUP").getAsBoolean();
-    settings.eventbrite =  json.get("ALLEVENTS").getAsBoolean();
+    settings.meetup  =  json.get("MEETUP").getAsBoolean();
+    settings.allevents = json.get("ALLEVENTS").getAsBoolean();
+    settings.eventbrite =  json.get("EVENTBRITE").getAsBoolean();
 
     settings.runOnRestart=  json.get("run_on_restart").getAsBoolean();
 

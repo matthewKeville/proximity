@@ -60,7 +60,7 @@ public class MeetupScanner implements EventScanner {
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
       ChromeOptions options = new ChromeOptions();
-      options.addArguments("headless");
+      //options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 
@@ -68,7 +68,7 @@ public class MeetupScanner implements EventScanner {
       proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
       proxy.newHar("eventScanHar");
 
-      String targetUrl = createTargetUrl(location); //TBD pass in radius
+      String targetUrl = createTargetUrl(location,radius);
       if ( targetUrl == null ) {
         LOG.error("unusable target url , aborting scan ");
         LOG.error("location\n" + location.toString());
@@ -156,7 +156,7 @@ public class MeetupScanner implements EventScanner {
       return newEvents.size();
   }
 
-  private String createTargetUrl(Location location) {
+  private String createTargetUrl(Location location,double radius) {
 
       //         "belmar"                       "nj"                    "us"
       if ( location.locality == null || location.region == null || location.country == null ) {
@@ -172,8 +172,22 @@ public class MeetupScanner implements EventScanner {
         LOG.warn(warnMsg);
       }
 
-      String distanceString = "fiveMiles";  // english distance string | Ex. "fiveMiles" TODO: make programmatic
-      String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS&distance=%s",location.country,location.region,location.locality,distanceString);
+      String distanceString  = "";
+      if ( radius <= 2.0 )  {
+        distanceString  = "&distance=twoMiles";
+      } else if ( radius <= 5.0 ) {
+        distanceString  = "&distance=fiveMiles";
+      } else if ( radius <=  10.0 ) {
+        distanceString  = "&distance=tenMiles";
+      } else if ( radius <= 25.0 ) {
+        distanceString  = "&distance=twentyFiveMiles";
+      } else if ( radius <= 50.0 ) {
+        distanceString  = "&distance=fiftyMiles";
+      } else if ( radius <= 100.0 ) {
+        distanceString  = "&distance=hundredMiles";
+      }
+
+      String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS%s",location.country,location.region,location.locality,distanceString);
 
       return targetUrl;
   }
