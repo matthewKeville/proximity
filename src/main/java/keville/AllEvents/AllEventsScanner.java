@@ -5,17 +5,12 @@ import keville.USStateAndTerritoryCodes;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
-import keville.EventBuilder;
-import keville.SchemaUtil;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 import keville.EventService;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
-
-import java.io.StringWriter;
 
 import java.time.Duration;
 
@@ -30,11 +25,6 @@ import net.lightbody.bmp.client.ClientUtil;
 import net.lightbody.bmp.core.har.Har;
 import net.lightbody.bmp.proxy.CaptureType;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonObject;
-
 public class AllEventsScanner implements EventScanner {
 
   
@@ -48,14 +38,13 @@ public class AllEventsScanner implements EventScanner {
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
       String targetUrl = createTargetUrl(location);
       if ( targetUrl == null ) {
-        LOG.error("unusable target url , aborting scan ");
+        LOG.error("invalid target url , aborting scan ");
         LOG.error("location\n" + location.toString());
         return 0;
       }
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
-      proxy.start(0); /* can concurrent instances use the same port? */
-      LOG.info("Scan started on port "+proxy.getPort());
+      proxy.start(0);
       Proxy seleniumProxy = ClientUtil.createSeleniumProxy(proxy);
       seleniumProxy.setHttpProxy("localhost:"+proxy.getPort());
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
@@ -72,85 +61,31 @@ public class AllEventsScanner implements EventScanner {
 
       LOG.info("targetting initial url \n" + targetUrl);
       driver.get(targetUrl);
-      LOG.info("after driver.get");
 
-      //////////////////////////////////////////////////////////
       // TODO expand result set until no more results appear
-      //////////////////////////////////////////////////////////
 
-        //scroll down until we are at the same level as view more button
-
-      // process HAR data from event list page
-      
       Har har = proxy.getHar();
-      StringWriter harStringWriter = new StringWriter();
-
-      try {
-        har.writeTo(harStringWriter);
-      } catch (Exception e) {
-        LOG.error("unable to extract HAR data as string");
-        LOG.error(e.getMessage());
-      }
-      proxy.endHar();
-
-      // extract the event stub data (incomplete data set for events)
-
-      String eventStubsJson= AllEventsHarProcessor.extractEventStubsJson(harStringWriter.toString(),targetUrl);
-      if ( eventStubsJson ==  null ) {
-        LOG.warn("found no event data from this scan");
-        return 0;
-      }
-
-      JsonArray eventStubs = JsonParser.parseString(eventStubsJson).getAsJsonArray();
-
-      List<Event> newEvents = new ArrayList<Event>();
-      LOG.info("found " + eventStubs.size() + " event stubs ");
-      for ( JsonElement eventStub : eventStubs ) {
-
-        //create stub event in place of full event
-        JsonObject eventStubJson = eventStub.getAsJsonObject();
-        newEvents.add(createEventStubFrom(eventStubJson));
-
-      }
-
-      //close web driver
 
       if (driver != null) {
         proxy.stop();
         driver.quit();
       }
 
-      // send new events to event service
+      List<Event> events  = AllEventsHarProcessor.process(har,targetUrl);
 
-      newEvents = newEvents.stream()
-        .distinct()
+      events = events.stream()
+        .distinct() 
+        .filter ( e -> !EventService.exists(EventTypeEnum.ALLEVENTS,e.eventId) )
         .collect(Collectors.toList());
-      EventService.createEvents(newEvents);
 
-      LOG.info(" allEvents scanner generated " + newEvents.size() + " new events " );
+      EventService.createEvents(events);
 
-      return newEvents.size();
-  }
+      LOG.info(" allevents scanner found  " + events.size());
 
-  /* 
-     this is a limited Event object that is missing other fields are
-     required to really be an 'Event' such as Time (instead of just date) and a formal
-     description. 
-
-     For testing purposes, I will use this limited Event as an Event, while I run tests
-     to see if full Event collection is feasible or desirable when the Event update protocol
-     has yet to be formulated. The main reason why I am reticent to grab the full data is
-     it would require a new web request per event which could seem suspicious to allEvents.in
-  */
-  private Event createEventStubFrom(JsonObject eventJson) {
-
-    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
-    eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
-    eb.setEventId(extractIdFromJson(eventJson)); 
-
-    return eb.build();
+      return events.size();
 
   }
+
 
 
   private String createTargetUrl(Location location) {
@@ -185,17 +120,5 @@ public class AllEventsScanner implements EventScanner {
 
   }
 
-  //https://allevents.in/asbury%20park/sea-hear-now-festival-the-killers-foo-fighters-greta-van-fleet-and-weezer-2-day-pass/230005595539097
-  //assuming the last bit is the eventId
-  private String extractIdFromJson(JsonObject eventJson) {
-
-    String url = eventJson.get("url").getAsString(); 
-
-    String [] splits = url.split("/");
-    if ( splits.length == 0 ) {
-      LOG.error("could not extract event id from url");
-    } 
-    return splits[splits.length-1];
-  }
 
 }
