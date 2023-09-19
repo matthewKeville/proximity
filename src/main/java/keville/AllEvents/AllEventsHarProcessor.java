@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Arrays;
-import java.util.Base64;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
@@ -28,6 +26,7 @@ public class AllEventsHarProcessor {
     public static List<Event> process(Har har,String targetUrl) {
 
       List<Event> events = extractEventsFromStaticPage(HarUtil.harToString(har),targetUrl);
+      // TODO : extractEventsFromAjax
       return events;
 
     }
@@ -36,38 +35,18 @@ public class AllEventsHarProcessor {
 
       // Find inital web response
         
-      JsonObject response = HarUtil.findResponseFromRequestUrl(harString,targetUrl);
-
+      JsonObject response = HarUtil.findResponseFromRequestUrl(harString,targetUrl,true);
       if ( response == null ) {
 
-        LOG.warn("assumption not met, could not find  initial repsonse content aborting...");
+        LOG.warn("unable to find intial web response");
         HarUtil.saveHARtoLFS(harString,"allevents-error.har");
         return null;
 
       }
 
-      // was it a redirect?
-      
-      String redirectURL = response.get("redirectURL").getAsString();
-
-      if ( !redirectURL.isEmpty() ) {
-
-        LOG.debug("using redirect response");
-        response = HarUtil.findResponseFromRequestUrl(harString,redirectURL);
-
-        if ( response == null ) {
-
-          LOG.info("assumption not met, could not find redirect response content aborting...");
-          HarUtil.saveHARtoLFS(harString,"allevents-error.har");
-          return null;
-
-        }
-
-      }
-
       // get the response data
 
-      String webpageData = getDecodedResponseText(response);
+      String webpageData = HarUtil.getDecodedResponseText(response);
       if ( webpageData == null ) {
 
         LOG.error("initial response data is empty");
@@ -102,6 +81,7 @@ public class AllEventsHarProcessor {
 
   }
 
+  // finds the JsonSchema data embedded in the webpage markkup
   private static JsonArray extractJsonSchemaEventArray(String webPageData) {
 
         // select JSON-LD string (exists between script tags in the markup)
@@ -131,57 +111,9 @@ public class AllEventsHarProcessor {
 
           LOG.error("error extracting JSON-LD from the unencoded post data text");
           LOG.error(e.getMessage());
-
-        }
-
-        return null;
-
-  }
-
-  private static String getDecodedResponseText(JsonObject response) {
-
-      // extract text content from the response ( may be base64 encoded )
-     
-      JsonObject responseContent = response.get("content").getAsJsonObject();
-
-      if ( responseContent.has("encoding") ) {
-
-        String enc = responseContent.get("encoding").getAsString();
-
-        if ( enc.equals("base64") ) {
-
-          LOG.debug("response was encoded with base64, decoding...");
-
-          String base64ResponseText = responseContent.get("text").getAsString();
-
-          // decode base64
-
-          try {
-
-            byte[] decodedBytes = Base64.getDecoder().decode(base64ResponseText);
-            return Arrays.toString(decodedBytes);
-
-          } catch (Exception e) {
-
-            LOG.error("unable to decode initial response entry from ");
-            LOG.error(e.getMessage());
-            return null;
-
-          }
-
-        } else {
-
-          LOG.error("this response is encoded with " + enc + " which is not currently supported aborting...");
           return null;
 
         }
-
-      } else {
-
-        LOG.warn("response was not encoded i.e. plain text");
-        return responseContent.get("text").getAsString();
-
-      }
 
   }
 

@@ -1,5 +1,8 @@
 package keville;
 
+import java.util.Arrays;
+import java.util.Base64;
+
 import java.io.PrintStream;
 import java.io.FileOutputStream;
 import java.io.StringWriter;
@@ -17,6 +20,10 @@ public class HarUtil {
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(HarUtil.class);
 
   public static JsonObject findResponseFromRequestUrl(String harString,String targetUrl) {
+    return findResponseFromRequestUrl(harString,targetUrl,false);
+  }
+
+  public static JsonObject findResponseFromRequestUrl(String harString,String targetUrl,boolean followRedirect) {
 
     JsonObject harJson = JsonParser.parseString(harString).getAsJsonObject();
     JsonArray entries = harJson.get("log").getAsJsonObject().get("entries").getAsJsonArray();
@@ -37,6 +44,16 @@ public class HarUtil {
 
     if ( response == null ) {
       LOG.warn("unable to find a valid response for the request url : " + targetUrl);
+    }
+
+    // was it a redirect?
+    String redirectURL = response.get("redirectURL").getAsString();
+
+    if ( !redirectURL.isEmpty() && followRedirect ) {
+
+      LOG.debug("using redirect response");
+      return findResponseFromRequestUrl(harString,redirectURL,true);
+
     }
 
     return response;
@@ -71,6 +88,53 @@ public class HarUtil {
       }
 
       return harStringWriter.toString();
+
+  }
+
+  public static String getDecodedResponseText(JsonObject response) {
+
+      // extract text content from the response ( may be base64 encoded )
+     
+      JsonObject responseContent = response.get("content").getAsJsonObject();
+
+      if ( responseContent.has("encoding") ) {
+
+        String enc = responseContent.get("encoding").getAsString();
+
+        if ( enc.equals("base64") ) {
+
+          LOG.debug("response was encoded with base64, decoding...");
+
+          String base64ResponseText = responseContent.get("text").getAsString();
+
+          // decode base64
+
+          try {
+
+            byte[] decodedBytes = Base64.getDecoder().decode(base64ResponseText);
+            return Arrays.toString(decodedBytes);
+
+          } catch (Exception e) {
+
+            LOG.error("unable to decode initial response entry from ");
+            LOG.error(e.getMessage());
+            return null;
+
+          }
+
+        } else {
+
+          LOG.error("this response is encoded with " + enc + " which is not currently supported aborting...");
+          return null;
+
+        }
+
+      } else {
+
+        LOG.warn("response was not encoded i.e. plain text");
+        return responseContent.get("text").getAsString();
+
+      }
 
   }
 
