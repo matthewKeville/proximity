@@ -1,18 +1,15 @@
 package keville;
 
 import keville.util.JSONUtils;
-import keville.AllEvents.AllEventsHarUtil;
+import keville.AllEvents.AllEventsHarProcessor;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import org.junit.Test;
 import org.junit.Ignore;
 import org.junit.BeforeClass;
 
 import java.util.Properties;
-import java.util.List;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -66,7 +63,7 @@ public class AllEventsScannerTests
     @Ignore
     public void extractEventsJsonReturnsValidJson()
     {
-      String  eventJsonPayload = AllEventsHarUtil.extractEventStubsJson(harString,"");
+      String  eventJsonPayload = AllEventsHarProcessor.extractEventStubsJson(harString,"");
       assertTrue(JSONUtils.isValidJson(eventJsonPayload));
     }
 

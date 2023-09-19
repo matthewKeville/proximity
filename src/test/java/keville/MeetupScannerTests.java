@@ -1,7 +1,7 @@
 package keville;
 
 import keville.util.JSONUtils;
-import keville.meetup.MeetupHarUtil;
+import keville.meetup.MeetupHarProcessor;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -66,7 +66,7 @@ public class MeetupScannerTests
     @Ignore
     public void extractEventsJsonReturnsValidJson()
     {
-      String jsonString = MeetupHarUtil.extractEventsJson(harString);
+      String jsonString = MeetupHarProcessor.extractEventsJson(harString);
       boolean valid = JSONUtils.isValidJson(jsonString);
       assertTrue(JSONUtils.isValidJson(jsonString));
     }

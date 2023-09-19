@@ -95,7 +95,7 @@ public class AllEventsScanner implements EventScanner {
 
       // extract the event stub data (incomplete data set for events)
 
-      String eventStubsJson= AllEventsHarUtil.extractEventStubsJson(harStringWriter.toString(),targetUrl);
+      String eventStubsJson= AllEventsHarProcessor.extractEventStubsJson(harStringWriter.toString(),targetUrl);
       if ( eventStubsJson ==  null ) {
         LOG.warn("found no event data from this scan");
         return 0;
@@ -110,11 +110,6 @@ public class AllEventsScanner implements EventScanner {
         //create stub event in place of full event
         JsonObject eventStubJson = eventStub.getAsJsonObject();
         newEvents.add(createEventStubFrom(eventStubJson));
-
-        /*
-        String url = eventStub.getAsJsonObject().get("url").getAsString();
-        // scrubEventDataFromUrl(Driver driver,Proxy proxy,String url);
-        */
 
       }
 
@@ -136,16 +131,6 @@ public class AllEventsScanner implements EventScanner {
 
       return newEvents.size();
   }
-
-  /*
-     This is a stub for a protocol that would visit event stub urls and grab the full event data
-  */
-  /*
-  private Event scrubEventDataFromUrl(Driver driver,Proxy proxy,String url) {
-  
-  }
-  */
-
 
   /* 
      this is a limited Event object that is missing other fields are

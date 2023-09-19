@@ -60,7 +60,7 @@ public class MeetupScanner implements EventScanner {
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
       ChromeOptions options = new ChromeOptions();
-      //options.addArguments("headless");
+      options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 
@@ -119,7 +119,7 @@ public class MeetupScanner implements EventScanner {
         driver.quit();
       }
 
-      String jsonData = MeetupHarUtil.extractEventsJson(harStringWriter.toString());
+      String jsonData = MeetupHarProcessor.extractEventsJson(harStringWriter.toString(),targetUrl);
 
       // package json event data into application Event
       int alreadyExists = 0;

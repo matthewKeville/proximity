@@ -12,3 +12,4 @@ custom.properties
 custom.json
 custom.json.bak
 sensitive/*
+*.har

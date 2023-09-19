@@ -37,6 +37,7 @@ public class Settings {
     } else {
       settings.latitude = json.get("latitude").getAsDouble();
       settings.longitude = json.get("longitude").getAsDouble();
+      LOG.info("using geocoordinate locataion : " + settings.latitude + " , " + settings.longitude);
     }
 
     settings.delay = json.get("delay").getAsInt();
