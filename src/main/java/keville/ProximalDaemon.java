@@ -29,7 +29,6 @@ public class ProximalDaemon
 
     public static void main( String[] args )
     {
-        List<Event> events = eventService.getEvents();
         Gson gson = new GsonBuilder()
           .registerTypeAdapter(Instant.class, new InstantAdapter())
           .create();
@@ -40,18 +39,18 @@ public class ProximalDaemon
             { 
               LOG.info("recieved GET /events");
               return gson.toJson(
-                 events
+                 eventService.getEvents()
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
                 .filter(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius))
-                //.filter(Events.InTheFuture())
+                .filter(Events.InTheFuture())
                 .map( e -> Events.CreateClientEvent(e,settings.latitude,settings.longitude) )
                 .collect(Collectors.toList())
               );
             });
 
 
-        get("/event", (req, res) -> gson.toJson(events.get(0)));
+        get("/event", (req, res) -> gson.toJson(eventService.getEvents().get(0)));
 
     }
 

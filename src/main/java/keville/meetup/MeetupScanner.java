@@ -4,21 +4,12 @@ import keville.Settings;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;
-import keville.SchemaUtil;
-import keville.EventBuilder;
 import keville.EventScanner;
 import keville.EventTypeEnum;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Properties;
 import java.util.stream.Collectors;
-
-import java.io.StringWriter;
-
-import java.time.Instant;
 import java.time.Duration;
-import java.time.format.DateTimeFormatter;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -31,11 +22,6 @@ import net.lightbody.bmp.BrowserMobProxyServer;
 import net.lightbody.bmp.client.ClientUtil;
 import net.lightbody.bmp.core.har.Har;
 import net.lightbody.bmp.proxy.CaptureType;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonObject;
 
 public class MeetupScanner implements EventScanner {
 
@@ -105,55 +91,25 @@ public class MeetupScanner implements EventScanner {
       }
       
       Har har = proxy.getHar();
-      StringWriter harStringWriter = new StringWriter();
-
-      try {
-        har.writeTo(harStringWriter);
-      } catch (Exception e) {
-        LOG.error("unable to extract HAR data as string");
-        LOG.error(e.getMessage());
-      }
 
       if (driver != null) {
         proxy.stop();
         driver.quit();
       }
 
-      String jsonData = MeetupHarProcessor.extractEventsJson(harStringWriter.toString(),targetUrl);
+      List<Event> events = MeetupHarProcessor.process(har,targetUrl);
 
-      // package json event data into application Event
-      int alreadyExists = 0;
-      List<Event> newEvents = new ArrayList<Event>();
-      if (!jsonData.equals("")) {
-
-        JsonArray eventsArray = JsonParser.parseString(jsonData).getAsJsonArray();
-
-        for (JsonElement jo : eventsArray) {
-
-          JsonObject event = jo.getAsJsonObject();
-          String id = meetupJsonId(event);
-
-          // only process new event ids
-          if (!eventService.exists(EventTypeEnum.MEETUP,id)) {
-            newEvents.add(createEventFrom(event));
-          } else {
-            alreadyExists++;
-          }
-        }
-
-      } else {
-        LOG.info("json data is empty!");
-      }
-
-
-      newEvents = newEvents.stream()
+      events = events.stream()
         .distinct() 
+        .filter ( e -> !eventService.exists(EventTypeEnum.MEETUP,e.eventId) )
         .collect(Collectors.toList());
-      eventService.createEvents(newEvents);
 
-      LOG.info(" meetup scanner found  " + newEvents.size() + " potential new events and " + alreadyExists + " known events ");
+      eventService.createEvents(events);
 
-      return newEvents.size();
+      LOG.info(" meetup scanner found  " + events.size());
+
+      return events.size();
+
   }
 
   private String createTargetUrl(Location location,double radius) {
@@ -193,6 +149,7 @@ public class MeetupScanner implements EventScanner {
   }
 
 
+  /*
   private Event createEventFrom(JsonObject eventJson) {
 
     EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
@@ -210,5 +167,6 @@ public class MeetupScanner implements EventScanner {
       String[] splits = url.split("/");
       return splits[splits.length-1];
   }
+  */
 
 }

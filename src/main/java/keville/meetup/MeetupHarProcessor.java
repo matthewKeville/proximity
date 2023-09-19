@@ -1,21 +1,39 @@
 package keville.meetup;
 
+import keville.Event;
+import keville.EventBuilder;
+import keville.SchemaUtil;
 import keville.HarUtil;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.util.Arrays;
 import java.util.Base64;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
 
-import org.apache.commons.text.StringEscapeUtils;
+import net.lightbody.bmp.core.har.Har;
+
+import keville.EventTypeEnum;
 
 public class MeetupHarProcessor {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupHarProcessor.class);
 
-    public static String extractEventsJson(String harString,String targetUrl) {
+
+    public static List<Event> process(Har har,String targetUrl) {
+      List<Event> events = extractEventsFromStaticPage(HarUtil.harToString(har),targetUrl);
+      //  TODO : extractEventsFromAjax 
+      return events;
+    }
+
+
+    public static List<Event> extractEventsFromStaticPage(String harString,String targetUrl) {
 
       String eventJsonRaw = "";
 
@@ -120,15 +138,38 @@ public class MeetupHarProcessor {
         return null;
 
       }
+    
+      List<Event> newEvents = new ArrayList<Event>();
+
+      JsonArray eventsArray = JsonParser.parseString(eventJsonRaw).getAsJsonArray();
+
+      for (JsonElement jo : eventsArray) {
+
+        JsonObject event = jo.getAsJsonObject();
+        newEvents.add(createEventFrom(event));
+
+      }
+
+      return newEvents;
+
+  }  
 
 
-      // Unescape json data
-      //String eventJson = StringEscapeUtils.unescapeJson(eventJsonRaw);
+  private static Event createEventFrom(JsonObject eventJson) {
 
-      //return eventJson;
-      return eventJsonRaw;
-      
+    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
+    eb.setEventTypeEnum(EventTypeEnum.MEETUP);
 
+    //I am assuming this last part is the eventId
+    //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/
+    String url = eventJson.get("url").getAsString(); 
+    String[] splits = url.split("/");
+    String id = splits[splits.length-1];
+
+    eb.setEventId(id); 
+
+    return eb.build();
   }
+
 
 }

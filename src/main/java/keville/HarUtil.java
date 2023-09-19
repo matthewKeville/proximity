@@ -2,11 +2,14 @@ package keville;
 
 import java.io.PrintStream;
 import java.io.FileOutputStream;
+import java.io.StringWriter;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
+
+import net.lightbody.bmp.core.har.Har;
 
 
 public class HarUtil {
@@ -53,6 +56,21 @@ public class HarUtil {
         LOG.error("error trying to save HAR file to LFS");
 
       }
+
+  }
+
+  public static String harToString(Har har) {
+
+      StringWriter harStringWriter = new StringWriter();
+
+      try {
+        har.writeTo(harStringWriter);
+      } catch (Exception e) {
+        LOG.error("unable to extract HAR data as string");
+        LOG.error(e.getMessage());
+      }
+
+      return harStringWriter.toString();
 
   }
 
