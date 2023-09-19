@@ -1,5 +1,6 @@
 package keville;
 
+import keville.Eventbrite.EventCache;
 import keville.gson.InstantAdapter;
 
 import java.util.stream.Collectors;
@@ -68,7 +69,8 @@ public class ProximalDaemon
         System.exit(1);
       }
 
-      eventService = new EventService(settings);
+      EventCache.applySettings(settings);
+      eventService = new EventService(settings); // TODO: make this static
       EventScannerScheduler scheduler = new EventScannerScheduler(eventService, settings);
       scheduleThread = new Thread(scheduler, "EventScannerScheduler");
       scheduleThread.start();

@@ -2,8 +2,6 @@ package keville.Eventbrite;
 
 import keville.Settings;
 
-import java.util.Properties;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -23,16 +21,15 @@ import java.sql.ResultSet;
 public class EventCache {
 
   private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
-  private HttpClient httpClient;
-  private String BEARER_TOKEN;
+
+  private static Settings settings;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
-  public EventCache (Settings settings) {
-    BEARER_TOKEN = settings.eventBriteApiKey;
-    httpClient = HttpClient.newHttpClient();
+  public static void applySettings(Settings s) {
+    settings = s;
   }
 
-  public JsonObject get(String eventId) {
+  public static JsonObject get(String eventId) {
     JsonObject eventJson = getEventJsonFromDb(eventId);
     if ( (eventJson == null) ) {
       LOG.info(String.format("local miss on event %s",eventId));
@@ -48,7 +45,7 @@ public class EventCache {
     return eventJson;
   }
 
-  private Connection getDbConnection() {
+  private static Connection getDbConnection() {
     Connection con  = null;
     String connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
     LOG.debug("connecting to " + connectionString);
@@ -63,7 +60,7 @@ public class EventCache {
     return con;
   }
 
-  private void closeDbConnection(Connection con) {
+  private static void closeDbConnection(Connection con) {
     try {
       con.close();
     } catch (Exception e) {
@@ -72,7 +69,7 @@ public class EventCache {
     }
   }
 
-  private boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
+  private static boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
 
     Connection con = getDbConnection();
     try {
@@ -93,7 +90,7 @@ public class EventCache {
   }
 
 
-  private JsonObject getEventJsonFromDb(String eventId) {
+  private static JsonObject getEventJsonFromDb(String eventId) {
 
     String json ="";
     JsonObject jsonEvent = null;
@@ -117,8 +114,9 @@ public class EventCache {
     return jsonEvent;
   }
 
-  private JsonObject getEventFromApi(String eventId) {
+  private static JsonObject getEventFromApi(String eventId) {
 
+    HttpClient  httpClient = HttpClient.newHttpClient();
     HttpRequest getRequest;
     JsonObject eventJson = null;
 
@@ -128,7 +126,7 @@ public class EventCache {
       URI uri = new URI(eventBaseUri+eventId+"/"+"?expand=organizer,venue");
       getRequest = HttpRequest.newBuilder()
         .uri(uri) 
-        .header("Authorization","Bearer "+BEARER_TOKEN)
+        .header("Authorization","Bearer "+settings.eventBriteApiKey)
         .GET()
         .build();
 
