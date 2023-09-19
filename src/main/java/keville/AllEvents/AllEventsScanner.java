@@ -9,6 +9,7 @@ import keville.EventBuilder;
 import keville.SchemaUtil;
 import keville.EventScanner;
 import keville.EventTypeEnum;
+import keville.EventService;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -36,11 +37,10 @@ import com.google.gson.JsonObject;
 
 public class AllEventsScanner implements EventScanner {
 
-  private keville.EventService eventService;
+  
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AllEventsScanner.class);
 
-  public AllEventsScanner(keville.EventService eventService,Settings settings) {
-    this.eventService = eventService;
+  public AllEventsScanner(Settings settings) {
   }
 
   public int scan(double latitude, double longitude, double radius) throws Exception {
@@ -125,7 +125,7 @@ public class AllEventsScanner implements EventScanner {
       newEvents = newEvents.stream()
         .distinct()
         .collect(Collectors.toList());
-      eventService.createEvents(newEvents);
+      EventService.createEvents(newEvents);
 
       LOG.info(" allEvents scanner generated " + newEvents.size() + " new events " );
 

@@ -18,13 +18,11 @@ public class EventScannerScheduler implements Runnable {
   private MeetupScanner meetupScanner;
   private AllEventsScanner allEventsScanner;
 
+  public EventScannerScheduler(Settings settings) {
 
-  /* DI would be convenient here, this class doesn't need eventService */
-  public EventScannerScheduler(EventService eventService, Settings settings) {
-
-    eventbriteScanner = new EventbriteScanner(eventService, settings);
-    meetupScanner = new MeetupScanner(eventService, settings);
-    allEventsScanner = new AllEventsScanner(eventService, settings);
+    eventbriteScanner = new EventbriteScanner(settings);
+    meetupScanner = new MeetupScanner(settings);
+    allEventsScanner = new AllEventsScanner(settings);
 
     jobs = new ArrayList<EventScanJob>();
     loadScanJobs(settings);

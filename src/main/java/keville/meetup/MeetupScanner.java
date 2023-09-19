@@ -6,6 +6,7 @@ import keville.Location;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
+import keville.EventService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,17 +26,23 @@ import net.lightbody.bmp.proxy.CaptureType;
 
 public class MeetupScanner implements EventScanner {
 
-  private keville.EventService eventService;
+  
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScanner.class);
 
-  public MeetupScanner(keville.EventService eventService, Settings settings) {
-    this.eventService = eventService;
+  public MeetupScanner(Settings settings) {
   }
 
   public int scan(double latitude, double longitude, double radius) throws Exception {
 
-      //My meetup scrubbing protocol requires huamn readable address formats ( city & state )
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
+
+      String targetUrl = createTargetUrl(location,radius);
+      if ( targetUrl == null ) {
+        LOG.error("unusable target url , aborting scan ");
+        LOG.error("location\n" + location.toString());
+        return 0;
+      }
+      LOG.info("targetting url \n" + targetUrl);
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
       proxy.start(0); /* can concurrent instances use the same port? */
@@ -53,14 +60,6 @@ public class MeetupScanner implements EventScanner {
       WebDriver driver = new ChromeDriver(options);
       proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
       proxy.newHar("eventScanHar");
-
-      String targetUrl = createTargetUrl(location,radius);
-      if ( targetUrl == null ) {
-        LOG.error("unusable target url , aborting scan ");
-        LOG.error("location\n" + location.toString());
-        return 0;
-      }
-      LOG.info("targetting url \n" + targetUrl);
 
       driver.get(targetUrl);
       driver.manage().timeouts().implicitlyWait(Duration.ofMillis(500));
@@ -101,10 +100,10 @@ public class MeetupScanner implements EventScanner {
 
       events = events.stream()
         .distinct() 
-        .filter ( e -> !eventService.exists(EventTypeEnum.MEETUP,e.eventId) )
+        .filter ( e -> !EventService.exists(EventTypeEnum.MEETUP,e.eventId) )
         .collect(Collectors.toList());
 
-      eventService.createEvents(events);
+      EventService.createEvents(events);
 
       LOG.info(" meetup scanner found  " + events.size());
 
@@ -148,25 +147,5 @@ public class MeetupScanner implements EventScanner {
       return targetUrl;
   }
 
-
-  /*
-  private Event createEventFrom(JsonObject eventJson) {
-
-    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
-    eb.setEventTypeEnum(EventTypeEnum.MEETUP);
-    eb.setEventId(meetupJsonId(eventJson)); 
-
-    return eb.build();
-  }
-
-
-  //I am assuming this last part is the eventId
-  //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/
-  private String meetupJsonId(JsonObject eventJson) {
-      String url = eventJson.get("url").getAsString(); 
-      String[] splits = url.split("/");
-      return splits[splits.length-1];
-  }
-  */
 
 }

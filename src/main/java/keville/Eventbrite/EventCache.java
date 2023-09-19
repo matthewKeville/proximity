@@ -32,7 +32,7 @@ public class EventCache {
   public static JsonObject get(String eventId) {
     JsonObject eventJson = getEventJsonFromDb(eventId);
     if ( (eventJson == null) ) {
-      LOG.info(String.format("local miss on event %s",eventId));
+      LOG.debug(String.format("local miss on event %s",eventId));
       eventJson = getEventFromApi(eventId);
       if (eventJson != null ) {
         createEventJsonInDb(eventId, eventJson);
@@ -40,7 +40,7 @@ public class EventCache {
         LOG.error("eventbrite api generated a null eventjson");
       }
     } else {
-      LOG.info(String.format("local hit on event %s",eventId));
+      LOG.debug(String.format("local hit on event %s",eventId));
     }
     return eventJson;
   }
@@ -138,7 +138,7 @@ public class EventCache {
 
     try {
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      LOG.info(String.format("request returned %d",getResponse.statusCode()));
+      LOG.debug(String.format("request returned %d",getResponse.statusCode()));
       eventJson = JsonParser.parseString(getResponse.body()).getAsJsonObject();
     } catch (Exception e) {
       /*Interrupted / IO*/

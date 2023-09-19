@@ -4,6 +4,7 @@ import keville.Settings;
 import keville.Event;
 import keville.EventScanner;
 import keville.EventTypeEnum;
+import keville.EventService;
 
 import keville.util.GeoUtils;
 
@@ -29,18 +30,12 @@ import net.lightbody.bmp.proxy.CaptureType;
 
 public class EventbriteScanner implements EventScanner {
 
-  private keville.EventService eventService;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScanner.class);
 
-  public EventbriteScanner(keville.EventService eventService, Settings settings) {
-
-    this.eventService = eventService;
-
+  public EventbriteScanner(Settings settings) {
   }
 
   public int scan(double latitude, double longitude, double radius) throws Exception {
-
-      int page  = 0;
 
       LOG.info(String.format("beginning scan on %f,%f ", latitude, longitude));
 
@@ -52,7 +47,7 @@ public class EventbriteScanner implements EventScanner {
       seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
       ChromeOptions options = new ChromeOptions();
-      options.addArguments("headless"); //should be programmatic
+      options.addArguments("headless");
       options.setCapability(CapabilityType.PROXY, seleniumProxy);
       options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 
@@ -147,10 +142,10 @@ public class EventbriteScanner implements EventScanner {
 
       events = events.stream()
         .distinct() 
-        .filter ( e -> !eventService.exists(EventTypeEnum.EVENTBRITE,e.eventId) )
+        .filter ( e -> !EventService.exists(EventTypeEnum.EVENTBRITE,e.eventId) )
         .collect(Collectors.toList());
 
-      eventService.createEvents(events);
+      EventService.createEvents(events);
 
       LOG.info(" eventbrite scanner found  " + events.size());
 

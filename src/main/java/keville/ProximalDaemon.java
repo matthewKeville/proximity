@@ -4,7 +4,6 @@ import keville.Eventbrite.EventCache;
 import keville.gson.InstantAdapter;
 
 import java.util.stream.Collectors;
-import java.util.List;
 import java.time.Instant;
 
 import java.nio.file.Files;
@@ -19,7 +18,6 @@ import static spark.Spark.*;
 
 public class ProximalDaemon 
 {
-    static EventService eventService;
     static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
     static Thread scheduleThread;
     static Settings settings;
@@ -40,7 +38,7 @@ public class ProximalDaemon
             { 
               LOG.info("recieved GET /events");
               return gson.toJson(
-                 eventService.getEvents()
+                 EventService.getEvents()
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
                 .filter(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius))
@@ -51,7 +49,7 @@ public class ProximalDaemon
             });
 
 
-        get("/event", (req, res) -> gson.toJson(eventService.getEvents().get(0)));
+        get("/event", (req, res) -> gson.toJson(EventService.getEvents().get(0)));
 
     }
 
@@ -70,8 +68,10 @@ public class ProximalDaemon
       }
 
       EventCache.applySettings(settings);
-      eventService = new EventService(settings); // TODO: make this static
-      EventScannerScheduler scheduler = new EventScannerScheduler(eventService, settings);
+      EventService.applySettings(settings);
+
+      EventScannerScheduler scheduler = new EventScannerScheduler(settings);
+
       scheduleThread = new Thread(scheduler, "EventScannerScheduler");
       scheduleThread.start();
 

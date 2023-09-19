@@ -17,15 +17,15 @@ import java.time.format.DateTimeFormatter;
 
 public class EventService {
 
-  private String connectionString;
+  private static Settings settings;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventService.class);
 
-  public EventService(Settings settings) {
-    connectionString = settings.applicationConnectionString;
+  public static void applySettings(Settings s) {
+    settings = s;
   }
 
   /* locate an Event row in the database */
-  public Event getEvent(/* pk id */int id) {
+  public static Event getEvent(/* pk id */int id) {
     Connection con = getDbConnection();
     Event event;
     try {
@@ -46,7 +46,7 @@ public class EventService {
   }
 
   /* return a list of Events from the DB */
-  public List<Event> getEvents(Predicate<Event> filter) {
+  public static List<Event> getEvents(Predicate<Event> filter) {
 
     /* probably not a great idea to pull all events into memory, then filter.
      * sqlite is probably more optimized for filtering but that is more code overhead 
@@ -77,7 +77,7 @@ public class EventService {
   }
 
   /* get all events */
-  public List<Event> getEvents() {
+  public static List<Event> getEvents() {
     Predicate<Event> tautology = new Predicate<Event>() {
       public boolean test(Event e) { return true; }
     };
@@ -89,7 +89,7 @@ public class EventService {
    * Existence is determined by a unique combination of eventId (domain)
    * and eventType (source). [New events from scanners do not have id]
    */
-  public boolean exists(EventTypeEnum type, String eventId) {
+  public static boolean exists(EventTypeEnum type, String eventId) {
     Connection con = getDbConnection();
     try {
       PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
@@ -121,7 +121,7 @@ public class EventService {
    * 
    * @return : true if event creation succeeds
    */
-  public boolean createEvent(Event event) {
+  public static boolean createEvent(Event event) {
 
     Connection con = getDbConnection();
 
@@ -181,7 +181,7 @@ public class EventService {
    * 
    * @return : true if all events were created.
    */
-  public boolean createEvents(List<Event> events) {
+  public static boolean createEvents(List<Event> events) {
     int fails = 0;
     boolean allPass = true;
     for ( Event e : events ) {
@@ -195,12 +195,12 @@ public class EventService {
     return allPass;
   }
 
-  private Connection getDbConnection() {
+  private static Connection getDbConnection() {
     Connection con  = null;
-    LOG.debug("connecting to " + connectionString);
+    LOG.debug("connecting to " + settings.applicationConnectionString);
     try {
-      con = DriverManager.getConnection(connectionString);
-      LOG.debug("connected to " + connectionString);
+      con = DriverManager.getConnection(settings.applicationConnectionString);
+      LOG.debug("connected to " + settings.applicationConnectionString);
     } catch (SQLException e) {
       LOG.error("Critical error : unable to read events from database app.db");
       LOG.error(e.getMessage());
@@ -209,7 +209,7 @@ public class EventService {
     return con;
   }
 
-  private void closeDbConnection(Connection con) {
+  private static void closeDbConnection(Connection con) {
     try {
       con.close();
     } catch (Exception e) {
@@ -219,7 +219,7 @@ public class EventService {
   }
 
   // convert sqllite row to domain Event map
-  private Event eventRowToEvent(ResultSet rs) {
+  private static Event eventRowToEvent(ResultSet rs) {
 
     EventBuilder eb = new EventBuilder();
     LocationBuilder lb = new LocationBuilder();
