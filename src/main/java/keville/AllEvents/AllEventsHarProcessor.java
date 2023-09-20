@@ -35,7 +35,7 @@ public class AllEventsHarProcessor {
 
       // Find inital web response
         
-      JsonObject response = HarUtil.findResponseFromRequestUrl(harString,targetUrl,true);
+      JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
       if ( response == null ) {
 
         LOG.warn("unable to find intial web response");

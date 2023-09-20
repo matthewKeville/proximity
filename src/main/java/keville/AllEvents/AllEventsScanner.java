@@ -1,5 +1,6 @@
 package keville.AllEvents;
 
+import keville.ScanReport;
 import keville.Settings;
 import keville.USStateAndTerritoryCodes;
 import keville.util.GeoUtils;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -33,14 +35,16 @@ public class AllEventsScanner implements EventScanner {
   public AllEventsScanner(Settings settings) {
   }
 
-  public int scan(double latitude, double longitude, double radius) throws Exception {
+  public ScanReport scan(double latitude, double longitude, double radius) throws Exception {
+
+      Instant scanStart= Instant.now();
 
       Location location = GeoUtils.getLocationFromGeoCoordinates(latitude,longitude);
       String targetUrl = createTargetUrl(location);
       if ( targetUrl == null ) {
         LOG.error("invalid target url , aborting scan ");
         LOG.error("location\n" + location.toString());
-        return 0;
+        return new ScanReport(scanStart,Instant.now(),Instant.now(),0,0);
       }
       
       BrowserMobProxyServer proxy = new BrowserMobProxyServer();
@@ -71,6 +75,7 @@ public class AllEventsScanner implements EventScanner {
         driver.quit();
       }
 
+      Instant processStart = Instant.now();
       List<Event> events  = AllEventsHarProcessor.process(har,targetUrl);
 
       events = events.stream()
@@ -78,11 +83,9 @@ public class AllEventsScanner implements EventScanner {
         .filter ( e -> !EventService.exists(EventTypeEnum.ALLEVENTS,e.eventId) )
         .collect(Collectors.toList());
 
-      EventService.createEvents(events);
+      int successes = EventService.createEvents(events);
 
-      LOG.info(" allevents scanner found  " + events.size());
-
-      return events.size();
+      return new ScanReport(scanStart,processStart,Instant.now(),events.size(),successes);
 
   }
 

@@ -2,6 +2,8 @@ package keville;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
+import java.util.LinkedList;
 
 import java.io.PrintStream;
 import java.io.FileOutputStream;
@@ -19,11 +21,41 @@ public class HarUtil {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(HarUtil.class);
 
-  public static JsonObject findResponseFromRequestUrl(String harString,String targetUrl) {
-    return findResponseFromRequestUrl(harString,targetUrl,false);
+
+  // does not follow redirect
+  // does not check content
+  public static List<JsonObject> findAllResponsesFromRequestUrl(String harString,String targetUrl) {
+
+    JsonObject harJson = JsonParser.parseString(harString).getAsJsonObject();
+    JsonArray entries = harJson.get("log").getAsJsonObject().get("entries").getAsJsonArray();
+    List<JsonObject> responses = new LinkedList<JsonObject>();
+
+    for (JsonElement jo : entries) {
+
+      JsonObject entry = jo.getAsJsonObject();
+      JsonObject request = entry.get("request").getAsJsonObject();
+      String requestUrl = request.get("url").getAsString();
+
+      if ( requestUrl.equals(targetUrl)) {
+        responses.add(entry.get("response").getAsJsonObject());
+      }
+
+    }
+
+    if ( responses.size() == 0 ) {
+      LOG.warn("unable to find any responses matching a request url : " + targetUrl);
+    }
+    return responses;
+
   }
 
-  public static JsonObject findResponseFromRequestUrl(String harString,String targetUrl,boolean followRedirect) {
+  public static JsonObject findResponseFromRequestUrl(String harString,String targetUrl) {
+
+    return findFirstResponseFromRequestUrl(harString,targetUrl,false);
+
+  }
+
+  public static JsonObject findFirstResponseFromRequestUrl(String harString,String targetUrl,boolean followRedirect) {
 
     JsonObject harJson = JsonParser.parseString(harString).getAsJsonObject();
     JsonArray entries = harJson.get("log").getAsJsonObject().get("entries").getAsJsonArray();
@@ -52,7 +84,7 @@ public class HarUtil {
     if ( !redirectURL.isEmpty() && followRedirect ) {
 
       LOG.debug("using redirect response");
-      return findResponseFromRequestUrl(harString,redirectURL,true);
+      return findFirstResponseFromRequestUrl(harString,redirectURL,true);
 
     }
 

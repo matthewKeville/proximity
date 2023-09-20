@@ -179,20 +179,21 @@ public class EventService {
 
   /**
    * 
-   * @return : true if all events were created.
+   * @return : how many events were created
    */
-  public static boolean createEvents(List<Event> events) {
+  public static int createEvents(List<Event> events) {
+
     int fails = 0;
-    boolean allPass = true;
     for ( Event e : events ) {
       boolean success = createEvent(e);
       if (!success) {
         fails++;
       }
-      allPass &= success;
     }
+
     LOG.info("created  " + (events.size() - fails) + " of " + events.size() + " events for createEvents ");
-    return allPass;
+    return events.size() - fails;
+
   }
 
   private static Connection getDbConnection() {

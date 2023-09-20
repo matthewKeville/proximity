@@ -2,7 +2,6 @@ package keville;
 
 public interface EventScanner  {
 
-  //int scan();
-  int scan(double latitude,double longitude, double radius) throws Exception;
+  ScanReport scan(double latitude,double longitude, double radius) throws Exception;
 
 }

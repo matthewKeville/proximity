@@ -34,36 +34,38 @@ public class EventScannerScheduler implements Runnable {
 
     while ( true ) {
 
-      LOG.info("evaluating job list");
+      LOG.debug("evaluating job list");
 
       for ( EventScanJob esj : jobs ) {
         if ( shouldRunNow(esj) ) {
+
           LOG.info("scan job started");
           LOG.info(esj.toString());
-          //do the scan
+          ScanReport scanReport = null;
+
           switch ( esj.source ) {
             case ALLEVENTS: 
               try {
-                allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
+                scanReport = allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
               } catch (Exception e) {
-                LOG.error("scan failed");
-                //LOG.error(e.getMessage());
+                LOG.error("scan failed : ALLEVENTS");
+                LOG.error(e.getMessage());
               }
               break;
             case EVENTBRITE:
               try {
-                eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
+                scanReport = eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
               } catch (Exception e) {
-                LOG.error("scan failed");
-                //LOG.error(e.getMessage());
+                LOG.error("scan failed : EVENTBRITE");
+                LOG.error(e.getMessage());
               }
               break;
             case MEETUP: 
               try {
-                meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
+                scanReport  = meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
               } catch (Exception e) {
-                LOG.error("scan failed");
-                //LOG.error(e.getMessage());
+                LOG.error("scan failed : MEETUP");
+                LOG.error(e.getMessage());
               }
               break;
             case DEBUG:
@@ -71,9 +73,14 @@ public class EventScannerScheduler implements Runnable {
             default:
               LOG.warn("This EventType case has not been programmed explicitly and will not be evaluated");
           }
+
           esj.lastRun = Instant.now();
           LOG.info("scan job complete");
-          LOG.info(esj.toString());
+
+          if ( scanReport != null ) {
+            LOG.info(scanReport.toString());
+          }
+
         }
       }
 
