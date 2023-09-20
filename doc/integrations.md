@@ -277,6 +277,33 @@ to a url sans suffix, but returns the correct data.
 (I presume headers are set during the redirect to get the appropriate response)
 
 
+allevents.in has a view more button once you scroll down the current event grid.
+
+
+```
+<a href="https://allevents.in/asbury%20park/all?page=5" id="show_more_events" class="mb20 btn-show-more"> View More </a>
+```
+
+clicking this button pulls the events into the browser session (through ajax)
+
+alternatively, we can use the information in the head to navigate.
+Going to these links directly creates a new page, but with a different data set.
+Navigating to these pages individually would be preferrable because it can 
+be distribuited in the future.
+
+```
+<head>
+  <link rel="next" href="https://allevents.in/asbury%20park/all?page=2">
+  <link rel="prev" href="https://allevents.in/asbury%20park/all?page=1">
+</head>
+```
+
+the above is not always present in the head, so implementation is using the anchor
+
+some localities are not supported. `asbury%20park` works but `wall%township` does not.
+if unsupported it will return `404`
+
+
 ## Event Extraction
 
 
@@ -293,9 +320,6 @@ tags within the document.
 - this data does not fully represent the underlying event
   - Start/End Datetime is missing time component
   - Description is absent
-
-
-### Ajax (Not implemented)
 
 
 ## Special Considerations

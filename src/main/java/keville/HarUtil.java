@@ -92,6 +92,44 @@ public class HarUtil {
 
   }
 
+  //given a request url, return that url or the redirect that it responded with
+  public static String getRedirectRequestUrlOrOriginal(String harString,String targetUrl) {
+
+    JsonObject harJson = JsonParser.parseString(harString).getAsJsonObject();
+    JsonArray entries = harJson.get("log").getAsJsonObject().get("entries").getAsJsonArray();
+    JsonObject response = null;
+
+    for (JsonElement jo : entries) {
+
+      JsonObject entry = jo.getAsJsonObject();
+      JsonObject request = entry.get("request").getAsJsonObject();
+      String requestUrl = request.get("url").getAsString();
+
+      if ( requestUrl.equals(targetUrl)) {
+        response = entry.get("response").getAsJsonObject();
+        break;
+      }
+
+    }
+
+    if ( response == null ) {
+      return null;
+    }
+
+    String redirectURL = response.get("redirectURL").getAsString();
+    if ( redirectURL == null ) {
+
+      return targetUrl;
+
+    } else {
+
+      return redirectURL;
+
+    }
+
+  }
+
+
   public static void saveHARtoLFS(String harString,String fileName) {
 
       try {

@@ -6,7 +6,7 @@ import keville.SchemaUtil;
 import keville.HarUtil;
 
 import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,57 +23,80 @@ public class AllEventsHarProcessor {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AllEventsHarProcessor.class);
 
-    public static List<Event> process(Har har,String targetUrl) {
+    public static List<Event> process(Har har,String targetUrl,int pages) {
 
-      List<Event> events = extractEventsFromStaticPage(HarUtil.harToString(har),targetUrl);
-      // TODO : extractEventsFromAjax
+      List<Event> events = extractEventsFromStaticPages(HarUtil.harToString(har),targetUrl,pages);
+      
       return events;
 
     }
 
-    public static List<Event> extractEventsFromStaticPage(String harString,String targetUrl) {
+    public static List<Event> extractEventsFromStaticPages(String harString,String targetUrl,int pages) {
 
-      // Find inital web response
-        
-      JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
-      if ( response == null ) {
+      // find the documents containing event data
 
-        LOG.warn("unable to find intial web response");
-        HarUtil.saveHARtoLFS(harString,"allevents-error.har");
-        return null;
-
+      String basePageRequest = HarUtil.getRedirectRequestUrlOrOriginal(harString,targetUrl);
+      if ( basePageRequest == null ) {
+        LOG.error("unable to retrieve the reponse information for the baes page url with initial target " + targetUrl);
+        return new LinkedList<Event>();
       }
 
-      // get the response data
+      List<String> staticPageUrls = new LinkedList<String>();
+      staticPageUrls.add(basePageRequest);
 
-      String webpageData = HarUtil.getDecodedResponseText(response);
-      if ( webpageData == null ) {
-
-        LOG.error("initial response data is empty");
-        HarUtil.saveHARtoLFS(harString,"allevents-error.har");
-
+      for ( int i = 2; i <= pages; i++ ) {
+        String pageUrl = basePageRequest+"?page="+i;
+        staticPageUrls.add(pageUrl);
       }
 
-      // find the Schema Event Data
+      // process the documents into Event data
 
-      JsonArray schemaEvents = extractJsonSchemaEventArray(webpageData);
+      List<Event> newEvents = new LinkedList<Event>();
 
-      if ( schemaEvents == null ) {
+      for ( String url : staticPageUrls ) {
 
-        LOG.warn("no embedded schema events found");
-        HarUtil.saveHARtoLFS(harString,"allevents-warn.har");
-        return null;
+        LOG.info("processing : " + url);
 
-      }
+        // Find web response
+          
+        JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,url,true);
+        if ( response == null ) {
 
-      // Transform Schema Event Data to domain Event
+          LOG.warn("unable to find intial web response");
+          HarUtil.saveHARtoLFS(harString,"allevents-error.har");
+          return null;
 
-      List<Event> newEvents = new ArrayList<Event>();
+        }
 
-      for (JsonElement jo : schemaEvents ) {
+        // get the response data
 
-        JsonObject event = jo.getAsJsonObject();
-        newEvents.add(createEventStubFrom(event));
+        String webpageData = HarUtil.getDecodedResponseText(response);
+        if ( webpageData == null ) {
+
+          LOG.error("initial response data is empty");
+          HarUtil.saveHARtoLFS(harString,"allevents-error.har");
+
+        }
+
+        // find the Schema Event Data
+
+        JsonArray schemaEvents = extractJsonSchemaEventArray(webpageData);
+
+        if ( schemaEvents == null ) {
+
+          LOG.warn("no embedded schema events found");
+          HarUtil.saveHARtoLFS(harString,"allevents-warn.har");
+
+        }
+
+        // Transform Schema Event Data to domain Event
+
+        for (JsonElement jo : schemaEvents ) {
+
+          JsonObject event = jo.getAsJsonObject();
+          newEvents.add(createEventStubFrom(event));
+
+        }
 
       }
 
@@ -118,16 +141,6 @@ public class AllEventsHarProcessor {
   }
 
 
-  /* 
-     this is a limited Event object that is missing other fields are
-     required to really be an 'Event' such as Time (instead of just date) and a formal
-     description. 
-
-     For testing purposes, I will use this limited Event as an Event, while I run tests
-     to see if full Event collection is feasible or desirable when the Event update protocol
-     has yet to be formulated. The main reason why I am reticent to grab the full data is
-     it would require a new web request per event which could seem suspicious to allEvents.in
-  */
   private static Event createEventStubFrom(JsonObject eventJson) {
 
     EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);

@@ -23,6 +23,7 @@ public class Settings {
   public boolean eventbrite;
 
   public int maxEventbritePages;
+  public int maxAlleventsPages;
 
   public static Settings parseSettings(String jsonString) throws Exception {/* populate jobs with data stored on LFS */
 
@@ -66,7 +67,16 @@ public class Settings {
       } else {
         settings.maxEventbritePages = 5;
       }
+    }
 
+    if (settings.allevents) {
+
+      if ( json.has("allevents_max_pages_scrub")) {
+        settings.maxAlleventsPages = json.get("allevents_max_pages_scrub").getAsInt();
+        LOG.info("allevents_max_pages_scrub = " + settings.maxAlleventsPages);
+      } else {
+        settings.maxAlleventsPages = 5;
+      }
 
     }
 

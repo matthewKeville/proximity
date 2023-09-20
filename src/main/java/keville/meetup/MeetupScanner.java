@@ -71,7 +71,6 @@ public class MeetupScanner implements EventScanner {
       /* 
         meetup loads as we scroll, but if we scroll too fast it won't load
         all the data. So we scroll slowly until we notice we can't scroll anymore
-        this is probably a useful utility, so definition doesn't belong here 
       */
 
       JavascriptExecutor js = (JavascriptExecutor) driver;

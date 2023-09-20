@@ -15,12 +15,15 @@ import java.util.stream.Collectors;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.net.URLEncoder;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import net.lightbody.bmp.BrowserMobProxyServer;
 import net.lightbody.bmp.client.ClientUtil;
@@ -31,8 +34,10 @@ public class AllEventsScanner implements EventScanner {
 
   
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AllEventsScanner.class);
+  private Settings settings; 
 
   public AllEventsScanner(Settings settings) {
+    this.settings = settings;
   }
 
   public ScanReport scan(double latitude, double longitude, double radius) throws Exception {
@@ -63,10 +68,35 @@ public class AllEventsScanner implements EventScanner {
       proxy.enableHarCaptureTypes(CaptureType.REQUEST_CONTENT, CaptureType.RESPONSE_CONTENT);
       proxy.newHar("eventScanHar");
 
-      LOG.info("targetting initial url \n" + targetUrl);
+      LOG.info("targetting " + targetUrl);
+
+      int pages = 1;
       driver.get(targetUrl);
 
-      // TODO expand result set until no more results appear
+      // is there another page?
+
+      List<WebElement> nextLinkMatches  = driver.findElements(By.xpath("//*[@id='show_more_events']"));
+
+      if ( !nextLinkMatches.isEmpty() ) {
+
+        WebElement nextLink  = nextLinkMatches.get(0);
+
+        while ( nextLink !=  null && pages <= settings.maxAlleventsPages) {
+
+          String  next  = nextLink.getAttribute("href").toString();
+          LOG.info("targetting " + next);
+          driver.get(next);
+          pages++;
+
+          nextLinkMatches  = driver.findElements(By.xpath("//*[@id='show_more_events']"));
+          nextLink = !nextLinkMatches.isEmpty() ? nextLinkMatches.get(0) : null;
+
+        }
+
+      } else {
+        LOG.warn("this search only had one page");
+      }
+
 
       Har har = proxy.getHar();
 
@@ -76,7 +106,7 @@ public class AllEventsScanner implements EventScanner {
       }
 
       Instant processStart = Instant.now();
-      List<Event> events  = AllEventsHarProcessor.process(har,targetUrl);
+      List<Event> events  = AllEventsHarProcessor.process(har,targetUrl,pages);
 
       events = events.stream()
         .distinct() 
@@ -115,7 +145,14 @@ public class AllEventsScanner implements EventScanner {
       //lowercase city , ANSI region code
       // https://allevents.in/Belmar-New Jersey/all   fails
       // https://allevents.in/belmar-nj/all           succeeds
+
+      // https://allevents.in/asbury park-nj/all           succeeds but gets redirected to 
+      // https://allevents.in/asbury%20park-nj/all           succeeds but gets redirected to 
       String locationString = location.locality.toLowerCase() + "-" + location.region.toLowerCase(); 
+      try {
+        locationString = URLEncoder.encode(locationString,"UTF-8"); // spaces need to be encoded
+      } catch (Exception e) {
+      }
       String targetUrl = "https://allevents.in/" + locationString + "/all";
 
       return targetUrl;
