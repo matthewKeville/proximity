@@ -135,6 +135,7 @@ public class EventbriteHarProcessor {
 
   }
 
+  //this method is a bit inefficient, but does extract all event ids in the archive, including asynchronous ones
   public static List<String> extractEventIds(String harString) {
 
     List<String> eventIds = new ArrayList<String>();

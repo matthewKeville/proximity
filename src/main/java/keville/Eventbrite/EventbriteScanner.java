@@ -31,8 +31,10 @@ import net.lightbody.bmp.proxy.CaptureType;
 public class EventbriteScanner implements EventScanner {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScanner.class);
+  private Settings settings;
 
   public EventbriteScanner(Settings settings) {
+    this.settings = settings;
   }
 
   public int scan(double latitude, double longitude, double radius) throws Exception {
@@ -94,21 +96,17 @@ public class EventbriteScanner implements EventScanner {
 
       }
 
-      int maxPagesToScrub = 5;
       int pageLoadDelay_ms = 1000;/*1 sec*/
+      int pagesToScrub = 1;
 
-      if (pages == 0) {
-
-        maxPagesToScrub = 1;
-
-      } else {
+      if (pages != 0) {
 
         LOG.info("multi page scrub");
-        maxPagesToScrub = Math.min(maxPagesToScrub,pages);
+        pagesToScrub = Math.min(settings.maxEventbritePages,pages);
+        
       }
 
-      //navigate to the remaing maxPagesToScrub-1 pages
-      for ( int i = 1; i < maxPagesToScrub; i++ ) {
+      for ( int i = 1; i < pagesToScrub; i++ ) {
 
         targetUrl = eventMapUrl(latitude,longitude,radius,i+1);
         LOG.info(targetUrl);

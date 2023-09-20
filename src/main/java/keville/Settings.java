@@ -17,9 +17,12 @@ public class Settings {
   public int delay;
   public boolean auto;
   public boolean runOnRestart;
+
   public boolean meetup;
   public boolean allevents;
   public boolean eventbrite;
+
+  public int maxEventbritePages;
 
   public static Settings parseSettings(String jsonString) throws Exception {/* populate jobs with data stored on LFS */
 
@@ -56,6 +59,15 @@ public class Settings {
       } else {
         LOG.info("using api_key : " + settings.eventBriteApiKey);
       }
+
+      if ( json.has("event_brite_max_pages_scrub")) {
+        settings.maxEventbritePages = json.get("event_brite_max_pages_scrub").getAsInt();
+        LOG.info("event_brite_max_pages_scrub = " + settings.maxEventbritePages);
+      } else {
+        settings.maxEventbritePages = 5;
+      }
+
+
     }
 
     return settings;
