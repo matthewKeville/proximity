@@ -13,3 +13,5 @@ custom.json
 custom.json.bak
 sensitive/*
 *.har
+client/prox
+client/prxy

@@ -1,0 +1,21 @@
+<assembly>
+    <id>release-zip</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <formats>
+        <format>dir</format>
+    </formats>
+
+    <files>
+        <file>
+          <source>client/prxy</source>
+        </file>
+        <file>
+          <source>custom.json</source>
+        </file>
+        <file>
+          <source>target/proximal-1.0-SNAPSHOT-jar-with-dependencies.jar</source>
+        </file>
+    </files>
+</assembly>
+
+
