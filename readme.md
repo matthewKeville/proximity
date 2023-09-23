@@ -1,13 +1,15 @@
 # Proximity
 
+An event aggregator written in Java & Go
 
 ## Features
 
-- Find events from [eventbrite](www.eventbrite.com) , [meetup](www.meetup.com) , [allevents](allevents.in)
-- Cross Platform
-- RSS integration
-- iCalendar integration
-- A terminal user interface built with the wonderful [charm](https://github.com/charmbracelet) toolchain and [bubble-table](https://github.com/Evertras/bubble-table) extension
+- Find local events from [eventbrite](https://eventbrite.com) , [meetup](https://meetup.com) and [allevents](https://allevents.in) from the command line
+- Compiler nearby events into RSS feeds
+- Export events into iCalendar format
+- Explore a colorful TUI built with the wonderful [charm](https://github.com/charmbracelet) toolchain and [bubble-table](https://github.com/Evertras/bubble-table) extension 
+- A Client/Server architecture that supports automatic event aggregation
+- Easily configurable settings via JSON
 
 ## Installation
 
