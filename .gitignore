@@ -3,6 +3,7 @@ target/*
 .factorypath
 .project
 .settings
+settings.json
 logs/
 eventbrite.db
 eventbrite.db-journal

@@ -181,10 +181,12 @@ func toTableRow(e event.Event) table.Row {
   })
 }
 
-func InitialModel() model {
+func InitialModel(latitude float64,longitude float64,radius float64,showVirtual bool,daysBefore int) model {
 
+  fmt.Printf("latitude : %f\tlongitude : %f\tradius : %f",latitude,longitude,radius);
 
-  es := http.GetEvents()
+  es := http.GetEvents(latitude,longitude,radius,showVirtual,daysBefore)
+
 
   sort.Slice(es, func(i, j int) bool {
     return es[i].Distance < es[j].Distance

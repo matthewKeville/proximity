@@ -148,6 +148,13 @@ func main() {
   daemonPtr := flag.Bool("daemon", false, "start proximity daemon")
   killPtr := flag.Bool("kill", false, "kill proximity daemon")
   statusPtr := flag.Bool("status", false, "print proximity server status report")
+
+  radiusPtr := flag.Float64("radius",0.0,"event radius")
+  latitudePtr := flag.Float64("latitude",0.0,"search latitude")
+  longitudePtr := flag.Float64("longitude",0.0,"event search longitude")
+  showVirtualPtr := flag.Bool("virtual", false,"show virtual events")
+  daysBeforePtr := flag.Int("days", 0,"how many days out")
+
   flag.Parse()
 
 
@@ -204,7 +211,7 @@ func main() {
   }
 
   // launch table view
-  p := tea.NewProgram(grid.InitialModel())
+  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr))
   if _, err := p.Run(); err != nil {
     fmt.Printf("An error occurred, error : %v",err)
     os.Exit(1)

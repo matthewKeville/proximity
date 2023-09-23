@@ -1,6 +1,7 @@
 package http
 
 import (
+  "fmt"
   "log"
   "net/http"
   "io/ioutil"
@@ -8,10 +9,29 @@ import (
   "proximity-client/event"
 )
 
-func GetEvents() []event.Event {
-  resp, err := http.Get("http://localhost:4567/events")
+
+func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int) []event.Event {
+
+  params := fmt.Sprintf("?virtual=%t",showVirtual)
+
+  if latitude != 0.0 && longitude != 0.0  && radius != 0.0 {
+    params += fmt.Sprintf("&latitude=%f&longitude=%f",latitude,longitude)
+  } 
+
+  if ( radius != 0.0 ) {
+    params += fmt.Sprintf("&radius=%f",radius)
+  } 
+
+  if ( daysBefore != 0 ) {
+    params += fmt.Sprintf("&daysBefore=%d",daysBefore)
+  } 
+
+  requestString := fmt.Sprintf("http://localhost:4567/events%s",params)
+  fmt.Printf("requesting : http://localhost:4567/events%s",params)
+
+  resp, err := http.Get(requestString)
   if err != nil {
-    log.Printf("error getting localhost:4567/events")
+    log.Printf("error getting :  %s ",err)
     log.Printf(err.Error())
     return []event.Event{}
   }

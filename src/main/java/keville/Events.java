@@ -28,6 +28,14 @@ public class Events {
     };
   }
 
+  public static Predicate<ClientEvent> BeforeDays(int days) {
+    return new Predicate<ClientEvent>() {
+      public boolean test(ClientEvent event) {
+        return event.daysFromNow < days;
+      }
+    };
+  }
+
   public static ClientEvent CreateClientEvent(Event event,double latitude,double longitude) {
 
     double distance = 0.0;

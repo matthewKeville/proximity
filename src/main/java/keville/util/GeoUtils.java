@@ -133,8 +133,11 @@ public class GeoUtils {
         locality = address.get("village").getAsString();
       } else if ( address.has("town") ) {
         locality = address.get("town").getAsString();
+      } else if ( address.has("city") ) {
+        locality = address.get("city").getAsString();
       } else {
-        LOG.warn("Failed to find a town or village for the geocoordinate : ( " + latitude + " , " + longitude + ")" );
+        LOG.warn("Failed to find a town , city or village for the geocoordinate : ( " + latitude + " , " + longitude + ")" );
+        LOG.warn("response :  " + response);
       }
 
 
