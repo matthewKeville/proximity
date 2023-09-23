@@ -1,6 +1,6 @@
 package keville;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -45,13 +45,14 @@ public class EventService {
     return null;
   }
 
+
   /* return a list of Events from the DB */
   public static List<Event> getEvents(Predicate<Event> filter) {
 
     /* probably not a great idea to pull all events into memory, then filter.
      * sqlite is probably more optimized for filtering but that is more code overhead 
      */
-    List<Event> allEvents = new ArrayList<Event>();
+    List<Event> allEvents = new LinkedList<Event>();
     Connection con = getDbConnection();
     try {
       String sql = "SELECT * FROM EVENT;";
@@ -179,20 +180,20 @@ public class EventService {
 
   /**
    * 
-   * @return : how many events were created
+   * @return : newly created events
    */
-  public static int createEvents(List<Event> events) {
+  public static List<Event> createEvents(List<Event> events) {
 
-    int fails = 0;
+    List<Event> discoveries  = new  LinkedList<Event>();
+
     for ( Event e : events ) {
-      boolean success = createEvent(e);
-      if (!success) {
-        fails++;
+      if (createEvent(e) ) {
+        discoveries.add(e);
       }
     }
 
-    LOG.info("created  " + (events.size() - fails) + " of " + events.size() + " events for createEvents ");
-    return events.size() - fails;
+    LOG.info("created  " + (discoveries) + " of " + events.size() + " events for createEvents ");
+    return discoveries;
 
   }
 

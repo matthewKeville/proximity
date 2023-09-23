@@ -1,17 +1,23 @@
 package keville;
 
+import keville.compilers.EventCompiler;
+import keville.compilers.RSSCompiler;
+import keville.AllEvents.AllEventsScanner;
+import keville.Eventbrite.EventbriteScanner;
+import keville.meetup.MeetupScanner;
+
+import java.io.File;
+import java.util.function.Predicate;
 import java.util.List;
 import java.util.ArrayList;
 import java.time.Instant;
 
-import keville.Eventbrite.EventbriteScanner;
-import keville.meetup.MeetupScanner;
-import keville.AllEvents.AllEventsScanner;
 
 public class EventScannerScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
+  private List<EventCompiler> compilers;
   private int timeStepMS = 10000;
 
   private EventbriteScanner eventbriteScanner;
@@ -25,9 +31,14 @@ public class EventScannerScheduler implements Runnable {
     allEventsScanner = new AllEventsScanner(settings);
 
     jobs = new ArrayList<EventScanJob>();
+    compilers = new ArrayList<EventCompiler>();
+
     loadScanJobs(settings);
+    loadCompilers(settings);
 
     LOG.info(" found : " + jobs.size() + " jobs ");
+    LOG.info(" found : " + compilers.size() + " compilers ");
+
   }
 
   public void run() {
@@ -78,7 +89,17 @@ public class EventScannerScheduler implements Runnable {
           LOG.info("scan job complete");
 
           if ( scanReport != null ) {
+
             LOG.info(scanReport.toString());
+            
+
+            LOG.info("compiling new events into output formats");
+
+            List<Event> discoveries  =  EventService.createEvents(scanReport.events);
+            for ( EventCompiler ec : compilers )  {
+              ec.compile(discoveries);
+            }
+
           }
 
         }
@@ -112,6 +133,14 @@ public class EventScannerScheduler implements Runnable {
       jobs.add(new EventScanJob(EventTypeEnum.ALLEVENTS,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
     }
 
+  }
+
+  private void loadCompilers(Settings settings) {
+    //debug placeholder data
+    File file = new File("within3miles.rss");
+    Predicate<Event> filter = Events.InTheFuture().
+      and(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius));
+    compilers.add(new RSSCompiler(filter,file));
   }
 
 }

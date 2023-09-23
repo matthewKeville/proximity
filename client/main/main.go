@@ -36,8 +36,9 @@ func startServer() int {
     os.Exit(1)
   }
 
+  logCfgPath := cwd+"/log4j2.xml";
   jarPath := cwd+"/proximal-1.0-SNAPSHOT-jar-with-dependencies.jar"
-  cmd := exec.Command("java","-jar",jarPath)
+  cmd := exec.Command("java","-Dlog4j.configurationFile="+logCfgPath,"-jar",jarPath)
   fmt.Println(cmd.Args)
   err2 := cmd.Start()
 

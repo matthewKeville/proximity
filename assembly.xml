@@ -13,6 +13,12 @@
           <source>custom.json</source>
         </file>
         <file>
+          <source>log4j2.xml</source>
+        </file>
+        <file>
+          <source>create_db.sh</source>
+        </file>
+        <file>
           <source>target/proximal-1.0-SNAPSHOT-jar-with-dependencies.jar</source>
         </file>
     </files>

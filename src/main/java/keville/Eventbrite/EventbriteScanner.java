@@ -4,9 +4,6 @@ import keville.ScanReport;
 import keville.Settings;
 import keville.Event;
 import keville.EventScanner;
-import keville.EventTypeEnum;
-import keville.EventService;
-
 import keville.util.GeoUtils;
 
 import java.time.Duration;
@@ -145,12 +142,9 @@ public class EventbriteScanner implements EventScanner {
 
       events = events.stream()
         .distinct() 
-        .filter ( e -> !EventService.exists(EventTypeEnum.EVENTBRITE,e.eventId) )
         .collect(Collectors.toList());
 
-      int successes = EventService.createEvents(events);
-
-      return new ScanReport(scanStart,processStart,Instant.now(),events.size(),successes);
+      return new ScanReport(scanStart,processStart,Instant.now(),events);
 
   }
 

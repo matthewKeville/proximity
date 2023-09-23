@@ -10,6 +10,7 @@ import keville.EventTypeEnum;
 import keville.EventService;
 
 import java.util.List;
+import java.util.LinkedList;
 import java.util.stream.Collectors;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,7 +45,7 @@ public class MeetupScanner implements EventScanner {
       if ( targetUrl == null ) {
         LOG.error("unusable target url , aborting scan ");
         LOG.error("location\n" + location.toString());
-        return new ScanReport(scanStart,Instant.now(),Instant.now(),0,0);
+        return new ScanReport(scanStart,Instant.now(),Instant.now(),new LinkedList<Event>());
       }
       LOG.info("targetting url \n" + targetUrl);
       
@@ -104,12 +105,9 @@ public class MeetupScanner implements EventScanner {
 
       events = events.stream()
         .distinct() 
-        .filter ( e -> !EventService.exists(EventTypeEnum.MEETUP,e.eventId) )
         .collect(Collectors.toList());
 
-      int successes = EventService.createEvents(events);
-
-      return new ScanReport(scanStart,processStart,Instant.now(),events.size(),successes);
+      return new ScanReport(scanStart,processStart,Instant.now(),events);
 
   }
 

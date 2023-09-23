@@ -5,7 +5,6 @@ import keville.gson.InstantAdapter;
 
 import java.util.stream.Collectors;
 import java.time.Instant;
-
 import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -13,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import static spark.Spark.*;
 
 public class ProximalDaemon 
@@ -47,9 +45,6 @@ public class ProximalDaemon
                 .collect(Collectors.toList())
               );
             });
-
-
-        get("/event", (req, res) -> gson.toJson(EventService.getEvents().get(0)));
 
     }
 
