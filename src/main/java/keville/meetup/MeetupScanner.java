@@ -1,7 +1,7 @@
 package keville.meetup;
 
 import keville.ScanReport;
-import keville.Settings;
+import keville.settings.Settings;
 import keville.util.GeoUtils;
 import keville.Location;
 import keville.Event;

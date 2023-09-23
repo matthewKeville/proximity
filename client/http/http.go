@@ -13,6 +13,7 @@ func GetEvents() []event.Event {
   if err != nil {
     log.Printf("error getting localhost:4567/events")
     log.Printf(err.Error())
+    return []event.Event{}
   }
 
   body, err :=  ioutil.ReadAll(resp.Body)

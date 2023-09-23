@@ -1,14 +1,15 @@
 package keville;
 
 import keville.compilers.EventCompiler;
+import keville.settings.Settings;
 import keville.compilers.RSSCompiler;
 import keville.AllEvents.AllEventsScanner;
 import keville.Eventbrite.EventbriteScanner;
 import keville.meetup.MeetupScanner;
 
-import java.io.File;
 import java.util.function.Predicate;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.ArrayList;
 import java.time.Instant;
 
@@ -23,87 +24,105 @@ public class EventScannerScheduler implements Runnable {
   private EventbriteScanner eventbriteScanner;
   private MeetupScanner meetupScanner;
   private AllEventsScanner allEventsScanner;
+  private Settings settings;
 
   public EventScannerScheduler(Settings settings) {
+
+    this.settings = settings;
 
     eventbriteScanner = new EventbriteScanner(settings);
     meetupScanner = new MeetupScanner(settings);
     allEventsScanner = new AllEventsScanner(settings);
 
-    jobs = new ArrayList<EventScanJob>();
-    compilers = new ArrayList<EventCompiler>();
+    jobs = new LinkedList<EventScanJob>();
+    loadCompilers();
 
-    loadScanJobs(settings);
-    loadCompilers(settings);
-
-    LOG.info(" found : " + jobs.size() + " jobs ");
+    LOG.info(" found : " + settings.scanRoutines.size() + " scan routines ");
     LOG.info(" found : " + compilers.size() + " compilers ");
+
+    settings.scanRoutines.stream()
+      .filter(e -> e.runOnRestart)
+      .forEach(e -> {
+        LOG.info(e.name + " is scheduled to run on restart");
+      });
 
   }
 
   public void run() {
+      
+    LOG.debug("starting scheduler ...");
 
     while ( true ) {
 
-      LOG.debug("evaluating job list");
+      LOG.debug("evaluating scan routines");
 
-      for ( EventScanJob esj : jobs ) {
-        if ( shouldRunNow(esj) ) {
+      for ( ScanRoutine routine : settings.scanRoutines ) {
+        if ( shouldRunNow(routine) ) {
+          LOG.info("It is time to scan " + routine.name);
+          List<EventScanJob> newJobs = makeScanJobs(routine);
+          LOG.info("adding " + newJobs.size() + " into the scan job queue ");
+          jobs.addAll(newJobs);
+          routine.lastRan = Instant.now();
+        }
+      }
 
-          LOG.info("scan job started");
-          LOG.info(esj.toString());
-          ScanReport scanReport = null;
+      if ( jobs.size() != 0 ) {
 
-          switch ( esj.source ) {
-            case ALLEVENTS: 
-              try {
-                scanReport = allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
-              } catch (Exception e) {
-                LOG.error("scan failed : ALLEVENTS");
-                LOG.error(e.getMessage());
-              }
-              break;
-            case EVENTBRITE:
-              try {
-                scanReport = eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
-              } catch (Exception e) {
-                LOG.error("scan failed : EVENTBRITE");
-                LOG.error(e.getMessage());
-              }
-              break;
-            case MEETUP: 
-              try {
-                scanReport  = meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
-              } catch (Exception e) {
-                LOG.error("scan failed : MEETUP");
-                LOG.error(e.getMessage());
-              }
-              break;
-            case DEBUG:
-              break;
-            default:
-              LOG.warn("This EventType case has not been programmed explicitly and will not be evaluated");
-          }
+        EventScanJob esj = jobs.remove(0);
 
-          esj.lastRun = Instant.now();
-          LOG.info("scan job complete");
+        LOG.info("executing scan job");
+        LOG.info(esj.toString());
+        ScanReport scanReport = null;
 
-          if ( scanReport != null ) {
-
-            LOG.info(scanReport.toString());
-            
-
-            LOG.info("compiling new events into output formats");
-
-            List<Event> discoveries  =  EventService.createEvents(scanReport.events);
-            for ( EventCompiler ec : compilers )  {
-              ec.compile(discoveries);
+        switch ( esj.source ) {
+          case ALLEVENTS: 
+            try {
+              scanReport = allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
+            } catch (Exception e) {
+              LOG.error("scan failed : ALLEVENTS");
+              LOG.error(e.getMessage());
             }
+            break;
+          case EVENTBRITE:
+            try {
+              scanReport = eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
+            } catch (Exception e) {
+              LOG.error("scan failed : EVENTBRITE");
+              LOG.error(e.getMessage());
+            }
+            break;
+          case MEETUP: 
+            try {
+              scanReport  = meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
+            } catch (Exception e) {
+              LOG.error("scan failed : MEETUP");
+              LOG.error(e.getMessage());
+            }
+            break;
+          case DEBUG:
+            break;
+          default:
+            LOG.warn("This EventType case has not been programmed explicitly and will not be evaluated");
+        }
 
+        LOG.info("scan job complete");
+
+        if ( scanReport != null ) {
+
+          LOG.info(scanReport.toString());
+
+          LOG.info("compiling new events into output formats");
+
+          List<Event> discoveries  =  EventService.createEvents(scanReport.events);
+          for ( EventCompiler ec : compilers )  {
+            ec.compile(discoveries);
           }
 
         }
+
       }
+
+      // wait
 
       try {
         Thread.sleep(timeStepMS);
@@ -113,34 +132,46 @@ public class EventScannerScheduler implements Runnable {
       }
 
     }
+
   }
 
-  private boolean shouldRunNow(EventScanJob job) {
-    Instant nextScanStart = (job.lastRun).plusSeconds(job.delayInSeconds);
+  private boolean shouldRunNow(ScanRoutine routine) {
+    Instant nextScanStart = (routine.lastRan).plusSeconds(routine.delay);
     Instant now = Instant.now();
     return  nextScanStart.isBefore(now);
   }
 
-  private void loadScanJobs(Settings settings) {
+  private List<EventScanJob> makeScanJobs(ScanRoutine routine) {
 
-    if ( settings.eventbrite ) {
-      jobs.add(new EventScanJob(EventTypeEnum.EVENTBRITE,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
-    }
-    if ( settings.meetup ) {
-      jobs.add(new EventScanJob(EventTypeEnum.MEETUP,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
-    }
-    if ( settings.allevents) {
-      jobs.add(new EventScanJob(EventTypeEnum.ALLEVENTS,settings.radius,settings.latitude,settings.longitude,settings.delay,settings.runOnRestart));
-    }
+    List<EventScanJob> newJobs = new LinkedList<EventScanJob>();
+
+      if ( routine.eventbrite ) {
+        newJobs.add(new EventScanJob(EventTypeEnum.EVENTBRITE,routine.radius,routine.latitude,routine.longitude));
+      }
+
+      if ( routine.meetup ) {
+        newJobs.add(new EventScanJob(EventTypeEnum.MEETUP,routine.radius,routine.latitude,routine.longitude));
+      }
+
+      if ( routine.allevents) {
+        newJobs.add(new EventScanJob(EventTypeEnum.ALLEVENTS,routine.radius,routine.latitude,routine.longitude));
+      }
+
+      return newJobs;
 
   }
 
-  private void loadCompilers(Settings settings) {
-    //debug placeholder data
-    File file = new File("within3miles.rss");
+  private void loadCompilers() {
+
+    compilers = new LinkedList<EventCompiler>();
+
+    //File file = new File("within3miles.rss");
+    /*
     Predicate<Event> filter = Events.InTheFuture().
       and(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius));
-    compilers.add(new RSSCompiler(filter,file));
+      */
+    //compilers.add(new RSSCompiler(filter,file));
+    
   }
 
 }

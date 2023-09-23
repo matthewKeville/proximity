@@ -1,7 +1,7 @@
 package keville.Eventbrite;
 
 import keville.ScanReport;
-import keville.Settings;
+import keville.settings.Settings;
 import keville.Event;
 import keville.EventScanner;
 import keville.util.GeoUtils;
@@ -103,7 +103,7 @@ public class EventbriteScanner implements EventScanner {
       if (pages != 0) {
 
         LOG.info("multi page scrub");
-        pagesToScrub = Math.min(settings.maxEventbritePages,pages);
+        pagesToScrub = Math.min(settings.eventbriteMaxPages,pages);
         
       }
 

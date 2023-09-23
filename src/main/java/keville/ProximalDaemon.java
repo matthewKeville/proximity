@@ -1,8 +1,11 @@
 package keville;
 
+import keville.util.GeoUtils;
+import keville.settings.Settings;
 import keville.Eventbrite.EventCache;
 import keville.gson.InstantAdapter;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.time.Instant;
 import java.nio.file.Files;
@@ -30,8 +33,17 @@ public class ProximalDaemon
           .registerTypeAdapter(Instant.class, new InstantAdapter())
           .create();
 
-        //spark defaults port to : 4567 
-        
+        // this request should be accompanied with radius/lat/lon otherwise auto inferred 
+        // always assuming auto for now ...
+        double latitude; 
+        double longitude; 
+        double radius = 5.0; 
+        Map<String,Double> coords = GeoUtils.getClientGeolocation();
+        latitude = coords.get("latitude");
+        longitude = coords.get("longitude");
+
+        port(4567);
+
         get("/events", (request, response) -> 
             { 
               LOG.info("recieved GET /events");
@@ -39,32 +51,42 @@ public class ProximalDaemon
                  EventService.getEvents()
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
-                .filter(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius))
+                .filter(Events.WithinKMilesOf(latitude,longitude,radius))
                 .filter(Events.InTheFuture())
-                .map( e -> Events.CreateClientEvent(e,settings.latitude,settings.longitude) )
+                .map( e -> Events.CreateClientEvent(e,latitude,longitude) )
                 .collect(Collectors.toList())
               );
-            });
+        });
+
+        LOG.info("spark initialized");
 
     }
 
     static void initialize() {
 
-      String settingsFileString = "./custom.json";
-      Path jobFilePath = FileSystems.getDefault().getPath(settingsFileString);
+      // in the future, we should check ~/.config/proximity/settings.json and adhere to XDG standard
+      String settingsFileString = "./settings.json";
+      Path settingsPath = FileSystems.getDefault().getPath(settingsFileString);
 
       try {
-        String jsonString = new String(Files.readAllBytes(jobFilePath),StandardCharsets.UTF_8);
+
+        String jsonString = new String(Files.readAllBytes(settingsPath),StandardCharsets.UTF_8);
         settings = Settings.parseSettings(jsonString);
+        LOG.info("Configured from settings file :  "  + settingsPath.toString());
+
       } catch (Exception e) {
-        LOG.error("unable to parse settings : " + jobFilePath.toString());
+
+        LOG.error("Error parsing settings : " + settingsPath.toString());
         LOG.error(e.getMessage());
         System.exit(1);
+
       }
+
+      LOG.info("settings loaded ...");
+      LOG.info(settings.toString());
 
       EventCache.applySettings(settings);
       EventService.applySettings(settings);
-
       EventScannerScheduler scheduler = new EventScannerScheduler(settings);
 
       scheduleThread = new Thread(scheduler, "EventScannerScheduler");

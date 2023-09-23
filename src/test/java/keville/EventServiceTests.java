@@ -1,7 +1,7 @@
 package keville;
 
 import keville.Event;
-import keville.Settings;
+import keville.settings.Settings;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;

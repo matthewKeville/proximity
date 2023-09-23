@@ -10,16 +10,19 @@
           <source>client/prxy</source>
         </file>
         <file>
-          <source>custom.json</source>
+          <source>settings.json</source>
         </file>
+
         <file>
-          <source>log4j2.xml</source>
+          <source>src/main/resources/log4j2.xml</source>
         </file>
+
         <file>
           <source>create_db.sh</source>
         </file>
         <file>
-          <source>target/proximal-1.0-SNAPSHOT-jar-with-dependencies.jar</source>
+          <source>target/proximity-1.0-SNAPSHOT-jar-with-dependencies.jar</source>
+          <destName>proximity-daemon.jar</destName>
         </file>
     </files>
 </assembly>

@@ -1,6 +1,6 @@
 package keville.Eventbrite;
 
-import keville.Settings;
+import keville.settings.Settings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -47,13 +47,11 @@ public class EventCache {
 
   private static Connection getDbConnection() {
     Connection con  = null;
-    String connectionString = "jdbc:sqlite:eventbrite.db"; //pls put in properties (custom & default)
-    LOG.debug("connecting to " + connectionString);
+    LOG.debug("connecting to " + settings.eventbriteDbConnectionString);
     try {
-      con = DriverManager.getConnection(connectionString);
-      LOG.debug("connected to " + connectionString);
+      con = DriverManager.getConnection(settings.eventbriteDbConnectionString);
     } catch (SQLException e) {
-      LOG.error("Critical error : unable to read events from database : " + connectionString);
+      LOG.error("Critical error : unable to read events from database : " + settings.eventbriteDbConnectionString);
       LOG.error(e.getMessage());
       System.exit(5);
     }
@@ -126,7 +124,7 @@ public class EventCache {
       URI uri = new URI(eventBaseUri+eventId+"/"+"?expand=organizer,venue");
       getRequest = HttpRequest.newBuilder()
         .uri(uri) 
-        .header("Authorization","Bearer "+settings.eventBriteApiKey)
+        .header("Authorization","Bearer "+settings.eventbriteApiKey)
         .GET()
         .build();
 

@@ -1,7 +1,7 @@
 package keville.AllEvents;
 
 import keville.ScanReport;
-import keville.Settings;
+import keville.settings.Settings;
 import keville.USStateAndTerritoryCodes;
 import keville.util.GeoUtils;
 import keville.Location;
@@ -82,7 +82,7 @@ public class AllEventsScanner implements EventScanner {
 
         WebElement nextLink  = nextLinkMatches.get(0);
 
-        while ( nextLink !=  null && pages <= settings.maxAlleventsPages) {
+        while ( nextLink !=  null && pages <= settings.alleventsMaxPages) {
 
           String  next  = nextLink.getAttribute("href").toString();
           LOG.info("targetting " + next);

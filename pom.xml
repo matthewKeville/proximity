@@ -5,17 +5,15 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>keville</groupId>
-  <artifactId>proximal</artifactId>
+  <artifactId>proximity</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
 
-  <name>proximal</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <name>proximity</name>
+  <url>http://www.github.com/matthewKeville/proximity</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- https://maven.apache.org/plugins/maven-compiler-plugin/examples/set-compiler-source-and-target.html -->
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <!--https://stackoverflow.com/questions/51871635/couldnt-destroy-threadgroup-org-codehaus-mojo-exec-execjavamojoisolatedthreadg-->
@@ -24,13 +22,11 @@
 
   <dependencies>
 
-    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-text -->
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-text</artifactId>
         <version>1.9</version>
     </dependency>
-
 
     <dependency>
       <groupId>junit</groupId>
@@ -39,7 +35,6 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
     <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-java</artifactId>
@@ -139,23 +134,13 @@
           <configuration>
           <systemPropertyVariables>
               <!-- in the future I will most likely want a seperate configuration for testing if at the very least to target test.log -->
-              <log4j.configurationFile>log4j2.xml</log4j.configurationFile>
+          <log4j.configurationFile>src/main/resources/log4j2.xml</log4j.configurationFile>
             </systemPropertyVariables>
           </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.0.2</version>
-          <!--
-          <configuration>
-            <archive>
-              <manifest>
-                <addClasspath>true</addClasspath>
-                <mainClass>keville.ProximalDaemon</mainClass>
-              </manifest>
-              </archive>
-          </configuration>
-           -->
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
@@ -165,7 +150,6 @@
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.8.2</version>
         </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.7.1</version>
@@ -175,8 +159,6 @@
           <version>3.0.0</version>
         </plugin>
 
-        <!-- https://stackoverflow.com/questions/8252107/is-it-possible-to-execute-two-different-maven-exec-maven-plugin-in-a-single-pom -->
-        <!-- https://stackoverflow.com/questions/3231797/specify-system-property-to-maven-project -->
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
@@ -212,7 +194,7 @@
                 <systemProperties>
                   <systemProperty>
                         <key>log4j.configurationFile</key>
-                        <value>log4j2.xml</value>
+                        <value>src/main/resources/log4j2.xml</value>
                   </systemProperty>
                 </systemProperties>
               </configuration>
@@ -250,7 +232,7 @@
 
               <execution>
                 <id>release-jar</id>
-                <phase>package</phase> <!-- For future Matt, please remember that  <plugins> != <pluginManagement><plugins> -->
+                <phase>package</phase>
 
                 <configuration>
                   <descriptors>

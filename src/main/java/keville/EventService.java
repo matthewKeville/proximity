@@ -1,5 +1,7 @@
 package keville;
 
+import keville.settings.Settings;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -199,10 +201,10 @@ public class EventService {
 
   private static Connection getDbConnection() {
     Connection con  = null;
-    LOG.debug("connecting to " + settings.applicationConnectionString);
+    LOG.debug("connecting to " + settings.dbConnectionString);
     try {
-      con = DriverManager.getConnection(settings.applicationConnectionString);
-      LOG.debug("connected to " + settings.applicationConnectionString);
+      con = DriverManager.getConnection(settings.dbConnectionString);
+      LOG.debug("connected to " + settings.dbConnectionString);
     } catch (SQLException e) {
       LOG.error("Critical error : unable to read events from database app.db");
       LOG.error(e.getMessage());
