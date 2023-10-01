@@ -137,6 +137,11 @@ public class EventScannerScheduler implements Runnable {
 
   private boolean shouldRunNow(ScanRoutine routine) {
     if ( routine.disabled ) return false;
+    if ( routine.eventbrite && ( settings.eventbriteApiKey == null || settings.eventbriteApiKey.equals("") )) {
+      LOG.warn("the configuration for " + routine.name + " is invalid");
+      LOG.warn("to use eventbrite scanning you must supply an eventbrite api key");
+      return false;
+    }
     Instant nextScanStart = (routine.lastRan).plusSeconds(routine.delay);
     Instant now = Instant.now();
     return  nextScanStart.isBefore(now);

@@ -129,7 +129,11 @@ func main() {
 
   //https://stackoverflow.com/questions/19965795/how-to-write-log-to-file
   defaultLogger := log.Default()
-  fh, err := os.OpenFile("prxy-go.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+  err := os.MkdirAll("logs", os.ModePerm)
+  if err != nil {
+    log.Fatalf("unable to create logs directory")
+  }
+  fh, err := os.OpenFile("logs/prxy.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
   if err != nil {
     log.Fatalf("error configuring log file")
   }
