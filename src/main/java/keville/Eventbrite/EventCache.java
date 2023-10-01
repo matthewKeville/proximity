@@ -47,11 +47,11 @@ public class EventCache {
 
   private static Connection getDbConnection() {
     Connection con  = null;
-    LOG.debug("connecting to " + settings.eventbriteDbConnectionString);
+    LOG.debug("connecting to " + settings.dbConnectionString);
     try {
-      con = DriverManager.getConnection(settings.eventbriteDbConnectionString);
+      con = DriverManager.getConnection(settings.dbConnectionString);
     } catch (SQLException e) {
-      LOG.error("Critical error : unable to read events from database : " + settings.eventbriteDbConnectionString);
+      LOG.error("Critical error : unable to read events from database : " + settings.dbConnectionString);
       LOG.error(e.getMessage());
       System.exit(5);
     }
@@ -71,7 +71,7 @@ public class EventCache {
 
     Connection con = getDbConnection();
     try {
-      String queryTemplate = "INSERT INTO EVENT (EVENT_ID, JSON) "
+      String queryTemplate = "INSERT INTO EVENTBRITE_EVENT (EVENT_ID, JSON) "
         + " VALUES (?,?);";
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,eventId);
@@ -79,7 +79,7 @@ public class EventCache {
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
     } catch (SQLException se)  {
-      LOG.error("error adding eventbrite event data to eventbrite.db");
+      LOG.error("error adding eventbrite event data db");
       LOG.error(se.getMessage());
     } finally {
       closeDbConnection(con);
@@ -95,7 +95,7 @@ public class EventCache {
     Connection con = getDbConnection();
 
     try {
-      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=?;");
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENTBRITE_EVENT WHERE EVENT_ID=?;");
       ps.setString(1,eventId);
       ResultSet rs = ps.executeQuery();
       if (rs.next()) {
@@ -103,7 +103,7 @@ public class EventCache {
         jsonEvent = JsonParser.parseString(json).getAsJsonObject();
       } 
     } catch (SQLException se) {
-      LOG.error("error retrieving eventbrite event data from eventbrite.db");
+      LOG.error("error retrieving eventbrite event data from db");
       LOG.error(se.getMessage());
     } finally {
       closeDbConnection(con);

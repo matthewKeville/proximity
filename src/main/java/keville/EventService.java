@@ -194,7 +194,7 @@ public class EventService {
       }
     }
 
-    LOG.info("created  " + (discoveries) + " of " + events.size() + " events for createEvents ");
+    LOG.info("created  " + (discoveries.size()) + " of " + events.size() + " events for createEvents ");
     return discoveries;
 
   }

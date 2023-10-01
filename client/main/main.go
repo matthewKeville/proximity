@@ -169,6 +169,7 @@ func main() {
     } 
 
     fmt.Println("killing daemon")
+    log.Println("killing daemon")
     err := syscall.Kill(serverPid,syscall.SIGKILL)
 
     if ( err != nil ) {
@@ -197,6 +198,7 @@ func main() {
   if ( !serverUp ) {
     fmt.Println("proximity server has not been started")
     fmt.Println("please execute prxy --daemon  to start the server")
+    log.Println("tried to execute command but server is not started")
     os.Exit(0)
   }
 

@@ -17,7 +17,6 @@ public class Settings {
   static final int ALLEVENTS_MAX_PAGES_DEFAULT = 8;
 
   public String dbConnectionString;
-  public String eventbriteDbConnectionString;
   public String eventbriteApiKey;
   public int eventbriteMaxPages;
   public int alleventsMaxPages;
@@ -32,11 +31,6 @@ public class Settings {
     settings.dbConnectionString  = "jdbc:sqlite:app.db";
     if  ( json.has("db_connection_string")) {
       settings.dbConnectionString  = json.get("db_connection_string").getAsString();
-    }
-
-    settings.eventbriteDbConnectionString  = "jdbc:sqlite:eventbrite.db";
-    if  ( json.has("eventbrite_db_connection_string")) {
-      settings.eventbriteDbConnectionString  = json.get("eventbrite_db_connection_string").getAsString();
     }
 
     if ( json.has("eventbrite_api_key") ) {

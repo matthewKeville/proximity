@@ -20,5 +20,11 @@
     <Logger name="org.littleshoot.proxy" level="fatal" additivity="false">
       <AppenderRef ref="LOGFILE"/>
     </Logger>
+    <Logger name="org.eclipse.jetty" level="warn" additivity="false">
+      <AppenderRef ref="LOGFILE"/>
+    </Logger>
+    <Logger name="spark.embeddedserver" level="warn" additivity="false">
+      <AppenderRef ref="LOGFILE"/>
+    </Logger>
   </Loggers>
 </Configuration>
