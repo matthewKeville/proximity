@@ -210,7 +210,7 @@ func main() {
   }
 
   // launch table view
-  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr))
+  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr), tea.WithAltScreen())
   if _, err := p.Run(); err != nil {
     fmt.Println("An internal error occurred")
     log.Fatalf("An error occurred, error : %s",err)

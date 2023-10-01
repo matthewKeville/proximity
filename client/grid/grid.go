@@ -230,7 +230,6 @@ func InitialModel(latitude float64,longitude float64,radius float64,showVirtual 
     HeaderStyle(columnHeaderStyle).
     Focused(true).
     WithKeyMap(keys).
-    WithStaticFooter("A bird in the hand is worth two in the bush.").
     WithPageSize(20).
     WithBaseStyle(
       lipgloss.NewStyle().
@@ -290,10 +289,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 
-    s := "Events near you!\n\n"
+  s := m.table.View()
 
-    s += m.table.View()
-
-    return s
+  return s
 
 }
