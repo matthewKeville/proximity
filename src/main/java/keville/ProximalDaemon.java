@@ -43,6 +43,23 @@ public class ProximalDaemon
 
         port(4567);
 
+        get("/status", (request, response) -> { 
+              LOG.info("recieved GET /status");
+
+              String result = "Server : Online";
+
+              result += "\nScan routines loaded : " + settings.scanRoutines.size();
+              result +="\n";
+              for ( ScanRoutine sr : settings.scanRoutines ) {
+                result+=sr.toString();
+                result+="\n";
+              }
+
+              result += "\nCompilers loaded : " + 0;
+
+              return result;
+        });
+
         get("/events", (request, response) -> 
             { 
 

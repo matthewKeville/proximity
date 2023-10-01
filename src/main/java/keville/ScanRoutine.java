@@ -34,11 +34,7 @@ public class ScanRoutine {
 
     for ( JsonElement scan : scans ) {
       ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject());
-      if ( !routine.disabled ) {
-        scanRoutineList.add(routine);
-      } else {
-        LOG.info("ignoring scan routine : " + routine.name + " because it is disabled");
-      }
+      scanRoutineList.add(routine);
     }
 
     return scanRoutineList;
@@ -101,15 +97,18 @@ public class ScanRoutine {
 
   public String toString() {
 
-    String result = "radius : " + radius;
+    String result = "";
+    result += "\n\tname : " + name;
+    result += "\n\tenabled : " + !disabled;
+    result += "\n\tradius : " + radius;
     result += "\n\tlatitude : " + latitude;
     result += "\n\tlongitude : " + longitude;
-    result += "\n\tdelay : " + delay;
     result += "\n\tmeetup : " + meetup;
     result += "\n\tallevents : " + allevents;
     result += "\n\teventbrite : " + eventbrite;
+    result += "\n\tdelay : " + delay;
+    result += "\n\tlastRan : " + lastRan;
     result += "\n\trunOnRestart : " + runOnRestart;
-    result += "\n\tname : " + name;
     return result;
 
   }

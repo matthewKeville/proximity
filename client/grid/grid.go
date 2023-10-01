@@ -4,6 +4,7 @@ import (
   "proximity-client/http"
   "proximity-client/event"
   "fmt"
+  "log"
   "sort"
   "github.com/charmbracelet/bubbletea"
   "github.com/evertras/bubble-table/table"
@@ -183,7 +184,7 @@ func toTableRow(e event.Event) table.Row {
 
 func InitialModel(latitude float64,longitude float64,radius float64,showVirtual bool,daysBefore int) model {
 
-  fmt.Printf("latitude : %f\tlongitude : %f\tradius : %f",latitude,longitude,radius);
+  log.Printf("latitude : %f\tlongitude : %f\tradius : %f",latitude,longitude,radius);
 
   es := http.GetEvents(latitude,longitude,radius,showVirtual,daysBefore)
 
@@ -192,7 +193,7 @@ func InitialModel(latitude float64,longitude float64,radius float64,showVirtual 
     return es[i].Distance < es[j].Distance
   })
 
-  fmt.Printf("found %d events",len(es))
+  log.Printf("found %d events",len(es))
 
 
   const version string = "0.1"

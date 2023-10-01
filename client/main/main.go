@@ -2,12 +2,12 @@ package main
 
 import (
   "proximity-client/grid"
-  //"proximity-client/http"
-  //"proximity-client/event"
+  "proximity-client/http"
   "os"
   "os/exec"
   "io/ioutil"
   "strings"
+  "log"
   "syscall"
   "flag"
   "fmt"
@@ -21,9 +21,10 @@ func startServer() int {
   ///////////////////////////
   //delete previous pid file
   ///////////////////////////
+
   os.Remove("./pid")
 
-  fmt.Printf("starting proximal server")
+  log.Printf("starting proximal server")
 
   ///////////////////////////
   // start the server
@@ -31,27 +32,23 @@ func startServer() int {
 
   cwd, err := os.Getwd()
   if err != nil {
-    fmt.Println("encountered an error finding cwd")
-    fmt.Println(err)
+    log.Fatalf("encountered an error finding cwd %s", err)
     os.Exit(1)
   }
 
   logCfgPath := cwd+"/log4j2.xml";
-  //jarPath := cwd+"/proximity-1.0-SNAPSHOT-jar-with-dependencies.jar"
   jarPath := cwd+"/proximity-daemon.jar"
   cmd := exec.Command("java","-Dlog4j.configurationFile="+logCfgPath,"-jar",jarPath)
-  fmt.Println(cmd.Args)
+  log.Printf("starting the server ")
+  log.Printf("arguments : %s",cmd.Args)
+  log.Printf("cmd : %s",cmd)
   err2 := cmd.Start()
 
   if err2 != nil {
-
-    fmt.Println("encountered an error starting server")
-    fmt.Println(err2)
-    os.Exit(1)
-
+    log.Fatalf("encountered an error starting server %s", err2)
   } 
 
-  fmt.Printf("daemon started... %d",cmd.Process.Pid)
+  log.Printf("daemon started... %d",cmd.Process.Pid)
  
   ///////////////////////////
   //write pid to file
@@ -61,14 +58,12 @@ func startServer() int {
 
   file, err3 :=  os.Create("pid")
   if err3 != nil {
-    fmt.Printf("failed to create pid file %d",pid)
-    os.Exit(2)
+    log.Fatalf("failed to create pid file %d : %s",pid,err3)
   }
   
   _, err4  := file.WriteString(fmt.Sprintf("%d",pid))
   if err4 != nil {
-    fmt.Printf("failed writing  pid to file %d",pid)
-    os.Exit(2)
+    log.Fatalf("failed writing  pid to file %d : %s",pid,err4)
   }
 
   return pid
@@ -91,10 +86,7 @@ func serverRunning() (bool, int)  {
       return false, -1
 
     } else {
-
-      fmt.Printf("unable to check pidFile existance")
-      os.Exit(1)
-
+      log.Fatalf("unable to check pidFile existance : %s",err)
     }
   }
 
@@ -104,10 +96,7 @@ func serverRunning() (bool, int)  {
 
   data, err  := ioutil.ReadFile(pidFile)
   if  err != nil {
-
-    fmt.Printf("unable to read pidFile")
-    os.Exit(1)
-
+    log.Fatalf("unable to read pidFile : %s",  err)
   }
 
   ///////////////////////////
@@ -119,19 +108,16 @@ func serverRunning() (bool, int)  {
   pid, err := strconv.Atoi(pidString)
 
   if err != nil {
-
-    fmt.Println("unable to parse pidFile")
-    fmt.Println(err)
-    os.Exit(1)
-
+    log.Fatalf("unable to parse pidFile : %s", err)
   }
 
   ///////////////////////////
-  // process still running? (see docs)
+  // process still running? 
   ///////////////////////////
 
   process, err := os.FindProcess(pid)
   err = process.Signal(syscall.Signal(0))
+  // (see go docs for why this is necessary)
   if ( err == nil ) {
     return true, pid
   } 
@@ -141,13 +127,24 @@ func serverRunning() (bool, int)  {
 
 func main() {
 
+  //https://stackoverflow.com/questions/19965795/how-to-write-log-to-file
+  defaultLogger := log.Default()
+  fh, err := os.OpenFile("prxy-go.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+  if err != nil {
+    log.Fatalf("error configuring log file")
+  }
+  defer fh.Close()
+  defaultLogger.SetOutput(fh)
+  log.Printf("proximity client started...")
+
   serverUp, serverPid := serverRunning()
 
   // flags
 
   daemonPtr := flag.Bool("daemon", false, "start proximity daemon")
   killPtr := flag.Bool("kill", false, "kill proximity daemon")
-  statusPtr := flag.Bool("status", false, "print proximity server status report")
+  jsonPtr := flag.Bool("json", false, "return a json response standard out")
+  statusPtr := flag.Bool("status", false, "print proximity server status report") // not implemented
 
   radiusPtr := flag.Float64("radius",0.0,"event radius")
   latitudePtr := flag.Float64("latitude",0.0,"search latitude")
@@ -155,22 +152,24 @@ func main() {
   showVirtualPtr := flag.Bool("virtual", false,"show virtual events")
   daysBeforePtr := flag.Int("days", 0,"how many days out")
 
+
   flag.Parse()
+  log.Printf("parsing flags")
 
 
   if  *killPtr {
 
     if !serverUp {
-      fmt.Printf("daemon is already dead")
+      fmt.Println("daemon is already dead")
       os.Exit(0)
     } 
 
-    fmt.Printf("killing daemon")
+    fmt.Println("killing daemon")
     err := syscall.Kill(serverPid,syscall.SIGKILL)
 
     if ( err != nil ) {
-      fmt.Printf("unable to kill daemon")
-      fmt.Println(err)
+      fmt.Println("unable to kill daemon")
+      log.Panicf("unable to kill daemon : %s", err)
     }
 
     os.Exit(0)
@@ -181,25 +180,12 @@ func main() {
   if *daemonPtr {
 
     if serverUp {
-      fmt.Printf("daemon is already started")
+      fmt.Println("daemon is already started")
     } else {
       startServer()
     }
 
     os.Exit(0)
-
-  }
-
-  if  *statusPtr {
-
-    if !serverUp {
-      fmt.Printf("daemon is not running")
-      os.Exit(0)
-    }
-
-    fmt.Printf("placeholder status report")
-    os.Exit(0)
-    // here I would call an endpoint on the server /status
 
   }
 
@@ -210,11 +196,24 @@ func main() {
     os.Exit(0)
   }
 
+  if  *statusPtr {
+    status := http.GetStatus()
+    fmt.Println(status)
+    os.Exit(0)
+  }
+
+
+  if ( *jsonPtr ) {
+    es := http.GetEventsAsJson(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr)
+    fmt.Println(es)
+    os.Exit(0)
+  }
+
   // launch table view
   p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr))
   if _, err := p.Run(); err != nil {
-    fmt.Printf("An error occurred, error : %v",err)
-    os.Exit(1)
+    fmt.Println("An internal error occurred")
+    log.Fatalf("An error occurred, error : %s",err)
   }
 
 }

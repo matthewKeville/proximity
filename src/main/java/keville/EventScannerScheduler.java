@@ -136,6 +136,7 @@ public class EventScannerScheduler implements Runnable {
   }
 
   private boolean shouldRunNow(ScanRoutine routine) {
+    if ( routine.disabled ) return false;
     Instant nextScanStart = (routine.lastRan).plusSeconds(routine.delay);
     Instant now = Instant.now();
     return  nextScanStart.isBefore(now);
