@@ -3,6 +3,7 @@ package keville;
 import keville.util.GeoUtils;
 import keville.settings.Settings;
 import keville.Eventbrite.EventCache;
+import keville.compilers.EventCompiler;
 import keville.gson.InstantAdapter;
 
 import java.util.Map;
@@ -55,7 +56,12 @@ public class ProximalDaemon
                 result+="\n";
               }
 
-              result += "\nCompilers loaded : " + 0;
+              result += "\nCompilers loaded : " + settings.eventCompilers.size();
+              result += "\n";
+              for ( EventCompiler ec : settings.eventCompilers ) {
+                result+=ec.toString();
+                result+="\n";
+              }
 
               return result;
         });

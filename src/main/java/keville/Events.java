@@ -36,6 +36,14 @@ public class Events {
     };
   }
 
+  public static Predicate<Event> NotVirtual() {
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+        return !event.virtual;
+      }
+    };
+  }
+
   public static ClientEvent CreateClientEvent(Event event,double latitude,double longitude) {
 
     double distance = 0.0;

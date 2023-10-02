@@ -240,9 +240,17 @@ public class Settings {
 
         return Events.WithinKMilesOf(latitude,longitude,radius);
 
+      case "virtual":
+
+        if (!filterJson.has("allowed") || !filterJson.get("allowed").getAsBoolean() ) {
+          return Events.NotVirtual();
+        } 
+        return null;
+
       default:
         LOG.warn("filter type : " + filterType + " is unknown");
         return null;
+
     }
 
   }

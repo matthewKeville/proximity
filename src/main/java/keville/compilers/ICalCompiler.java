@@ -5,6 +5,7 @@ import keville.Event;
 import java.util.function.Predicate;
 import java.util.List;
 import java.util.Date;
+import java.util.stream.Collectors;
 import java.io.File;
 
 import biweekly.Biweekly;
@@ -24,6 +25,8 @@ public class ICalCompiler extends EventCompiler {
   public void compile(List<Event> events) {
 
     ICalendar ical = new ICalendar();        
+
+    events = events.stream().filter(filter).collect(Collectors.toList());
 
     for ( Event ev : events ) {
 

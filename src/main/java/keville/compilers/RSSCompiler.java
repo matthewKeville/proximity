@@ -3,9 +3,13 @@ package keville.compilers;
 import keville.Event;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.function.Predicate;
 import java.io.File;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -37,10 +41,7 @@ public class RSSCompiler extends EventCompiler {
 
   }
 
-  // update RSS file
-  // this  doesn't check if events are already items in the file
-  // there isn't supposed to be duplications because discoveries is meant
-  // to be events that were just found after a scan...
+  // note this  doesn't check if events are already items in the file
   public void compile(List<Event> discoveries) {
 
     if ( !Files.exists(file.toPath()) ) {
@@ -75,6 +76,8 @@ public class RSSCompiler extends EventCompiler {
 
 
     int added = 0;
+    discoveries = discoveries.stream().filter(filter).collect(Collectors.toList());
+
     for ( Event event : discoveries ) {
 
       //what if the nodes need updating ?  Needs rework when implementing Event Update Protocol
@@ -128,10 +131,17 @@ public class RSSCompiler extends EventCompiler {
 
   private Node createItem(Document doc,Event event) {
 
+    final int MAX_EVENT_NAME_SIZE = 100;
+    LocalDateTime  dateTime = LocalDateTime.ofInstant(event.start,  ZoneOffset.UTC);
+
+    String dayDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(dateTime);
+    String timeString = DateTimeFormatter.ofPattern("hh:mm").format(dateTime);
+
     Element item = doc.createElement("item");
-   
     Element titleNode = doc.createElement("title");
-    titleNode.appendChild(doc.createTextNode(event.name));
+
+    String titleString = dayDateString + " - " + event.name.substring(0,Math.min(MAX_EVENT_NAME_SIZE,event.name.length()));
+    titleNode.appendChild(doc.createTextNode(titleString));
     item.appendChild(titleNode);
 
     Element linkNode = doc.createElement("link");
@@ -139,7 +149,16 @@ public class RSSCompiler extends EventCompiler {
     item.appendChild(linkNode);
 
     Element descriptionNode = doc.createElement("description");
-    descriptionNode.appendChild(doc.createTextNode(event.description));
+    String descriptionString; 
+    descriptionString  = "What :<br>";
+    descriptionString += "<br>" + event.description + "<br>";
+    descriptionString += "<br>When :<br>";
+    descriptionString += "<br>" + dayDateString + " @ " + timeString + "<br>";
+    descriptionString += "<br>Where :<br>";
+    descriptionString += "<br>" + event.location.name;
+    descriptionString += "<br>" + event.location.locality  + " , " + event.location.region;
+
+    descriptionNode.appendChild(doc.createTextNode(descriptionString));
     item.appendChild(descriptionNode);
 
     String eventGuid = event.eventType.toString() + event.eventId;
@@ -171,8 +190,8 @@ public class RSSCompiler extends EventCompiler {
 
     LOG.info("creating inital feed");
 
-    String feedTitle = "a testing feed";
-    String feedDescription = "this is a testing for proximity";
+    String feedTitle = name;
+    String feedDescription = "proximity feed";
     String xml = ""
       + "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"
       + "<rss version=\"2.0\">"
