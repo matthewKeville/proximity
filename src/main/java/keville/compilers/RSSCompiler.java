@@ -25,8 +25,8 @@ public class RSSCompiler extends EventCompiler {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RSSCompiler.class);
 
-  public RSSCompiler(Predicate<Event> filter,File file) {
-    super(filter,file);
+  public RSSCompiler(String name,Predicate<Event> filter,File file) {
+    super(name,filter,file);
 
     if ( !Files.exists(file.toPath()) ) {
       LOG.info(file.toString() + " not found, creating rss xml base...");
@@ -81,7 +81,6 @@ public class RSSCompiler extends EventCompiler {
       
       if ( !itemAlreadyExists(items,event) ) {
         
-        LOG.info("adding new item to rss feed");
         channel.appendChild(createItem(rss,event));
         added++;
 

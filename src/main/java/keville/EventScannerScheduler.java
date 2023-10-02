@@ -18,7 +18,6 @@ public class EventScannerScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
-  private List<EventCompiler> compilers;
   private int timeStepMS = 10000;
 
   private EventbriteScanner eventbriteScanner;
@@ -35,10 +34,8 @@ public class EventScannerScheduler implements Runnable {
     allEventsScanner = new AllEventsScanner(settings);
 
     jobs = new LinkedList<EventScanJob>();
-    loadCompilers();
 
     LOG.info(" found : " + settings.scanRoutines.size() + " scan routines ");
-    LOG.info(" found : " + compilers.size() + " compilers ");
 
     settings.scanRoutines.stream()
       .filter(e -> e.runOnRestart)
@@ -114,7 +111,7 @@ public class EventScannerScheduler implements Runnable {
           LOG.info("compiling new events into output formats");
 
           List<Event> discoveries  =  EventService.createEvents(scanReport.events);
-          for ( EventCompiler ec : compilers )  {
+          for ( EventCompiler ec : settings.eventCompilers )  {
             ec.compile(discoveries);
           }
 
@@ -167,17 +164,6 @@ public class EventScannerScheduler implements Runnable {
 
   }
 
-  private void loadCompilers() {
 
-    compilers = new LinkedList<EventCompiler>();
-
-    //File file = new File("within3miles.rss");
-    /*
-    Predicate<Event> filter = Events.InTheFuture().
-      and(Events.WithinKMilesOf(settings.latitude,settings.longitude,settings.radius));
-      */
-    //compilers.add(new RSSCompiler(filter,file));
-    
-  }
 
 }

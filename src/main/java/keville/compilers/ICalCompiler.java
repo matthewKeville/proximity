@@ -16,8 +16,8 @@ public class ICalCompiler extends EventCompiler {
 
   static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ICalCompiler.class);
 
-  public ICalCompiler(Predicate<Event> filter, File file) {
-    super(filter,file);
+  public ICalCompiler(String name,Predicate<Event> filter, File file) {
+    super(name,filter,file);
   }
 
 
