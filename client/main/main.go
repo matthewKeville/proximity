@@ -39,9 +39,12 @@ func startServer() int {
   logCfgPath := cwd+"/log4j2.xml";
   jarPath := cwd+"/proximity-daemon.jar"
   cmd := exec.Command("java","-Dlog4j.configurationFile="+logCfgPath,"-jar",jarPath)
+  cmd.Stderr = os.Stderr
+
   log.Printf("starting the server ")
   log.Printf("arguments : %s",cmd.Args)
   log.Printf("cmd : %s",cmd)
+
   err2 := cmd.Start()
 
   if err2 != nil {
@@ -147,6 +150,7 @@ func main() {
 
   daemonPtr := flag.Bool("daemon", false, "start proximity daemon")
   killPtr := flag.Bool("kill", false, "kill proximity daemon")
+  restartPtr := flag.Bool("restart", false, "restart proximity daemon")
   jsonPtr := flag.Bool("json", false, "return a json response standard out")
   statusPtr := flag.Bool("status", false, "print proximity server status report") // not implemented
 
@@ -164,7 +168,7 @@ func main() {
   if  *killPtr {
 
     if !serverUp {
-      fmt.Println("daemon is already dead")
+      fmt.Println("no daemon to kill")
       os.Exit(0)
     } 
 
@@ -190,6 +194,16 @@ func main() {
       startServer()
     }
 
+    os.Exit(0)
+
+  }
+
+  if *restartPtr {
+
+    log.Println("killing daemon")
+    startServer()
+    log.Println("starting daemon")
+    fmt.Println("daemon restarted")
     os.Exit(0)
 
   }
