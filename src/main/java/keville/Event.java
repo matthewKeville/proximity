@@ -16,6 +16,8 @@ public class Event implements Serializable {
   public String url;
   public String organizer;
   public boolean virtual;
+  public Instant lastUpdate;
+  public EventStatusEnum status;
 
   public Event(
       int id, // pk in db
@@ -27,7 +29,9 @@ public class Event implements Serializable {
       Location location,
       String organizer,
       String url,
-      boolean virtual) {
+      boolean virtual,
+      Instant lastUpdate,
+      EventStatusEnum status) {
     this.id = id;
     this.eventId = eventId;
     this.eventType = eventType;
@@ -38,13 +42,15 @@ public class Event implements Serializable {
     this.organizer = organizer;
     this.url = url;
     this.virtual = virtual;
+    this.lastUpdate = lastUpdate;
+    this.status = status;
   }
 
   public String toString() {
     return String.format(
         "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
         name, description == null ? "" : description.substring(0, Math.min(description.length(), 60)), start.toString(),
-        virtual,eventTypeString(eventType),url);
+        virtual, eventTypeString(eventType), url);
   }
 
   public String toColorString() {

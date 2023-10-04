@@ -1,6 +1,7 @@
 package keville.meetup;
 
 import keville.Event;
+import keville.EventStatusEnum;
 import keville.EventBuilder;
 import keville.LocationBuilder;
 import keville.SchemaUtil;
@@ -137,6 +138,7 @@ public class MeetupHarProcessor {
     String id = splits[splits.length-1];
 
     eb.setEventId(id); 
+    eb.setStatus(EventStatusEnum.HEALTHY);
 
     return eb.build();
   }
@@ -281,6 +283,7 @@ public class MeetupHarProcessor {
 
     eb.setLocation(lb.build()); 
     eb.setEventTypeEnum(EventTypeEnum.MEETUP);
+    eb.setStatus(EventStatusEnum.HEALTHY);
 
     return eb.build();
   }

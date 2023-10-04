@@ -16,7 +16,9 @@ public class ClientEvent extends Event {
       event.location,
       event.organizer,
       event.url,
-      event.virtual
+      event.virtual,
+      event.lastUpdate,
+      event.status
     );
     this.distance = distance;
     this.daysFromNow = daysFromNow;

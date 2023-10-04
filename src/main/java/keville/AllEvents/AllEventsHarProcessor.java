@@ -1,6 +1,7 @@
 package keville.AllEvents;
 
 import keville.Event;
+import keville.EventStatusEnum;
 import keville.EventBuilder;
 import keville.SchemaUtil;
 import keville.HarUtil;
@@ -146,6 +147,9 @@ public class AllEventsHarProcessor {
     EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
     eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
     eb.setEventId(extractIdFromJson(eventJson)); 
+    //to cope with the partial data set extracted from this method, we immediatly tag
+    //these events as outdated so they can be completed in the update protocol.
+    eb.setStatus(EventStatusEnum.INCOMPLETE);
 
     return eb.build();
 

@@ -21,7 +21,8 @@ import static spark.Spark.*;
 public class ProximalDaemon 
 {
     static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
-    static Thread scheduleThread;
+    static Thread scannerThread;
+    static Thread updaterThread;
     static Settings settings;
 
     static double DEFAULT_LAT; 
@@ -128,7 +129,7 @@ public class ProximalDaemon
               LOG.info("processing request with parameters : radius = " + radius + " latitude  = " + latitude +  " longitude = " + longitude + " dayBefore " + daysBefore + " showVirtual " + showVirtual);
 
               return gson.toJson(
-                 EventService.getEvents()
+                 EventService.getAllEvents()
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
                 .filter(e -> showVirtual || !e.virtual)
@@ -173,10 +174,15 @@ public class ProximalDaemon
 
       EventCache.applySettings(settings);
       EventService.applySettings(settings);
-      EventScannerScheduler scheduler = new EventScannerScheduler(settings);
 
-      scheduleThread = new Thread(scheduler, "EventScannerScheduler");
-      scheduleThread.start();
+      EventScannerScheduler scannerScheduler = new EventScannerScheduler(settings);
+      EventUpdaterScheduler updaterScheduler = new EventUpdaterScheduler(settings);
+
+      scannerThread = new Thread(scannerScheduler, "ScannerThread");
+      updaterThread = new Thread(updaterScheduler, "UpdaterThread");
+
+      scannerThread.start();
+      updaterThread.start();
 
     }
 

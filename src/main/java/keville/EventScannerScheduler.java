@@ -108,11 +108,16 @@ public class EventScannerScheduler implements Runnable {
 
           LOG.info(scanReport.toString());
 
-          LOG.info("compiling new events into output formats");
+          LOG.info("processing scanned events");
 
-          List<Event> discoveries  =  EventService.createEvents(scanReport.events);
+          ScannedEventsReport ser =  EventService.processFoundEvents(scanReport.events);
+          LOG.info("processing summary");
+
+          LOG.info("created : " + ser.created.size());
+          LOG.info("updated : " + ser.updated.size());
+          LOG.info("unchanged : " + ser.unchanged.size());
           for ( EventCompiler ec : settings.eventCompilers )  {
-            ec.compile(discoveries);
+            ec.compile(ser.getAll());
           }
 
         }

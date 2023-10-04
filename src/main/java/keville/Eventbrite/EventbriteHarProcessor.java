@@ -2,6 +2,7 @@ package keville.Eventbrite;
 
 import keville.HarUtil;
 import keville.Event;
+import keville.EventStatusEnum;
 import keville.EventBuilder;
 import keville.LocationBuilder;
 import keville.EventTypeEnum;
@@ -130,6 +131,7 @@ public class EventbriteHarProcessor {
 
     eb.setLocation(lb.build());
     eb.setEventTypeEnum(EventTypeEnum.EVENTBRITE);
+    eb.setStatus(EventStatusEnum.HEALTHY);
 
     return eb.build();
 

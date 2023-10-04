@@ -1,5 +1,4 @@
 package keville;
-
 import java.time.Instant;
 
 public class EventBuilder {
@@ -15,6 +14,8 @@ public class EventBuilder {
   private String organizer;
   private String url;
   private boolean virtual;
+  private Instant lastUpdate;
+  private EventStatusEnum status;
 
   public EventBuilder() {
     id = -1;
@@ -61,6 +62,14 @@ public class EventBuilder {
     this.virtual = virtual;
   }
 
+  public void setLastUpdate(Instant lastUpdate) {
+    this.lastUpdate = lastUpdate;
+  }
+
+  public void setStatus(EventStatusEnum status) {
+    this.status = status;
+  }
+
   public Event build() {
     Event event = new Event(
       id,
@@ -72,7 +81,9 @@ public class EventBuilder {
       location,
       organizer,
       url,
-      virtual
+      virtual,
+      lastUpdate,
+      status
     );
     return event;
   }

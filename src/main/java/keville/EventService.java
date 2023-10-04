@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -47,6 +47,28 @@ public class EventService {
     return null;
   }
 
+  /* 
+     locate event row in db without pk
+   */
+  public static Event getEvent(EventTypeEnum type, String eventId) {
+    Connection con = getDbConnection();
+    try {
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
+      ps.setString(1,eventId);
+      ps.setString(2,type.toString());
+      ResultSet rs = ps.executeQuery();
+      if ( rs.next() ) {
+        return eventRowToEvent(rs);
+      }
+    } catch (SQLException e) {
+      LOG.error("An error occurred checking if an event exists { type, eventId } = { " + 
+          type + " , " + eventId + " } ");
+      LOG.error(e.getMessage());
+    } finally {
+      closeDbConnection(con);
+    }
+    return null;
+  }
 
   /* return a list of Events from the DB */
   public static List<Event> getEvents(Predicate<Event> filter) {
@@ -66,7 +88,7 @@ public class EventService {
         allEvents.add(event);
       }
     } catch (SQLException e) {
-      LOG.error("An error occurred retrieving events from the database");
+      LOG.error("An error occurred retrieving events from the database"); 
       LOG.error(e.getMessage());
     } finally {
       closeDbConnection(con);
@@ -80,11 +102,23 @@ public class EventService {
   }
 
   /* get all events */
-  public static List<Event> getEvents() {
+  public static List<Event> getAllEvents() {
+
     Predicate<Event> tautology = new Predicate<Event>() {
       public boolean test(Event e) { return true; }
     };
+
     return getEvents(tautology);
+  }
+
+  public static List<Event> getOudatedEvents(int batchSize,Duration maxAcceptableAge) {
+
+    Predicate<Event> filter = (e -> e.status == EventStatusEnum.INCOMPLETE);
+    filter = filter.or(e ->  e.lastUpdate.plus(maxAcceptableAge).isBefore(Instant.now()));
+    filter = filter.and(e ->  e.status != EventStatusEnum.QUARENTINE);
+
+    return getEvents(filter).stream().limit(batchSize).collect(Collectors.toList());
+
   }
 
   /* 
@@ -93,32 +127,83 @@ public class EventService {
    * and eventType (source). [New events from scanners do not have id]
    */
   public static boolean exists(EventTypeEnum type, String eventId) {
+    return getEvent(type,eventId) != null;
+  }
+
+  /**
+     update an event row in the database, modifiying it's LAST_UPDATE timestamp.
+     @return : update success
+  */
+  public static boolean updateEvent(Event event) {    
+
     Connection con = getDbConnection();
+
     try {
-      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
-      ps.setString(1,eventId);
-      ps.setString(2,type.toString());
-      ResultSet rs = ps.executeQuery();
-      if ( rs.next() ) {
-        //redundant?
-        return (rs.getString("event_id").equals(eventId) && rs.getString("source").equals(type.toString()));
+
+    String queryTemplate = 
+      " UPDATE " + 
+        " EVENT " +
+      " SET " +
+        " EVENT_ID = ?, " +
+        " SOURCE = ?, " +
+        " NAME = ?, " +
+        " DESCRIPTION = ?, " +
+        " START_TIME = ?, " + 
+        " LOCATION_NAME = ?, " +
+        " COUNTRY = ?, " + 
+        " REGION = ?, " +
+        " LOCALITY = ?, " +
+        " STREET_ADDRESS = ?, " +
+        " LATITUDE = ?, " +
+        " LONGITUDE = ?, " +
+        " ORGANIZER = ?, " +
+        " URL = ?, " +
+        " VIRTUAL = ?, " +
+        " STATUS = ?, " +
+        " LAST_UPDATE  = ? " +
+      " WHERE " + 
+        " ID = ? ";
+
+      PreparedStatement ps = con.prepareStatement(queryTemplate);
+      ps.setString(1,event.eventId);
+      ps.setString(2,event.eventType.toString());
+      ps.setString(3,event.name);
+      ps.setString(4,event.description);
+      ps.setString(5,event.start.toString());
+      ps.setString(6,event.location.name);
+      ps.setString(7,event.location.country);
+      ps.setString(8,event.location.region);
+      ps.setString(9,event.location.locality);
+      ps.setString(10,event.location.streetAddress);
+      if ( event.location.longitude == null || event.location.latitude == null ) {
+        ps.setObject(11,null);
+        ps.setObject(12,null);
+      } else {
+        ps.setDouble(11,event.location.latitude);
+        ps.setDouble(12,event.location.longitude);
       }
-    } catch (SQLException e) {
-      LOG.error("An error occurred checking if an event exists { type, eventId } = { " + 
-          type + " , " + eventId + " } ");
+      ps.setString(13,event.organizer);
+      ps.setString(14,event.url);
+      ps.setString(15,""+(event.virtual ? 1 : 0));
+      ps.setString(16,event.status.toString());
+      ps.setString(17,Instant.now().toString());
+
+      ps.setInt(18,event.id);
+
+      int rowsUpdated = ps.executeUpdate();
+      return rowsUpdated == 1;
+
+    } catch (Exception e) {
+      LOG.error("an error occurred updating an event in the database, id : " + event.id);
       LOG.error(e.getMessage());
     } finally {
       closeDbConnection(con);
     }
+
     return false;
+
   }
 
-  /*
-  public boolean updateEvent(Event event) {
-    //TODO 
-    return true;
-  }
-  */
 
   /**
    * 
@@ -142,8 +227,9 @@ public class EventService {
       "DESCRIPTION,START_TIME,LOCATION_NAME," +
       "COUNTRY,REGION,LOCALITY," +
       "STREET_ADDRESS,LATITUDE,LONGITUDE," +
-      "ORGANIZER,URL,VIRTUAL" +
-      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "ORGANIZER,URL,VIRTUAL," +
+      "STATUS,LAST_UPDATE" +
+      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,event.eventId);
@@ -166,10 +252,12 @@ public class EventService {
       ps.setString(13,event.organizer);
       ps.setString(14,event.url);
       ps.setString(15,""+(event.virtual ? 1 : 0));
+      ps.setString(16,event.status.toString());
+      ps.setString(17,Instant.now().toString());
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
-    } catch (SQLException e) {
+    } catch (Exception e) {
       LOG.error("an error occurred creating an event in the database");
       LOG.error("event : \n" + event.toString());
       LOG.error(e.getMessage());
@@ -177,25 +265,48 @@ public class EventService {
       closeDbConnection(con);
     }
 
-    return false;
+    return true;
   }
 
   /**
    * 
    * @return : newly created events
    */
-  public static List<Event> createEvents(List<Event> events) {
+  public static ScannedEventsReport processFoundEvents(List<Event> events) {
 
-    List<Event> discoveries  = new  LinkedList<Event>();
+    List<Event> created  = new  LinkedList<Event>();
+    List<Event> updated  = new  LinkedList<Event>();
+    List<Event> unchanged  = new  LinkedList<Event>();
 
     for ( Event e : events ) {
-      if (createEvent(e) ) {
-        discoveries.add(e);
+
+      Event dbe = getEvent(e.eventType,e.eventId);
+
+      if ( dbe == null ) {
+
+        if ( createEvent(e) ) {
+          dbe = getEvent(e.eventType,e.eventId);
+          created.add(dbe);
+        } else {
+          LOG.error("couldn't create a new event (type, eventId) : ( " + e.eventType.toString() + " , "  +  e.eventId + " )");
+        }
+
+      } else {
+
+        if ( false /* TODO : add logic to detect when an udpated event is found */ ) {
+          // set status to `current`
+          // set lastUpdated to now
+          // update row in db
+          updated.add(dbe);
+        } else {
+          unchanged.add(dbe);
+        }
+
       }
+
     }
 
-    LOG.info("created  " + (discoveries.size()) + " of " + events.size() + " events for createEvents ");
-    return discoveries;
+    return new ScannedEventsReport(created,updated,unchanged);
 
   }
 
@@ -299,6 +410,24 @@ public class EventService {
 
       int virtual = rs.getInt("virtual");
       eb.setVirtual(!rs.wasNull() && (virtual == 1));
+
+      String lastUpdateTimeString = rs.getString("last_update");
+      if ( !rs.wasNull() ) {
+        Instant lastUpdate  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(lastUpdateTimeString));
+        eb.setLastUpdate(lastUpdate);
+      }
+
+      String status = rs.getString("status");
+      if ( !rs.wasNull() )  {
+        try {
+          eb.setStatus(EventStatusEnum.valueOf(status));
+        } catch (IllegalArgumentException iae) {
+          LOG.error("mismatch between EventStatusEnum string in database and EventStatusEnum types");
+          LOG.error("offending string : " + status);
+          LOG.error(iae.getMessage());
+        }
+      }
+
       eb.setLocation(lb.build());
 
     } catch (SQLException se) {
