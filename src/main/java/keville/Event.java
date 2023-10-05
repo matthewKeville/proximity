@@ -79,4 +79,16 @@ public class Event implements Serializable {
     }
   }
 
+  public boolean equals(Event e) {
+
+    return e.eventId.equals(eventId) 
+        && e.eventType.equals(eventType)
+        && e.name.equals(name)
+        && e.description.equals(description)
+        && e.start.equals(start)
+        //&& e.organizer ( can be null? in eventbrite )
+        //&& e.location TODO :  (need to implement equality for Location ..)
+        && e.url.equals(url);
+  }
+
 }

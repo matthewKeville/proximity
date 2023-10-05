@@ -24,4 +24,14 @@ public class ScannedEventsReport {
     return all;
   }
 
+  public String toString() {
+
+    String result = "";
+    result += "\ncreated : " + created.size();
+    result += "\nupdated : " + updated.size();
+    result += "\nunchanged : " + unchanged.size();
+
+    return result;
+  }
+
 }

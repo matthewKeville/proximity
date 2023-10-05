@@ -1,6 +1,7 @@
 package keville;
 
 import keville.settings.Settings;
+import keville.EventMerger;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -293,13 +294,23 @@ public class EventService {
 
       } else {
 
-        if ( false /* TODO : add logic to detect when an udpated event is found */ ) {
-          // set status to `current`
-          // set lastUpdated to now
-          // update row in db
-          updated.add(dbe);
+        // known events found in a scan can be updated
+        Event merge = EventMerger.merge(dbe,e);
+
+        if ( merge != null ) {
+
+          LOG.info("found an updated version of existing event " + merge.id);
+          //update event in db
+          updateEvent(merge);
+          updated.add(merge);
+
         } else {
+
+          //refresh last update and status
+          LOG.info("found an existing event in scan " + dbe.id);
+          updateEvent(dbe);  
           unchanged.add(dbe);
+
         }
 
       }

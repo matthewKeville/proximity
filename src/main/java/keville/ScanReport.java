@@ -20,8 +20,8 @@ public class ScanReport {
   }
 
   public String toString() {
-    String result = "start:\t" + this.start.toString();
-    result = "processingStart:\t" + this.start.toString();
+    String result = "\nstart:\t" + this.start.toString();
+    result = "\nprocessingStart:\t" + this.start.toString();
     result += "\nfinish:\t" + this.finish.toString();
 
     Duration stime = Duration.between(this.start, this.processStart);
