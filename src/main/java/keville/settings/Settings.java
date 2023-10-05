@@ -1,9 +1,9 @@
 package keville.settings;
 
-import keville.ScanRoutine;
+import keville.scanner.ScanRoutine;
 
-import keville.Event;
-import keville.Events;
+import keville.event.Event;
+import keville.event.Events;
 import keville.compilers.EventCompiler;
 import keville.compilers.RSSCompiler;
 import keville.compilers.ICalCompiler;

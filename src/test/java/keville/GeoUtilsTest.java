@@ -2,6 +2,7 @@ package keville;
 
 import static org.junit.Assert.assertEquals;
 import keville.util.GeoUtils;
+import keville.location.Location;
 
 import org.junit.Test;
 
@@ -15,7 +16,7 @@ public class GeoUtilsTest
     public void getLocationFromGeoCoordinatesReturnsCorrectLocation() {
       double lat = 40.171200;
       double lon = -74.071700;
-      keville.Location result = GeoUtils.getLocationFromGeoCoordinates(lat,lon);
+      Location result = GeoUtils.getLocationFromGeoCoordinates(lat,lon);
 
       String expectedLocality = "Wall Township";
       String expectedRegion = "NJ";

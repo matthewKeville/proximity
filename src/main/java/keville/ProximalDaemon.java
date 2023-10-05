@@ -1,10 +1,16 @@
 package keville;
 
+import keville.providers.Eventbrite.EventCache;
+import keville.compilers.EventCompiler;
+import keville.event.EventService;
+import keville.event.Events;
+import keville.event.EventTypeEnum;
+import keville.scanner.EventScannerScheduler;
+import keville.scanner.ScanRoutine;
+import keville.updater.EventUpdaterScheduler;
+import keville.gson.InstantAdapter;
 import keville.util.GeoUtils;
 import keville.settings.Settings;
-import keville.Eventbrite.EventCache;
-import keville.compilers.EventCompiler;
-import keville.gson.InstantAdapter;
 
 import java.util.Map;
 import java.util.stream.Collectors;

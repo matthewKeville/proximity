@@ -1,8 +1,8 @@
 package keville.util;
 
-import keville.Location;
-import keville.LocationBuilder;
-import keville.USStateAndTerritoryCodes;
+import keville.location.Location;
+import keville.location.LocationBuilder;
+import keville.location.USStateAndTerritoryCodes;
 
 import java.util.Map;
 import java.util.HashMap;

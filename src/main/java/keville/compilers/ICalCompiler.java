@@ -1,6 +1,6 @@
 package keville.compilers;
 
-import keville.Event;
+import keville.event.Event;
 
 import java.util.function.Predicate;
 import java.util.List;

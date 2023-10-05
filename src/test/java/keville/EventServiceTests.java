@@ -1,6 +1,7 @@
 package keville;
 
-import keville.Event;
+import keville.event.Event;
+import keville.event.EventService;
 import keville.settings.Settings;
 
 import static org.junit.Assert.assertTrue;
