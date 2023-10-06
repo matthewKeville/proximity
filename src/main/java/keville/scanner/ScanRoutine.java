@@ -1,10 +1,13 @@
 package keville.scanner;
 
+import keville.event.EventTypeEnum;
 import keville.util.GeoUtils;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.LinkedList;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -22,9 +25,7 @@ public class ScanRoutine {
   public boolean runOnRestart;
   public String name;
 
-  public boolean meetup;
-  public boolean allevents;
-  public boolean eventbrite;
+  public Set<EventTypeEnum> types;
 
   public boolean disabled;
 
@@ -44,6 +45,7 @@ public class ScanRoutine {
   public static ScanRoutine parseScanRoutine(JsonObject scanJson) throws Exception {
 
     ScanRoutine scanRoutine = new ScanRoutine();
+    scanRoutine.types = new HashSet<EventTypeEnum>();
 
     if ( !scanJson.has("radius") ) {
       throw new Exception("Invalid scan scanRoutine , you must set a \"radius\"");
@@ -69,9 +71,15 @@ public class ScanRoutine {
 
     scanRoutine.delay = scanJson.get("delay").getAsInt();
 
-    scanRoutine.meetup     =  scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean();
-    scanRoutine.allevents  =  scanJson.has("allevents")  && scanJson.get("allevents").getAsBoolean();
-    scanRoutine.eventbrite =  scanJson.has("eventbrite") && scanJson.get("eventbrite").getAsBoolean();
+    if ( scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.MEETUP);
+    }
+    if ( scanJson.has("allevents")     && scanJson.get("allevents").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.ALLEVENTS);
+    }
+    if ( scanJson.has("eventbrite")     && scanJson.get("eventbrite").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.EVENTBRITE);
+    }
 
     scanRoutine.runOnRestart =  scanJson.has("run_on_restart") && scanJson.get("run_on_restart").getAsBoolean();
     scanRoutine.lastRan = scanRoutine.runOnRestart ? Instant.EPOCH : Instant.now();
@@ -87,11 +95,9 @@ public class ScanRoutine {
   public static ScanRoutine createDefault() {
 
     ScanRoutine routine = new ScanRoutine();
+    routine.types = new HashSet<EventTypeEnum>();
     routine.radius = 5.0;
     routine.delay = 7200;
-    routine.meetup = true;
-    routine.allevents = true;
-
     return routine;
   }
 
@@ -103,9 +109,9 @@ public class ScanRoutine {
     result += "\n\tradius : " + radius;
     result += "\n\tlatitude : " + latitude;
     result += "\n\tlongitude : " + longitude;
-    result += "\n\tmeetup : " + meetup;
-    result += "\n\tallevents : " + allevents;
-    result += "\n\teventbrite : " + eventbrite;
+    result += "\n\tmeetup : " + types.contains(EventTypeEnum.MEETUP);
+    result += "\n\tallevents : " + types.contains(EventTypeEnum.ALLEVENTS);
+    result += "\n\teventbrite : " + types.contains(EventTypeEnum.EVENTBRITE);
     result += "\n\tdelay : " + delay;
     result += "\n\tlastRan : " + lastRan;
     result += "\n\trunOnRestart : " + runOnRestart;

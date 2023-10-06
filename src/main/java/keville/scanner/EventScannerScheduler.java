@@ -3,15 +3,12 @@ package keville.scanner;
 import keville.event.EventService;
 import keville.event.EventTypeEnum;
 import keville.compilers.EventCompiler;
-import keville.providers.AllEvents.AllEventsScanner;
-import keville.providers.Eventbrite.EventbriteScanner;
-import keville.providers.meetup.MeetupScanner;
+import keville.providers.Providers;
 import keville.settings.Settings;
 
-import java.util.function.Predicate;
 import java.util.List;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ArrayList;
 import java.time.Instant;
 
 
@@ -20,24 +17,14 @@ public class EventScannerScheduler implements Runnable {
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerScheduler.class);
   private List<EventScanJob> jobs;
   private int timeStepMS = 10000;
-
-  private EventbriteScanner eventbriteScanner;
-  private MeetupScanner meetupScanner;
-  private AllEventsScanner allEventsScanner;
   private Settings settings;
 
   public EventScannerScheduler(Settings settings) {
 
     this.settings = settings;
-
-    eventbriteScanner = new EventbriteScanner(settings);
-    meetupScanner = new MeetupScanner(settings);
-    allEventsScanner = new AllEventsScanner(settings);
-
     jobs = new LinkedList<EventScanJob>();
 
     LOG.info(" found : " + settings.scanRoutines.size() + " scan routines ");
-
     settings.scanRoutines.stream()
       .filter(e -> e.runOnRestart)
       .forEach(e -> {
@@ -71,37 +58,23 @@ public class EventScannerScheduler implements Runnable {
         LOG.info("executing scan job");
         LOG.info(esj.toString());
         ScanReport scanReport = null;
+        try {
 
-        switch ( esj.source ) {
-          case ALLEVENTS: 
-            try {
-              scanReport = allEventsScanner.scan(esj.latitude,esj.longitude,esj.radius);
-            } catch (Exception e) {
-              LOG.error("scan failed : ALLEVENTS");
-              LOG.error(e.getMessage());
+            EventScanner scanner = Providers.getScanner(esj.source); 
+            if ( scanner != null ) {
+                scanReport = Providers.providers.get(esj.source)
+                    .scanner.scan(esj.latitude,esj.longitude,esj.radius);
+            } else {
+                LOG.error("unable to find a scanner for type : " + esj.source);
             }
-            break;
-          case EVENTBRITE:
-            try {
-              scanReport = eventbriteScanner.scan(esj.latitude,esj.longitude,esj.radius);
-            } catch (Exception e) {
-              LOG.error("scan failed : EVENTBRITE");
-              LOG.error(e.getMessage());
-            }
-            break;
-          case MEETUP: 
-            try {
-              scanReport  = meetupScanner.scan(esj.latitude,esj.longitude,esj.radius);
-            } catch (Exception e) {
-              LOG.error("scan failed : MEETUP");
-              LOG.error(e.getMessage());
-            }
-            break;
-          case DEBUG:
-            break;
-          default:
-            LOG.warn("This EventType case has not been programmed explicitly and will not be evaluated");
+
+        } catch (Exception e) {
+
+            LOG.error("scan failed, type : " + esj.source.toString());
+            LOG.error(e.getMessage());
+
         }
+
 
         LOG.info("scan job complete");
 
@@ -138,11 +111,18 @@ public class EventScannerScheduler implements Runnable {
 
   private boolean shouldRunNow(ScanRoutine routine) {
     if ( routine.disabled ) return false;
-    if ( routine.eventbrite && ( settings.eventbriteApiKey == null || settings.eventbriteApiKey.equals("") )) {
+    //this failsafe is in the wrong place, we want to abstract away the
+    //scan routine source... 
+    //TODO : move to settings where we are aware of specific types.
+    if ( routine.types.contains(EventTypeEnum.EVENTBRITE) && 
+        ( settings.eventbriteApiKey == null || 
+          settings.eventbriteApiKey.equals("") 
+        )
+    ) {
       LOG.warn("the configuration for " + routine.name + " is invalid");
       LOG.warn("to use eventbrite scanning you must supply an eventbrite api key");
       return false;
-    }
+    } 
     Instant nextScanStart = (routine.lastRan).plusSeconds(routine.delay);
     Instant now = Instant.now();
     return  nextScanStart.isBefore(now);
@@ -152,19 +132,17 @@ public class EventScannerScheduler implements Runnable {
 
     List<EventScanJob> newJobs = new LinkedList<EventScanJob>();
 
-      if ( routine.eventbrite ) {
-        newJobs.add(new EventScanJob(EventTypeEnum.EVENTBRITE,routine.radius,routine.latitude,routine.longitude));
-      }
+    Iterator<EventTypeEnum> typeIterator = routine.types.iterator();
 
-      if ( routine.meetup ) {
-        newJobs.add(new EventScanJob(EventTypeEnum.MEETUP,routine.radius,routine.latitude,routine.longitude));
-      }
+    while ( typeIterator.hasNext() ) {
+        newJobs.add(new EventScanJob(typeIterator.next(),
+            routine.radius,
+            routine.latitude,
+            routine.longitude
+        ));
+    }
 
-      if ( routine.allevents) {
-        newJobs.add(new EventScanJob(EventTypeEnum.ALLEVENTS,routine.radius,routine.latitude,routine.longitude));
-      }
-
-      return newJobs;
+    return newJobs;
 
   }
 

@@ -1,5 +1,7 @@
 package keville.event;
 
+import keville.merger.EventMerger;
+import keville.providers.Providers;
 import keville.scanner.ScannedEventsReport;
 import keville.settings.Settings;
 import keville.location.LocationBuilder;
@@ -296,7 +298,13 @@ public class EventService {
       } else {
 
         // known events found in a scan can be updated
-        Event merge = EventMerger.merge(dbe,e);
+        EventMerger eventMerger = Providers.getMerger(dbe.eventType);
+        if ( eventMerger == null ) {
+            LOG.error("Unable to find merger for type : " + dbe.eventType);
+            LOG.error("aborting processing for event id " + dbe.id);
+            continue;
+        }
+        Event merge = eventMerger.merge(dbe,e);
 
         if ( merge != null ) {
 

@@ -1,5 +1,6 @@
 package keville;
 
+import keville.providers.Providers;
 import keville.providers.Eventbrite.EventCache;
 import keville.compilers.EventCompiler;
 import keville.event.EventService;
@@ -44,10 +45,6 @@ public class ProximalDaemon
         Gson gson = new GsonBuilder()
           .registerTypeAdapter(Instant.class, new InstantAdapter())
           .create();
-
-        // this request should be accompanied with radius/lat/lon otherwise auto inferred 
-        // always assuming auto for now ...
-        Map<String,Double> coords = GeoUtils.getClientGeolocation();
 
         port(4567);
 
@@ -178,11 +175,17 @@ public class ProximalDaemon
       LOG.info("settings loaded ...");
       LOG.info(settings.toString());
 
-      EventCache.applySettings(settings);
+      Providers.init(settings);
+
+      EventCache.applySettings(settings); //this doesn't seem like it belongs
+                                          //here. We should remain Type 
+                                          //agnostic here.
+                                          
       EventService.applySettings(settings);
 
       EventScannerScheduler scannerScheduler = new EventScannerScheduler(settings);
       EventUpdaterScheduler updaterScheduler = new EventUpdaterScheduler(settings);
+
 
       scannerThread = new Thread(scannerScheduler, "ScannerThread");
       updaterThread = new Thread(updaterScheduler, "UpdaterThread");

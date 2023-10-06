@@ -51,7 +51,7 @@ public class Event implements Serializable {
     return String.format(
         "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
         name, description == null ? "" : description.substring(0, Math.min(description.length(), 60)), start.toString(),
-        virtual, eventTypeString(eventType), url);
+        virtual, eventType.toString(), url);
   }
 
   public String toColorString() {
@@ -62,34 +62,65 @@ public class Event implements Serializable {
             AnsiColors.GREEN),
         AnsiColors.colorString(start.toString(), AnsiColors.YELLOW),
         AnsiColors.colorString(Boolean.toString(virtual), AnsiColors.PURPLE_BRIGHT),
-        AnsiColors.colorString(eventTypeString(eventType), AnsiColors.PURPLE),
+        AnsiColors.colorString(eventType.toString(), AnsiColors.PURPLE),
         AnsiColors.colorString(url, AnsiColors.WHITE));
 
   }
 
-  public static String eventTypeString(EventTypeEnum type) {
-    switch (type) {
-      case EVENTBRITE:
-        return "Eventbrite.com";
-      case MEETUP:
-        return "meetup.com";
-      case ALLEVENTS:
-        return "allevents.in";
-      default:
-        return "unknown";
-    }
-  }
-
   public boolean equals(Event e) {
 
-    return e.eventId.equals(eventId) 
-        && e.eventType.equals(eventType)
-        && e.name.equals(name)
-        && e.description.equals(description)
-        && e.start.equals(start)
-        //&& e.organizer ( can be null? in eventbrite )
-        //&& e.location TODO :  (need to implement equality for Location ..)
-        && e.url.equals(url);
+    boolean sameType = true;
+    if ( eventType != null && e.eventType != null ) {
+      sameType = eventType.equals(e.eventType);
+    } else {
+      sameType = eventType == null && e.eventType == null;
+    }
+
+    boolean sameDescription = true;
+    if ( description != null && e.description != null ) {
+      sameDescription = description.equals(e.description);
+    } else {
+      sameDescription = description == null && e.description == null;
+    }
+
+    boolean sameName = true;
+    if ( name != null && e.name != null ) {
+      sameName = name.equals(e.name);
+    } else {
+      sameName = name == null && e.name == null;
+    }
+
+    boolean sameOrganizer = true;
+    if ( organizer != null && e.organizer != null ) {
+      sameOrganizer = organizer.equals(e.organizer);
+    } else {
+      sameOrganizer = organizer == null && e.organizer == null;
+    }
+
+    boolean sameStart = true;
+    if ( start != null && e.start != null ) {
+      sameStart = start.equals(e.start);
+    } else {
+      sameStart = start == null && e.start == null;
+    }
+
+    boolean sameUrl = true;
+    if ( url != null && e.url != null ) {
+      sameUrl = url.equals(e.url);
+    } else {
+      sameUrl = url == null && e.url == null;
+    }
+
+    // TODO : Location
+    
+    return sameName 
+      && sameType 
+      && sameDescription 
+      && sameName 
+      && sameOrganizer 
+      && sameStart
+      && sameUrl;
+
   }
 
 }
