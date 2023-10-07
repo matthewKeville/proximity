@@ -9,20 +9,20 @@ An event aggregator written in Java & Go
 - Explore events near you with a colorful TUI built with the excellent [charm](https://github.com/charmbracelet) toolchain and [bubble-table](https://github.com/Evertras/bubble-table) extension.
 - Highly customizable and easily configurable settings written in JSON.
 
-## Installation
+## ~~Installation~~
 
 TODO
 
 ## Overview
 
-Proximity runs a java server to perform web scraping against the target sites. This was designed
+Proximity runs a Java server to perform web scraping against the target sites. This was designed
 as a utility that runs routinely, but infrequently. To scrape event data, you define
-`scans routines` in a configuration file `settings.json`. The server will load these `scans routines` into memory on startup
+scan ***routines*** in a configuration file `settings.json`. The server will load these scan ***routines*** into memory on startup
 and perform them at the requested frequency.
 
-When the server finds events not in it's database it updates any configured `compilers`.
+When the server finds events not in it's database it updates any configured ***compilers***.
 <br><br>
-`compilers` in proximity are output mechanisms that transform events into a format that can be integrated
+***compilers*** in proximity are output mechanisms that transform events into a format that can be integrated
 into other software. One of the main  motivations for this  project was a desire to have an **RSS** feed that would
 inform me when events of interest where happening in my area. Currently proximity supporst two types of compilers
 **RSS** and **iCalendar**.
@@ -33,77 +33,97 @@ to the Web Api.
 
 As the project evolved I found it unergonomic to interface with the data strictly through the sqlite3 client and felt limited by the command line capabilities of java so I created a companion client `prxy` written in go that communicates with the main java server through the Web API.
 
-When `prxy` requests data from the server it will tell the server
-to infer the geolocation based on the current IP address. As a consequence if you setup a `scan routine` that is not
-based on your current location, then `prxy` will return no events. If you would like to customize what data
-is retrieved from the server you can  specify a geographical region with `--radius`  `--latitude` `--longitude`.
-It is worth noting that this invocation `prxy --radius --latitude --longitude` does not perform or request a scan, it
-accesses data already on  the server.
-
 #### TLDR
 
-Java server performs `scan routines` and creates `compilers` based on `settings.json`.
+A Java server performs scan **routines** and executes **compilers** that create custom event output formats.
 <br>
-`prxy` is a CLI utility to access the data found by the Java server.
+<br>
+`prxy` is a CLI to access the data found by the server.
 
 
-## Configuration
-```
+## ~~Configuration~~
+
+**Under construction**
+
+```json
 ./settings.json
 
 {
-  "db_connection_string" :  "jdbc:sqlite:app.db",
-  "eventbrite_db_connection_string" :  "jdbc:sqlite:eventbrite.db",
-  "eventbrite_api_key" : <your eventbrite api key>,
+  "eventbrite_api_key" : "<your eventbrite api key>",
   "eventbrite_max_pages": 10,
   "allevents_max_pages": 10,
-  "run_on_restart" : false,
-  "scans" : []
+  "scans" : [],
   "compilers" : []
 }
 ```
 
-## scan routines 
+## ~~scan routines~~
 
 TODO
 
-## compilers 
+## ~~compilers~~
 
 TODO
 
 ## Usage
 
-start the server
+### Manage Server
+
 
 ```sh
-prxy --daemon
+prxy --daemon # start the server
 ```
-
-check server status (useful to test settings.json)
 
 ```sh
-prxy --status
+prxy --kill # kill the server
 ```
-
-view local events in an interactive table
 
 ```sh
-prxy
+prxy --restart # equivalent to ./prxy --kill && ./prxy --daemon
 ```
 
-print events as json on the command line
+### Configuration Check
 
 ```sh
-prxy --json
+prxy --list-routine # print loaded routines as json
 ```
 
-Filter events returned from the server based on geolocation
+```sh
+prxy --list-compiler # print loaded compilers as json string
+```
+
+***These can be helpful when troubleshooting configuration issues.***
+
+### Format Options
+
+
+```sh
+prxy # no format, loads an interactive table
+```
+
+```sh
+prxy --json # print events as json string
+```
+
+### Filters (Location)
+
+
 ```sh
 prxy --radius <radius> --latitude <latitude> --longitude <longitude> 
 ```
-Allow online events in result set
+
+or
+
 ```sh
-prxy --virtual <virtual>
+prxy --routine <routine-name> # use the same location settings as named routine
+```
+
+***When no Location Filter is specified `prxy` will not filter events by location***
+
+#### Filters (Content)
+
+```sh
+prxy --virtual <True/False> #allow online events in result set?
 ```
 
 
