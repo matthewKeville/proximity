@@ -4,12 +4,10 @@ import keville.event.EventTypeEnum;
 import keville.settings.Settings;
 
 import keville.providers.AllEvents.AllEventsScanner;
-import keville.providers.AllEvents.AllEventsUpdater;
 import keville.providers.Eventbrite.EventbriteScanner;
-import keville.providers.Eventbrite.EventbriteUpdater;
 import keville.providers.meetup.MeetupScanner;
-import keville.providers.meetup.MeetupUpdater;
 import keville.merger.DefaultEventMerger;
+import keville.updater.DefaultUpdater;
 
 import keville.scanner.EventScanner;
 import keville.merger.EventMerger;
@@ -29,19 +27,19 @@ public class Providers {
         
         Provider ae = new Provider(
                 new AllEventsScanner(settings),
-                new AllEventsUpdater(),
+                new DefaultUpdater(),
                 defaultMerger
         );
 
         Provider eb = new Provider(
                 new EventbriteScanner(settings),
-                new EventbriteUpdater(),
+                new DefaultUpdater(),
                 defaultMerger
         );
 
         Provider mu = new Provider(
                 new MeetupScanner(settings),
-                new MeetupUpdater(),
+                new DefaultUpdater(),
                 defaultMerger
         );
 
