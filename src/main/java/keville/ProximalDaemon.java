@@ -10,12 +10,15 @@ import keville.scanner.EventScannerScheduler;
 import keville.scanner.ScanRoutine;
 import keville.updater.EventUpdaterScheduler;
 import keville.gson.InstantAdapter;
+import keville.gson.FileAdapter;
 import keville.util.GeoUtils;
 import keville.settings.Settings;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.time.Instant;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -34,7 +37,7 @@ public class ProximalDaemon
 
     static double DEFAULT_LAT; 
     static double DEFAULT_LON; 
-    static final double DEFAULT_RAD = 5.0; 
+    static final double DEFAULT_RAD = Double.MAX_VALUE;
 
     static {
       initialize();
@@ -44,6 +47,7 @@ public class ProximalDaemon
     {
         Gson gson = new GsonBuilder()
           .registerTypeAdapter(Instant.class, new InstantAdapter())
+          .registerTypeAdapter(File.class, new FileAdapter())
           .create();
 
         port(4567);
@@ -52,20 +56,8 @@ public class ProximalDaemon
               LOG.info("recieved GET /status");
 
               String result = "Server : Online";
-
               result += "\nScan routines loaded : " + settings.scanRoutines.size();
-              result +="\n";
-              for ( ScanRoutine sr : settings.scanRoutines ) {
-                result+=sr.toString();
-                result+="\n";
-              }
-
               result += "\nCompilers loaded : " + settings.eventCompilers.size();
-              result += "\n";
-              for ( EventCompiler ec : settings.eventCompilers ) {
-                result+=ec.toString();
-                result+="\n";
-              }
 
               return result;
         });
@@ -75,44 +67,63 @@ public class ProximalDaemon
 
               LOG.info("recieved GET /events");
 
-              //  this query parameter extraction feels awkward at best
-              //  It is the way it is because java lambdas require final or effectively final
-              //  variables (not class fields)
-
+              String routineName = null;
               Double radius;
-              if (request.queryMap().hasKey("radius")) {
-                Double queryRadius = request.queryMap().get("radius").doubleValue();
-                if ( queryRadius != null ) {
-                  radius = queryRadius;
+              Double latitude;
+              Double longitude;
+
+              // either the user querys with a geographical circle, or the
+              // area defined by a routine.
+
+              if (request.queryMap().hasKey("routine")) {
+               
+                routineName = request.queryMap().get("routine").value();
+                ScanRoutine sr = settings.scanRoutines.get(routineName);
+                if ( sr != null ) {
+                  radius = sr.radius;
+                  latitude = sr.latitude;
+                  longitude = sr.longitude;
+                } else {
+                  radius  = DEFAULT_RAD;
+                  latitude = DEFAULT_LAT; 
+                  longitude = DEFAULT_LON; 
+                }
+
+              } else {
+
+                if (request.queryMap().hasKey("radius")) {
+                  Double queryRadius = request.queryMap().get("radius").doubleValue();
+                  if ( queryRadius != null ) {
+                    radius = queryRadius;
+                  } else {
+                    radius = DEFAULT_RAD; 
+                  }
                 } else {
                   radius = DEFAULT_RAD; 
                 }
-              } else {
-                radius = DEFAULT_RAD; 
-              }
 
-              Double latitude;
-              if (request.queryMap().hasKey("latitude")) {
-                Double queryLatitude = request.queryMap().get("latitude").doubleValue();
-                if ( queryLatitude != null ) {
-                  latitude = queryLatitude;
+                if (request.queryMap().hasKey("latitude")) {
+                  Double queryLatitude = request.queryMap().get("latitude").doubleValue();
+                  if ( queryLatitude != null ) {
+                    latitude = queryLatitude;
+                  } else {
+                    latitude = DEFAULT_LAT; 
+                  }
                 } else {
                   latitude = DEFAULT_LAT; 
                 }
-              } else {
-                latitude = DEFAULT_LAT; 
-              }
 
-              Double longitude;
-              if (request.queryMap().hasKey("longitude")) {
-                Double queryLongitude = request.queryMap().get("longitude").doubleValue();
-                if ( queryLongitude != null ) {
-                  longitude = queryLongitude;
+                if (request.queryMap().hasKey("longitude")) {
+                  Double queryLongitude = request.queryMap().get("longitude").doubleValue();
+                  if ( queryLongitude != null ) {
+                    longitude = queryLongitude;
+                  } else {
+                    longitude = DEFAULT_LON; 
+                  }
                 } else {
                   longitude = DEFAULT_LON; 
                 }
-              } else {
-                longitude = DEFAULT_LON; 
+
               }
 
               Integer daysBefore;
@@ -129,7 +140,13 @@ public class ProximalDaemon
 
               boolean showVirtual = request.queryMap().hasKey("virtual") && request.queryMap().get("virtual").booleanValue();
 
-              LOG.info("processing request with parameters : radius = " + radius + " latitude  = " + latitude +  " longitude = " + longitude + " dayBefore " + daysBefore + " showVirtual " + showVirtual);
+              LOG.info("processing request with parameters : " 
+                  + ((routineName != null) ? " routine = " + routineName : "")
+                  + " radius = " + radius 
+                  + " latitude  = " + latitude 
+                  +  " longitude = " + longitude 
+                  + " dayBefore " + daysBefore 
+                  + " showVirtual " + showVirtual);
 
               return gson.toJson(
                  EventService.getAllEvents()
@@ -143,6 +160,24 @@ public class ProximalDaemon
                 .collect(Collectors.toList())
               );
         });
+
+
+        get("/routine", (request, response) ->  { 
+          return gson.toJson(
+            settings.scanRoutines.values()
+            .stream()
+            .collect(Collectors.toList())
+          );
+        });
+
+        get("/compiler", (request, response) ->  { 
+          return gson.toJson(
+            settings.eventCompilers
+            .stream()
+            .collect(Collectors.toList())
+          );
+        });
+
 
         LOG.info("spark initialized");
 

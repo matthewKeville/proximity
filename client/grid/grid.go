@@ -182,11 +182,11 @@ func toTableRow(e event.Event) table.Row {
   })
 }
 
-func InitialModel(latitude float64,longitude float64,radius float64,showVirtual bool,daysBefore int) model {
+func InitialModel(latitude float64,longitude float64,radius float64,showVirtual bool,daysBefore int,routine string) model {
 
-  log.Printf("latitude : %f\tlongitude : %f\tradius : %f",latitude,longitude,radius);
+  log.Printf("latitude : %f\tlongitude : %f\tradius : %f\troutine : %s",latitude,longitude,radius,routine);
 
-  es := http.GetEvents(latitude,longitude,radius,showVirtual,daysBefore)
+  es := http.GetEvents(latitude,longitude,radius,showVirtual,daysBefore,routine)
 
 
   sort.Slice(es, func(i, j int) bool {

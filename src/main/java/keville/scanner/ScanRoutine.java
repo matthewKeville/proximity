@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
@@ -29,16 +30,19 @@ public class ScanRoutine {
 
   public boolean disabled;
 
-  public static List<ScanRoutine> parseScanRoutines(JsonArray scans) throws Exception {
+  public static Map<String,ScanRoutine> parseScanRoutines(JsonArray scans) throws Exception {
 
-    List<ScanRoutine> scanRoutineList = new LinkedList<ScanRoutine>();
+    Map<String,ScanRoutine> scanRoutineMap = new HashMap<String,ScanRoutine>();
 
     for ( JsonElement scan : scans ) {
       ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject());
-      scanRoutineList.add(routine);
+      if ( scanRoutineMap.containsKey(routine.name) ) {
+          LOG.warn("Scan routine names must be unique! But found " + routine.name + " more than once");
+      }
+      scanRoutineMap.put(routine.name,routine);
     }
 
-    return scanRoutineList;
+    return scanRoutineMap;
 
   }
 

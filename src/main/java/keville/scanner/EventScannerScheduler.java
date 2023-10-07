@@ -24,13 +24,6 @@ public class EventScannerScheduler implements Runnable {
     this.settings = settings;
     jobs = new LinkedList<EventScanJob>();
 
-    LOG.info(" found : " + settings.scanRoutines.size() + " scan routines ");
-    settings.scanRoutines.stream()
-      .filter(e -> e.runOnRestart)
-      .forEach(e -> {
-        LOG.info(e.name + " is scheduled to run on restart");
-      });
-
   }
 
   public void run() {
@@ -41,7 +34,10 @@ public class EventScannerScheduler implements Runnable {
 
       LOG.debug("evaluating scan routines");
 
-      for ( ScanRoutine routine : settings.scanRoutines ) {
+      Iterator<String> routineKeyIterator = settings.scanRoutines.keySet().iterator();
+
+      while (routineKeyIterator.hasNext() ) {
+        ScanRoutine routine = settings.scanRoutines.get(routineKeyIterator.next());
         if ( shouldRunNow(routine) ) {
           LOG.info("It is time to scan " + routine.name);
           List<EventScanJob> newJobs = makeScanJobs(routine);

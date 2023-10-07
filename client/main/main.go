@@ -158,9 +158,13 @@ func main() {
   daemonPtr := flag.Bool("daemon", false, "start proximity daemon")
   killPtr := flag.Bool("kill", false, "kill proximity daemon")
   restartPtr := flag.Bool("restart", false, "restart proximity daemon")
+
   jsonPtr := flag.Bool("json", false, "return a json response standard out")
   statusPtr := flag.Bool("status", false, "print proximity server status report") // not implemented
+  listRoutinePtr := flag.Bool("list-routine", false, "print routines running on the server")
+  listCompilerPtr := flag.Bool("list-compiler", false, "print compilers running on the server")
 
+  routinePtr := flag.String("routine","","use a routine's geography")
   radiusPtr := flag.Float64("radius",0.0,"event radius")
   latitudePtr := flag.Float64("latitude",0.0,"search latitude")
   longitudePtr := flag.Float64("longitude",0.0,"event search longitude")
@@ -223,21 +227,34 @@ func main() {
     os.Exit(0)
   }
 
+
   if  *statusPtr {
     status := http.GetStatus()
     fmt.Println(status)
     os.Exit(0)
   }
 
+  if *listRoutinePtr {
+    routines := http.GetRoutines()
+    fmt.Println(routines)
+    os.Exit(0)
+  }
+
+  if *listCompilerPtr {
+    compilers := http.GetCompilers()
+    fmt.Println(compilers)
+    os.Exit(0)
+  }
+
 
   if ( *jsonPtr ) {
-    es := http.GetEventsAsJson(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr)
+    es := http.GetEventsAsJson(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr)
     fmt.Println(es)
     os.Exit(0)
   }
 
   // launch table view
-  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr), tea.WithAltScreen())
+  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr), tea.WithAltScreen())
   if _, err := p.Run(); err != nil {
     fmt.Println("An internal error occurred")
     log.Fatalf("An error occurred, error : %s",err)

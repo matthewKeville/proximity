@@ -14,6 +14,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.HashMap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
@@ -31,7 +34,7 @@ public class Settings {
   public String eventbriteApiKey;
   public int eventbriteMaxPages;
   public int alleventsMaxPages;
-  public List<ScanRoutine> scanRoutines;
+  public Map<String,ScanRoutine> scanRoutines;
   public List<EventCompiler> eventCompilers;
 
   public static Settings parseSettings(String jsonString) throws Exception {/* populate jobs with data stored on LFS */
@@ -55,8 +58,8 @@ public class Settings {
 
     if ( !json.has("scans") ) {
       LOG.warn("no scans where found in the configuration file, generating default scan");
-      settings.scanRoutines = new LinkedList<ScanRoutine>();
-      settings.scanRoutines.add(ScanRoutine.createDefault());
+      settings.scanRoutines = new HashMap<String,ScanRoutine>();
+      settings.scanRoutines.put("Default",ScanRoutine.createDefault());
     } else {
       settings.scanRoutines = ScanRoutine.parseScanRoutines(json.get("scans").getAsJsonArray());
     }
@@ -267,7 +270,9 @@ public class Settings {
 
     result += "\n Scan Routines : " +  scanRoutines.size() + "\n";
 
-    for ( ScanRoutine sr : scanRoutines ) {
+    Iterator<String> routineKeyIterator = scanRoutines.keySet().iterator();
+    while ( routineKeyIterator.hasNext() ) {
+      ScanRoutine sr = scanRoutines.get(routineKeyIterator.next());
       result+= "\n"+sr.toString();
     }
 
