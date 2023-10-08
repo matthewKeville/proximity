@@ -13,6 +13,7 @@ public class ClientEvent extends Event {
       event.name,
       event.description,
       event.start,
+      event.end,
       event.location,
       event.organizer,
       event.url,

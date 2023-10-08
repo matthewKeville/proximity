@@ -58,9 +58,9 @@ public class EventbriteHarProcessor {
     }
 
     // description is deprecated , but preferred over nothing
-    if (eventJson.has("summary")) {
+    if (eventJson.has("summary")) { // this is compact
       eb.setDescription(eventJson.get("summary").toString());
-    } else if (eventJson.has("description")) {  
+    } else if (eventJson.has("description")) {  // this is lengthy
       JsonElement eventDescriptionJson = eventJson.getAsJsonObject("description").get("text");
       eb.setDescription(eventDescriptionJson.toString());
     }
@@ -70,6 +70,13 @@ public class EventbriteHarProcessor {
       String timestring = eventStartJson.get("utc").getAsString();
       Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
       eb.setStart(start);
+    }
+
+    if ( eventJson.has("end") ) {
+      JsonObject eventEndJson = eventJson.getAsJsonObject("end");
+      String timestring = eventEndJson.get("utc").getAsString();
+      Instant end  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
+      eb.setEnd(end);
     }
 
     if ( eventJson.has("venue") && !eventJson.get("venue").isJsonNull() ) {

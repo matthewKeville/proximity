@@ -233,6 +233,13 @@ public class MeetupHarProcessor {
       eb.setStart(start);
     }
 
+    if (node.has("endTime")) { // end 
+      String timestring = node.get("endTime").getAsString();
+      //2023-09-27T12:00-04:00 (from gql : iso offset time)
+      Instant end  = Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(timestring));
+      eb.setEnd(end);
+    }
+
     if (node.has("title")) {
       eb.setName(node.get("title").getAsString());
     }

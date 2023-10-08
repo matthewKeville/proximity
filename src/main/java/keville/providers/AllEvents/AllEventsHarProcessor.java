@@ -38,7 +38,7 @@ public class AllEventsHarProcessor {
 
       String basePageRequest = HarUtil.getRedirectRequestUrlOrOriginal(harString,targetUrl);
       if ( basePageRequest == null ) {
-        LOG.error("unable to retrieve the reponse information for the baes page url with initial target " + targetUrl);
+        LOG.error("unable to retrieve the reponse information for the base page url with initial target " + targetUrl);
         return new LinkedList<Event>();
       }
 
@@ -147,10 +147,6 @@ public class AllEventsHarProcessor {
     EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
     eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
     eb.setEventId(extractIdFromJson(eventJson)); 
-    //to cope with the partial data set extracted from this method, we immediatly tag
-    //these events as outdated so they can be completed in the update protocol.
-    eb.setStatus(EventStatusEnum.INCOMPLETE);
-
     return eb.build();
 
   }

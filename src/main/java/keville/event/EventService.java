@@ -153,6 +153,7 @@ public class EventService {
         " NAME = ?, " +
         " DESCRIPTION = ?, " +
         " START_TIME = ?, " + 
+        " END_TIME = ?, " + 
         " LOCATION_NAME = ?, " +
         " COUNTRY = ?, " + 
         " REGION = ?, " +
@@ -174,25 +175,26 @@ public class EventService {
       ps.setString(3,event.name);
       ps.setString(4,event.description);
       ps.setString(5,event.start.toString());
-      ps.setString(6,event.location.name);
-      ps.setString(7,event.location.country);
-      ps.setString(8,event.location.region);
-      ps.setString(9,event.location.locality);
-      ps.setString(10,event.location.streetAddress);
+      ps.setString(6,event.end.toString());
+      ps.setString(7,event.location.name);
+      ps.setString(8,event.location.country);
+      ps.setString(9,event.location.region);
+      ps.setString(10,event.location.locality);
+      ps.setString(11,event.location.streetAddress);
       if ( event.location.longitude == null || event.location.latitude == null ) {
-        ps.setObject(11,null);
         ps.setObject(12,null);
+        ps.setObject(13,null);
       } else {
-        ps.setDouble(11,event.location.latitude);
-        ps.setDouble(12,event.location.longitude);
+        ps.setDouble(12,event.location.latitude);
+        ps.setDouble(13,event.location.longitude);
       }
-      ps.setString(13,event.organizer);
-      ps.setString(14,event.url);
-      ps.setString(15,""+(event.virtual ? 1 : 0));
-      ps.setString(16,event.status.toString());
-      ps.setString(17,Instant.now().toString());
+      ps.setString(14,event.organizer);
+      ps.setString(15,event.url);
+      ps.setString(16,""+(event.virtual ? 1 : 0));
+      ps.setString(17,event.status.toString());
+      ps.setString(18,Instant.now().toString());
 
-      ps.setInt(18,event.id);
+      ps.setInt(19,event.id);
 
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
@@ -228,12 +230,13 @@ public class EventService {
 
     String queryTemplate = "INSERT INTO EVENT (" +
       "EVENT_ID,SOURCE,NAME," +
-      "DESCRIPTION,START_TIME,LOCATION_NAME," +
+      "DESCRIPTION,START_TIME,END_TIME," + 
+      "LOCATION_NAME," +
       "COUNTRY,REGION,LOCALITY," +
       "STREET_ADDRESS,LATITUDE,LONGITUDE," +
       "ORGANIZER,URL,VIRTUAL," +
       "STATUS,LAST_UPDATE" +
-      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
       PreparedStatement ps = con.prepareStatement(queryTemplate);
       ps.setString(1,event.eventId);
@@ -241,23 +244,24 @@ public class EventService {
       ps.setString(3,event.name);
       ps.setString(4,event.description);
       ps.setString(5,event.start.toString());
-      ps.setString(6,event.location.name);
-      ps.setString(7,event.location.country);
-      ps.setString(8,event.location.region);
-      ps.setString(9,event.location.locality);
-      ps.setString(10,event.location.streetAddress);
+      ps.setString(6,event.end.toString());
+      ps.setString(7,event.location.name);
+      ps.setString(8,event.location.country);
+      ps.setString(9,event.location.region);
+      ps.setString(10,event.location.locality);
+      ps.setString(11,event.location.streetAddress);
       if ( event.location.longitude == null || event.location.latitude == null ) {
-        ps.setObject(11,null);
         ps.setObject(12,null);
+        ps.setObject(13,null);
       } else {
-        ps.setDouble(11,event.location.latitude);
-        ps.setDouble(12,event.location.longitude);
+        ps.setDouble(12,event.location.latitude);
+        ps.setDouble(13,event.location.longitude);
       }
-      ps.setString(13,event.organizer);
-      ps.setString(14,event.url);
-      ps.setString(15,""+(event.virtual ? 1 : 0));
-      ps.setString(16,event.status.toString());
-      ps.setString(17,Instant.now().toString());
+      ps.setString(14,event.organizer);
+      ps.setString(15,event.url);
+      ps.setString(16,""+(event.virtual ? 1 : 0));
+      ps.setString(17,event.status.toString());
+      ps.setString(18,Instant.now().toString());
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
 
@@ -389,6 +393,12 @@ public class EventService {
       if ( !rs.wasNull() ) {
         Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimeString));
         eb.setStart(start);
+      }
+
+      String endTimeString = rs.getString("end_time");
+      if ( !rs.wasNull() ) {
+        Instant end  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(endTimeString));
+        eb.setEnd(end);
       }
 
       String locationName = rs.getString("location_name");

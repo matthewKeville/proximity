@@ -1,7 +1,6 @@
 package keville.event;
 
 import keville.location.Location;
-import keville.util.AnsiColors;
 import java.time.Instant;
 import java.io.Serializable;
 
@@ -13,6 +12,7 @@ public class Event implements Serializable {
   public String name;
   public String description;
   public Instant start;
+  public Instant end;
   public Location location;
   public String url;
   public String organizer;
@@ -27,6 +27,7 @@ public class Event implements Serializable {
       String name,
       String description,
       Instant start,
+      Instant end,
       Location location,
       String organizer,
       String url,
@@ -39,6 +40,7 @@ public class Event implements Serializable {
     this.name = name;
     this.description = description;
     this.start = start;
+    this.end = end;
     this.location = location;
     this.organizer = organizer;
     this.url = url;
@@ -49,22 +51,10 @@ public class Event implements Serializable {
 
   public String toString() {
     return String.format(
-        "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
-        name, description == null ? "" : description.substring(0, Math.min(description.length(), 60)), start.toString(),
+        "Name: %s\nDescription: %s\nStart %s\nEnd %s\nVirtual %s\nSource : %s\nUrl %s",
+        name, description == null ? "" : description.substring(0, Math.min(description.length(), 60)), 
+        start.toString(), end.toString(),
         virtual, eventType.toString(), url);
-  }
-
-  public String toColorString() {
-    return String.format(
-        "Name: %s\nDescription: %s\nStart %s\nVirtual %s\nSource : %s\nUrl %s",
-        AnsiColors.colorString(name, AnsiColors.RED),
-        AnsiColors.colorString(description == null ? "" : description.substring(0, Math.min(description.length(), 60)),
-            AnsiColors.GREEN),
-        AnsiColors.colorString(start.toString(), AnsiColors.YELLOW),
-        AnsiColors.colorString(Boolean.toString(virtual), AnsiColors.PURPLE_BRIGHT),
-        AnsiColors.colorString(eventType.toString(), AnsiColors.PURPLE),
-        AnsiColors.colorString(url, AnsiColors.WHITE));
-
   }
 
   public boolean equals(Event e) {
@@ -104,6 +94,13 @@ public class Event implements Serializable {
       sameStart = start == null && e.start == null;
     }
 
+    boolean sameEnd = true;
+    if ( end != null && e.end != null ) {
+      sameEnd = end.equals(e.end);
+    } else {
+      sameEnd = end == null && e.end == null;
+    }
+
     boolean sameUrl = true;
     if ( url != null && e.url != null ) {
       sameUrl = url.equals(e.url);
@@ -119,6 +116,7 @@ public class Event implements Serializable {
       && sameName 
       && sameOrganizer 
       && sameStart
+      && sameEnd
       && sameUrl;
 
   }

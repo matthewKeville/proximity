@@ -18,9 +18,9 @@ public class EventUpdaterScheduler implements Runnable {
   private int timeStepMS = 10000; /* every ten seconds */
   private List<Event> outdatedEvents;
   private final int updateBatchSize = 5;
-  private final Duration maxAge = /* dev value */ Duration.ofMinutes(5); //Duration.ofDays(1); 
-  //must be careful here as maxAge directly affects request frequency. 100 events invalidated at 5 minutes would
-  //be 28800 requests per day.
+  private final Duration maxAge = Duration.ofDays(10); // This will need to
+                                                       // change to a dynamic
+                                                       // system.
 
   /**
   * @param settings

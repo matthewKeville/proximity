@@ -4,6 +4,7 @@ import keville.location.Location;
 import keville.location.LocationBuilder;
 import keville.event.Event;
 import keville.event.EventBuilder;
+import keville.event.EventStatusEnum;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -23,14 +24,24 @@ public class SchemaUtil {
       EventBuilder eb = new EventBuilder();
       LocationBuilder lb = new LocationBuilder();
 
-      String timestring = eventJson.get("startDate").getAsString(); // DateTime or Date
-      if ( timestring.length() == 10 ) {  // ex: 2023‐09‐13
-        LOG.warn("Schema event had Date instead of DateTime , faking Time component");
-        timestring+="T00:00:00.000Z";
+      String startTimestring = eventJson.get("startDate").getAsString(); // DateTime or Date
+      if ( startTimestring.length() == 10 ) {  // ex: 2023‐09‐13
+        LOG.warn("Schema event had Date instead of DateTime , faking Time component setting INCOMPLETE");
+        startTimestring+="T00:00:00.000Z";
+        eb.setStatus(EventStatusEnum.INCOMPLETE);
       }       
-      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
-
+      Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimestring));
       eb.setStart(start);
+
+      String endTimestring = eventJson.get("endDate").getAsString(); // DateTime or Date
+      if ( endTimestring.length() == 10 ) {  // ex: 2023‐09‐13
+        LOG.warn("Schema event had Date instead of DateTime , faking Time component, setting INCOMPLETET");
+        endTimestring+="T00:00:00.000Z";
+        eb.setStatus(EventStatusEnum.INCOMPLETE);
+      }       
+      Instant end  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(endTimestring));
+      eb.setEnd(end);
+
       eb.setName(eventJson.get("name").getAsString());
 
       if ( eventJson.has("description") ) {

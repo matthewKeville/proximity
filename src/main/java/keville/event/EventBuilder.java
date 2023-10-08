@@ -13,6 +13,7 @@ public class EventBuilder {
   private String name;
   private String description;
   private Instant start;
+  private Instant end;
   private Location location;
   private String organizer;
   private String url;
@@ -48,6 +49,10 @@ public class EventBuilder {
     this.start = start;
   }
 
+  public void setEnd(Instant end) {
+    this.end = end;
+  }
+
   public void setLocation(Location location) {
     this.location = location;
   }
@@ -81,6 +86,7 @@ public class EventBuilder {
       name,
       description,
       start,
+      end,
       location,
       organizer,
       url,
