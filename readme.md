@@ -1,71 +1,112 @@
 # Proximity
 
-An event aggregator written in Java & Go
+**Proximity** is an event aggregation server that is capable of generating custom RSS feeds and calendars.
 
 ## Features
 
-- Scrape event data from [eventbrite](https://eventbrite.com) , [meetup](https://meetup.com) and [allevents](https://allevents.in).
-- Create custom RSS feeds and iCalendars.
-- Explore events near you with a colorful TUI built with the excellent [charm](https://github.com/charmbracelet) toolchain and [bubble-table](https://github.com/Evertras/bubble-table) extension.
-- Highly customizable and easily configurable settings written in JSON.
-
+- Proximity can scrape event data from [eventbrite](https://eventbrite.com) , [meetup](https://meetup.com) and [allevents](https://allevents.in) based on user defined scanning routines.
+- Proximity is capable of transforming scanned events into RSS feeds and iCalendars.
+- Proximity features a filtering pipeline that can distill it's findings by removing unwanted data like promotional 
+  or online only events.
+- Proximity has a companion client **prxy** that can be used to interact with event data on the command line
+    using an interactive TUI or programmatically in the CLI modes.
 ## ~~Installation~~
 
 TODO
 
-## Overview
-
-Proximity runs a Java server to perform web scraping against the target sites. This was designed
-as a utility that runs routinely, but infrequently. To scrape event data, you define
-scan ***routines*** in a configuration file `settings.json`. The server will load these scan ***routines*** into memory on startup
-and perform them at the requested frequency.
-
-When the server finds events not in it's database it updates any configured ***compilers***.
-<br><br>
-***compilers*** in proximity are output mechanisms that transform events into a format that can be integrated
-into other software. One of the main  motivations for this  project was a desire to have an **RSS** feed that would
-inform me when events of interest where happening in my area. Currently proximity supporst two types of compilers
-**RSS** and **iCalendar**.
-
-Event data collected by proximity is stored in sqlite database, so it is easy to construct your own filters
-or pipelines out of the routine scan data. Additionally this data can be accessed through the server by making calls
-to the Web Api.
-
-As the project evolved I found it unergonomic to interface with the data strictly through the sqlite3 client and felt limited by the command line capabilities of java so I created a companion client `prxy` written in go that communicates with the main java server through the Web API.
-
-#### TLDR
-
-A Java server performs scan **routines** and executes **compilers** that create custom event output formats.
-<br>
-<br>
-`prxy` is a CLI to access the data found by the server.
-
-
 ## ~~Configuration~~
 
-**Under construction**
+To use Proximity you must define a `settings.json`.
 
 ```json
 ./settings.json
 
 {
-  "eventbrite_api_key" : "<your eventbrite api key>",
-  "eventbrite_max_pages": 10,
+  "eventbrite_api_key" : "<your eventbrite api key>", # Required for scraping eventbrite
+  "eventbrite_max_pages": 10,                         # Limit number of pages scraped
   "allevents_max_pages": 10,
   "scans" : [],
   "compilers" : []
 }
 ```
 
-## ~~scan routines~~
+The top level attributes of this json object specifies general rules about scraping providers. Throughout this document provider referes to an online event host like `meetup.com` The main meat of the configuration
+lies within the  `scans` and `compilers` attributes.
 
-TODO
+## Scan Routines
 
-## ~~compilers~~
+Scan routines define what data to collect, where to collect it from, and how often. A routine requires 4 essential
+parts a **name** , a **delay** , **providers** and **geographical circle** defined by a  **latitude**, **longitude** and **radius**.
 
-TODO
+Here is an example scan routine that scans for events in Philadelphia, PA every hour.
+
+```json
+{
+  "name" : "Philly scan",
+  "radius" : 5.0,
+  "latitude" : 39.9526,
+  "longitude" : -75.1652,
+  "delay" : 3600,
+  "meetup" : true,
+  "allevents" : true,
+  "eventbrite" : false
+}
+```
+Note : this routine only scans **meetup** and **allevents** because **eventbrite** is explicitly
+disabled. However, you can simply omit disabled providers in the configuration alltogether.
+
+
+There are some scan routine attributes not on display above.
+
+- `"auto" : true` Instead of specifying a geolocation you can ask the server to infer based on ip.
+- `"disable" : true` you can disable an entire scan which may be useful for troubleshooting.
+- `"run_on_restart" : true` By default **proximity will wait **delay** seconds to run any configured scan routines, but you can force a routine to run ASAP.
+
+
+## Compilers ***WIP***
+
+Compilers are defined by 4 key attributes, **name**, **type**, **path**,
+and **filters**.
+
+This compiler creates an RSS feed on the filesystem at `~/feeds/philly-jawns.rss`.
+It uses a disk filter exclude events outside of the geographical disk.
+
+```json
+{
+  "name" : "Philly Jawns",
+  "type" : "rss",
+  "path" : "~/feeds/philly-jawns.rss",
+  "conjuctive" : true,
+  "filters" : [
+    {
+      "type" : "disk",
+      "radius" : 3.0,
+      "latitude" : 39.9526,
+      "longitude" : -75.1652
+    },
+  ]
+}
+```
+
+Note : the attribute **conjunctive** defines how to logically compose the filters.
+With a value of false, the filters would be disjunctive, meaning an event need only 
+be true for one of the defined filters for inclusion.
+
+## Filters ***WIP***
+
+Other filters include
+
+```
+{
+  "type" : "virtual",
+  "allowed" : false
+}
+```
 
 ## Usage
+
+While you can invoke the server directly through `proximity.jar`. It is recommended you
+use the companion client `prxy` to manage the **proxmity** instance.
 
 ### Manage Server
 
@@ -102,10 +143,13 @@ prxy # no format, loads an interactive table
 ```
 
 ```sh
-prxy --json # print events as json string
+prxy --json # print events as json
 ```
 
 ### Filters (Location)
+
+Note : these filters are not related to the filters mentioned for compilers. This is a limited set
+of filtering options.
 
 
 ```sh
