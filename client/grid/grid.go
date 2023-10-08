@@ -3,6 +3,7 @@ package grid
 import (
   "proximity-client/http"
   "proximity-client/event"
+  "proximity-client/desktop"
   "fmt"
   "log"
   "sort"
@@ -24,6 +25,7 @@ const (
   columnKeyDaysFromNow      = "daysFromNow"
   columnKeyDate             = "date"
   columnKeyTime             = "time"
+  columnKeyUrl              = "url" //not a visible row
 )
 
 type model struct {
@@ -179,6 +181,7 @@ func toTableRow(e event.Event) table.Row {
     columnKeyLocality: e.Location.Locality,
     columnKeyDate:  fmt.Sprintf("%d/%d/%d",e.Start.Month(),e.Start.Day(),e.Start.Year()),
     columnKeyTime:  fmt.Sprintf("%d:%d",e.Start.Local().Hour(),e.Start.Local().Minute()),
+    columnKeyUrl: e.Url,
   })
 }
 
@@ -276,7 +279,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
           m.table = m.table.SortByAsc(columnKeyDistance)
         case "D":
           m.table = m.table.SortByDesc(columnKeyDistance)
-
+        case "o":
+          currRow := m.table.HighlightedRow()
+          url := currRow.Data[columnKeyUrl].(string)
+          desktop.OpenUrl(url)
         case "ctrl+c", "q":
             return m, tea.Quit
         }
