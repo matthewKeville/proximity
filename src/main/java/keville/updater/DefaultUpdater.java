@@ -1,7 +1,6 @@
 package keville.updater;
 
 import keville.event.Event;
-import keville.event.EventService;
 import keville.event.EventStatusEnum;
 
 public class DefaultUpdater implements EventUpdater {
@@ -12,11 +11,11 @@ public class DefaultUpdater implements EventUpdater {
         LOG.warn("Default Updater is being used, this for debugging only");
     }
 
-    public boolean updateEvent(Event event) {
+    public Event updateEvent(Event event) {
 
         event.status = EventStatusEnum.HEALTHY;
 
-        return EventService.updateEvent(event);
+        return event;
     }
 
 }

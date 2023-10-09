@@ -1,7 +1,9 @@
 package keville.updater;
 
 import keville.event.Event;
+import keville.merger.EventMerger;
 import keville.event.EventService;
+import keville.event.EventStatusEnum;
 import keville.providers.Providers;
 
 import java.util.LinkedList;
@@ -15,7 +17,7 @@ import keville.settings.Settings;
 public class EventUpdaterScheduler implements Runnable {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventUpdaterScheduler.class);
-  private int timeStepMS = 10000; /* every ten seconds */
+  private int timeStepMS = 60_000; /* every minute */
   private List<Event> outdatedEvents;
   private final int updateBatchSize = 5;
   private final Duration maxAge = Duration.ofDays(10); // This will need to
@@ -72,13 +74,25 @@ public class EventUpdaterScheduler implements Runnable {
     LOG.warn("updating event " + event.id);
 
     EventUpdater eventUpdater = Providers.getUpdater(event.eventType);
-    if ( eventUpdater == null ) {
+    EventMerger eventMerger = Providers.getMerger(event.eventType);
+
+    if ( eventUpdater == null || eventMerger == null ) {
         LOG.error("unable to get updater for type " + event.eventType);
         LOG.error("aborting update for event : " + event.id);
         return;
     }
 
-    eventUpdater.updateEvent(event);
+    Event updatedEvent = eventUpdater.updateEvent(event);
+    Event merged = eventMerger.merge(event,updatedEvent);
+
+    if ( merged == null ) {
+      LOG.error("error updating event, quarentining : " + event.id);
+      return;
+    }
+    merged.status = EventStatusEnum.HEALTHY;
+    EventService.updateEvent(merged);
+
+
 
   }
 

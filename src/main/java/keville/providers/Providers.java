@@ -4,6 +4,7 @@ import keville.event.EventTypeEnum;
 import keville.settings.Settings;
 
 import keville.providers.AllEvents.AllEventsScanner;
+import keville.providers.AllEvents.AllEventsUpdater;
 import keville.providers.Eventbrite.EventbriteScanner;
 import keville.providers.meetup.MeetupScanner;
 import keville.merger.DefaultEventMerger;
@@ -27,7 +28,7 @@ public class Providers {
         
         Provider ae = new Provider(
                 new AllEventsScanner(settings),
-                new DefaultUpdater(),
+                new AllEventsUpdater(),
                 defaultMerger
         );
 
