@@ -73,39 +73,56 @@ func GetCompilers() string {
 
 }
 
+func GetViews() string {
+
+  requestString := "http://localhost:4567/view"
+  log.Printf("requesting : %s", requestString)
+
+  resp, err := http.Get(requestString)
+  if err != nil {
+    log.Panicf("error getting :  %s ",err)
+    return "Server Unreachable"
+  }
+
+  body, err :=  ioutil.ReadAll(resp.Body)
+
+  if err != nil {
+    log.Panicf("can't extract body %s", err)
+  }
+
+  return string(body)
+
+}
 
 
-func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string) []byte {
+
+func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) []byte {
 
   //params := fmt.Sprintf("?virtual=%t",showVirtual)
   v := url.Values{}
 
   if ( routine != "" ) {
-
     v.Add("routine", routine);
-    //params += fmt.Sprintf("&routine=%s",routine)
+  } 
 
-  } else {
+  if ( view != "" ) {
+    v.Add("view", view);
+  } 
 
-    if latitude != 0.0 && longitude != 0.0  && radius != 0.0 {
-      v.Add("latitude", fmt.Sprintf("%f",latitude));
-      v.Add("longitude", fmt.Sprintf("%f",longitude));
-      //params += fmt.Sprintf("&latitude=%f&longitude=%f",latitude,longitude)
-    } 
+  if latitude != 0.0 && longitude != 0.0  && radius != 0.0 {
+    v.Add("latitude", fmt.Sprintf("%f",latitude));
+    v.Add("longitude", fmt.Sprintf("%f",longitude));
+  } 
 
-    if ( radius != 0.0 ) {
-      v.Add("radius", fmt.Sprintf("%f",radius));
-      //params += fmt.Sprintf("&radius=%f",radius)
-    } 
+  if ( radius != 0.0 ) {
+    v.Add("radius", fmt.Sprintf("%f",radius));
+  } 
 
-  }
 
   if ( daysBefore != 0 ) {
     v.Add("daysBefore",fmt.Sprintf("%d",daysBefore));
-    //params += fmt.Sprintf("&daysBefore=%d",daysBefore)
   } 
 
-  //requestString := fmt.Sprintf("http://localhost:4567/events%s",params)
   requestString := fmt.Sprintf("http://localhost:4567/events?%s",v.Encode())
   log.Printf("requesting : %s",requestString)
 
@@ -125,9 +142,9 @@ func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual
 
 }
 
-func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string) []event.Event {
+func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) []event.Event {
 
-  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine);
+  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,view);
 
   var e []event.Event
 
@@ -140,9 +157,9 @@ func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bo
 
 }
 
-func GetEventsAsJson(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string) string {
+func GetEventsAsJson(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) string {
 
-  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine);
+  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,view);
 
   return string(body[:])
 

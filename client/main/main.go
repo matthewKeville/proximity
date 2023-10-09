@@ -163,8 +163,10 @@ func main() {
   statusPtr := flag.Bool("status", false, "print proximity server status report") // not implemented
   listRoutinePtr := flag.Bool("list-routine", false, "print routines running on the server")
   listCompilerPtr := flag.Bool("list-compiler", false, "print compilers running on the server")
+  listViewPtr := flag.Bool("list-view", false, "print views known by the server")
 
   routinePtr := flag.String("routine","","use a routine's geography")
+  viewPtr := flag.String("view","","use a view filter")
   radiusPtr := flag.Float64("radius",0.0,"event radius")
   latitudePtr := flag.Float64("latitude",0.0,"search latitude")
   longitudePtr := flag.Float64("longitude",0.0,"event search longitude")
@@ -246,15 +248,22 @@ func main() {
     os.Exit(0)
   }
 
+  if *listViewPtr {
+    views := http.GetViews()
+    fmt.Println(views)
+    os.Exit(0)
+  }
+
+
 
   if ( *jsonPtr ) {
-    es := http.GetEventsAsJson(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr)
+    es := http.GetEventsAsJson(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr,*viewPtr)
     fmt.Println(es)
     os.Exit(0)
   }
 
   // launch table view
-  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr), tea.WithAltScreen())
+  p := tea.NewProgram(grid.InitialModel(*latitudePtr,*longitudePtr,*radiusPtr,*showVirtualPtr,*daysBeforePtr,*routinePtr,*viewPtr), tea.WithAltScreen())
   if _, err := p.Run(); err != nil {
     fmt.Println("An internal error occurred")
     log.Fatalf("An error occurred, error : %s",err)

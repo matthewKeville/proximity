@@ -35,6 +35,7 @@ public class Settings {
   public int eventbriteMaxPages;
   public int alleventsMaxPages;
   public Map<String,ScanRoutine> scanRoutines;
+  public Map<String,Predicate<Event>> views;
   public List<EventCompiler> eventCompilers;
 
   public static Settings parseSettings(String jsonString) throws Exception {/* populate jobs with data stored on LFS */
@@ -62,6 +63,13 @@ public class Settings {
       settings.scanRoutines.put("Default",ScanRoutine.createDefault());
     } else {
       settings.scanRoutines = ScanRoutine.parseScanRoutines(json.get("scans").getAsJsonArray());
+    }
+
+    if ( !json.has("views") ) {
+      LOG.warn("no views where found in the configuration file");
+      settings.views = new HashMap<String,Predicate<Event>>();
+    } else {
+      settings.views = parseEventViews(json.get("views").getAsJsonArray());
     }
 
 
@@ -180,6 +188,58 @@ public class Settings {
 
   }
 
+  private static Map<String,Predicate<Event>> parseEventViews(JsonArray viewsJson) {
+
+      Map<String,Predicate<Event>> eventViews = new HashMap<String,Predicate<Event>>();
+
+      for ( JsonElement jsonElm : viewsJson ) {
+
+        JsonObject viewJson = jsonElm.getAsJsonObject();
+
+        if ( !viewJson.has("name") ) {
+          LOG.warn("you have a misconfigured view in your settings.json");
+          LOG.warn("you must provide a \"name\" for  the view to build to");
+          continue;
+        }
+        String name = viewJson.get("name").getAsString();
+        
+        if ( !viewJson.has("conjunction") ) {
+          LOG.warn("the view " + name + " does not specify a conjunction value, assuming true");
+        }
+        boolean conjunction = !viewJson.has("conjunction") || viewJson.get("conjunction").getAsBoolean();
+
+        // parse filter chain
+
+        Predicate<Event> filter = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
+          public boolean test(Event x) { return true; }
+        };
+
+        if ( !viewJson.has("filters") )  {
+          LOG.warn(name + " has no filters");
+          LOG.warn("this will include everything ...");
+        } else {
+
+          for ( JsonElement filterJsonElm : viewJson.get("filters").getAsJsonArray() ) {
+            JsonObject filterJson = filterJsonElm.getAsJsonObject();
+            Predicate<Event> subFilter = parseCompilerFilter(filterJson);
+            if ( subFilter != null ) {
+              filter = (conjunction) ? filter.and(subFilter) : filter.or(subFilter);
+            } else {
+              LOG.warn("part of the filter chain for the view " +  name  + " is misconfigured");
+            }
+          }
+        }
+
+        eventViews.put(name,filter);
+
+      }
+
+      return eventViews;
+
+    }
+
+
+
 /*
     planned filter types
 
@@ -257,6 +317,7 @@ public class Settings {
     }
 
   }
+
 
 
 

@@ -4,6 +4,7 @@ import keville.providers.Providers;
 import keville.providers.Eventbrite.EventCache;
 import keville.compilers.EventCompiler;
 import keville.event.EventService;
+import keville.event.Event;
 import keville.event.Events;
 import keville.event.EventTypeEnum;
 import keville.scanner.EventScannerScheduler;
@@ -16,6 +17,7 @@ import keville.settings.Settings;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.time.Instant;
 import java.io.File;
@@ -68,12 +70,15 @@ public class ProximalDaemon
               LOG.info("recieved GET /events");
 
               String routineName = null;
-              Double radius;
-              Double latitude;
-              Double longitude;
+              String viewName = null;
+              Predicate<Event> view = null;
+              Double radius = Double.MAX_VALUE;
+              Double latitude = DEFAULT_LAT;
+              Double longitude = DEFAULT_LON;
 
-              // either the user querys with a geographical circle, or the
-              // area defined by a routine.
+              //////////////////////////////
+              // Determine Query Geography
+              //////////////////////////////
 
               if (request.queryMap().hasKey("routine")) {
                
@@ -83,48 +88,36 @@ public class ProximalDaemon
                   radius = sr.radius;
                   latitude = sr.latitude;
                   longitude = sr.longitude;
-                } else {
-                  radius  = DEFAULT_RAD;
-                  latitude = DEFAULT_LAT; 
-                  longitude = DEFAULT_LON; 
+                } 
+
+              } 
+
+              // latitude,longitude, and radius query params can override routine
+              
+              if (request.queryMap().hasKey("radius")) {
+                Double queryRadius = request.queryMap().get("radius").doubleValue();
+                if ( queryRadius != null ) {
+                  radius = queryRadius;
                 }
-
-              } else {
-
-                if (request.queryMap().hasKey("radius")) {
-                  Double queryRadius = request.queryMap().get("radius").doubleValue();
-                  if ( queryRadius != null ) {
-                    radius = queryRadius;
-                  } else {
-                    radius = DEFAULT_RAD; 
-                  }
-                } else {
-                  radius = DEFAULT_RAD; 
-                }
-
-                if (request.queryMap().hasKey("latitude")) {
-                  Double queryLatitude = request.queryMap().get("latitude").doubleValue();
-                  if ( queryLatitude != null ) {
-                    latitude = queryLatitude;
-                  } else {
-                    latitude = DEFAULT_LAT; 
-                  }
-                } else {
-                  latitude = DEFAULT_LAT; 
-                }
-
-                if (request.queryMap().hasKey("longitude")) {
-                  Double queryLongitude = request.queryMap().get("longitude").doubleValue();
-                  if ( queryLongitude != null ) {
-                    longitude = queryLongitude;
-                  } else {
-                    longitude = DEFAULT_LON; 
-                  }
-                } else {
-                  longitude = DEFAULT_LON; 
-                }
-
               }
+
+              if (request.queryMap().hasKey("latitude")) {
+                Double queryLatitude = request.queryMap().get("latitude").doubleValue();
+                if ( queryLatitude != null ) {
+                  latitude = queryLatitude;
+                } 
+              }
+
+              if (request.queryMap().hasKey("longitude")) {
+                Double queryLongitude = request.queryMap().get("longitude").doubleValue();
+                if ( queryLongitude != null ) {
+                  longitude = queryLongitude;
+                } 
+              }
+
+              //////////////////////////////
+              // Primitive Filters
+              //////////////////////////////
 
               Integer daysBefore;
               if (request.queryMap().hasKey("daysBefore")) {
@@ -138,25 +131,47 @@ public class ProximalDaemon
                 daysBefore = Integer.MAX_VALUE;
               }
 
-              boolean showVirtual = request.queryMap().hasKey("virtual") && request.queryMap().get("virtual").booleanValue();
+              boolean hideVirtual = request.queryMap().hasKey("virtual") && !request.queryMap().get("virtual").booleanValue();
+
+              //////////////////////////////
+              // View Filter (User Defined) 
+              //////////////////////////////
+
+              if (request.queryMap().hasKey("view")) {
+               
+                viewName = request.queryMap().get("view").value();
+                view = settings.views.get(routineName);
+                if ( view == null ) {
+
+                  view = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
+                    public boolean test(Event x) { return true; }
+                  };
+                }
+
+              } 
+
 
               LOG.info("processing request with parameters : " 
                   + ((routineName != null) ? " routine = " + routineName : "")
+                  + ((viewName != null) ? " view = " + viewName : "")
                   + " radius = " + radius 
                   + " latitude  = " + latitude 
-                  +  " longitude = " + longitude 
+                  + " longitude = " + longitude 
                   + " dayBefore " + daysBefore 
-                  + " showVirtual " + showVirtual);
+                  + " hideVirtual " + hideVirtual);
+
+              final double finalLat = latitude;
+              final double finalLon = longitude;
 
               return gson.toJson(
                  EventService.getAllEvents()
                 .stream()
                 .filter( e -> e.eventType != EventTypeEnum.DEBUG )
-                .filter(e -> showVirtual || !e.virtual)
-                .filter(Events.WithinKMilesOf(latitude,longitude,radius))
                 .filter(Events.InTheFuture())
-                .map( e -> Events.CreateClientEvent(e,latitude,longitude) )
-                .filter(Events.BeforeDays(daysBefore))
+                .filter(Events.WithinKMilesOf(latitude,longitude,radius))
+                .filter( e -> !hideVirtual || !e.virtual)
+                .filter(view)
+                .map( e -> Events.CreateClientEvent(e,finalLat,finalLon) )
                 .collect(Collectors.toList())
               );
         });
@@ -178,6 +193,13 @@ public class ProximalDaemon
           );
         });
 
+        get("/view", (request, response) ->  { 
+          return gson.toJson(
+            settings.views.keySet()
+            .stream()
+            .collect(Collectors.toList())
+          );
+        });
 
         LOG.info("spark initialized");
 
