@@ -164,13 +164,16 @@ func toTableRow(e event.Event) table.Row {
       e.Virtual, lipgloss.NewStyle().
         Foreground(lipgloss.Color(colorVirtual(e.Virtual)))),
     columnKeyDistance: table.NewStyledCell(
+      e.Distance, lipgloss.NewStyle().
+        Foreground(lipgloss.Color(colorEventDistance(e.Distance)))),
+      /*
       fmt.Sprintf("%.2f",e.Distance), lipgloss.NewStyle().
         Foreground(lipgloss.Color(colorEventDistance(e.Distance)))),
+      */
     columnKeyDaysFromNow: table.NewStyledCell(
       e.DaysFromNow, lipgloss.NewStyle().
         Foreground(lipgloss.Color(colorEventDaysFromNow(e.DaysFromNow)))),
     columnKeyName: e.Name,
-    //columnKeyMonth: fmt.Sprintf("%s",e.Start.Month()),
     columnKeyMonth: table.NewStyledCell(
       e.Start.Month(), lipgloss.NewStyle().
         Foreground(lipgloss.Color(colorMonth(e.Start.Month().String())))),
@@ -210,7 +213,7 @@ func InitialModel(latitude float64,longitude float64,radius float64,showVirtual 
   columns := []table.Column{
     table.NewColumn(columnKeyType, "TYPE", 12),
     table.NewColumn(columnKeyOnline, "ONLINE", 8),
-    table.NewColumn(columnKeyDistance, "DIST", 6),
+    table.NewColumn(columnKeyDistance, "DIST", 8).WithFormatString("%.2f"),
     table.NewColumn(columnKeyDaysFromNow, "IN DAYS", 7),
     table.NewColumn(columnKeyName, "NAME", 80),
     table.NewColumn(columnKeyRegion, "STATE", 5),
