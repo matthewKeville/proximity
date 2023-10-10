@@ -1,15 +1,24 @@
 package keville.event;
 
+import java.util.List;
+import java.time.DayOfWeek;
+import java.time.Month;
 import java.time.Instant;
 import java.time.Duration;
-import keville.util.GeoUtils;
 import java.util.function.Predicate;
+import keville.util.GeoUtils;
+
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Events {
 
   static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(Events.class);
 
   public static Predicate<Event> WithinKMilesOf(double lat, double lon, double miles) {
+
     return new Predicate<Event>() {
       public boolean test(Event event) {
         if ( event.location.latitude == null || event.location.longitude == null ) {
@@ -18,30 +27,101 @@ public class Events {
         return GeoUtils.isWithinMilesOf(miles, lat, lon, event.location.latitude, event.location.longitude);
       }
     };
+
   }
 
   public static Predicate<Event> InTheFuture() {
+
     return new Predicate<Event>() {
       public boolean test(Event event) {
         return event.start.isAfter(Instant.now());
       }
     };
+
   }
 
-  public static Predicate<ClientEvent> BeforeDays(int days) {
-    return new Predicate<ClientEvent>() {
-      public boolean test(ClientEvent event) {
-        return event.daysFromNow < days;
-      }
-    };
-  }
+  // return events that are not online ( match online only if invert )
+  public static Predicate<Event> InPerson(boolean invert) {
 
-  public static Predicate<Event> NotVirtual() {
     return new Predicate<Event>() {
       public boolean test(Event event) {
-        return !event.virtual;
+        return invert ? !event.virtual : event.virtual;
       }
     };
+
+  }
+
+  // return events that match ( do not match if invert ) the list of keywords
+  // compare against event.name and event.description
+  public static Predicate<Event> Keywords(List<String> keywords,boolean caseSensitive,boolean invert) {
+
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+          for ( String key : keywords ) {
+              Pattern pattern = Pattern.compile(Pattern.quote(key), ((caseSensitive) ? Pattern.LITERAL : Pattern.CASE_INSENSITIVE));
+              Matcher descriptionMatcher = pattern.matcher(event.description);
+              Matcher nameMatcher = pattern.matcher(event.name);
+              if ( descriptionMatcher.find() || nameMatcher.find() ) {
+                return ( invert ? false : true );
+              }
+          }
+          return false;
+      }
+    };
+
+  }
+
+  // return events that match ( do not match if invert ) the list of week days
+  public static Predicate<Event> Weekdays(List<DayOfWeek> days,boolean invert) {
+
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+
+          ZonedDateTime date = event.start.atZone(ZoneId.of("UTC"));
+
+          for ( DayOfWeek day : days ) {
+            if ( date.getDayOfWeek().equals(day) )  {
+              return invert ? false : true;
+            }
+          }
+
+          return false;
+      }
+    };
+
+  }
+
+  // return events that match ( do not match if invert ) the list of months
+  public static Predicate<Event> Months(List<Month> months,boolean invert) {
+
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+
+          ZonedDateTime date = event.start.atZone(ZoneId.of("UTC"));
+
+          for ( Month month : months ) {
+            if ( date.getMonth().equals(month) )  {
+              return invert ? false : true;
+            }
+          }
+
+          return false;
+      }
+    };
+
+  }
+
+  //return events between the DaysAwayRange
+  public static Predicate<Event> DaysAwayRange(int minDays,int maxDays) {
+
+    return new Predicate<Event>() {
+      public boolean test(Event event) {
+        Duration duration = Duration.between(Instant.now(),event.start);
+        int daysFromNow = (int) duration.toDaysPart();
+        return daysFromNow < maxDays && daysFromNow > minDays;
+      }
+    };
+
   }
 
   public static ClientEvent CreateClientEvent(Event event,double latitude,double longitude) {

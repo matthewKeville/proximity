@@ -73,9 +73,9 @@ func GetCompilers() string {
 
 }
 
-func GetViews() string {
+func GetFilters() string {
 
-  requestString := "http://localhost:4567/view"
+  requestString := "http://localhost:4567/filter"
   log.Printf("requesting : %s", requestString)
 
   resp, err := http.Get(requestString)
@@ -96,17 +96,16 @@ func GetViews() string {
 
 
 
-func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) []byte {
+func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,filter string) []byte {
 
-  //params := fmt.Sprintf("?virtual=%t",showVirtual)
   v := url.Values{}
 
   if ( routine != "" ) {
     v.Add("routine", routine);
   } 
 
-  if ( view != "" ) {
-    v.Add("view", view);
+  if ( filter != "" ) {
+    v.Add("filter", filter);
   } 
 
   if latitude != 0.0 && longitude != 0.0  && radius != 0.0 {
@@ -142,9 +141,9 @@ func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual
 
 }
 
-func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) []event.Event {
+func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,filter string) []event.Event {
 
-  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,view);
+  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,filter);
 
   var e []event.Event
 
@@ -157,9 +156,9 @@ func GetEvents(latitude float64,longitude float64, radius float64,showVirtual bo
 
 }
 
-func GetEventsAsJson(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,view string) string {
+func GetEventsAsJson(latitude float64,longitude float64, radius float64,showVirtual bool,daysBefore int,routine string,filter string) string {
 
-  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,view);
+  body := GetEventsRaw(latitude,longitude,radius,showVirtual,daysBefore,routine,filter);
 
   return string(body[:])
 

@@ -2,7 +2,6 @@ package keville;
 
 import keville.providers.Providers;
 import keville.providers.Eventbrite.EventCache;
-import keville.compilers.EventCompiler;
 import keville.event.EventService;
 import keville.event.Event;
 import keville.event.Events;
@@ -15,7 +14,6 @@ import keville.gson.FileAdapter;
 import keville.util.GeoUtils;
 import keville.settings.Settings;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -70,8 +68,8 @@ public class ProximalDaemon
               LOG.info("recieved GET /events");
 
               String routineName = null;
-              String viewName = null;
-              Predicate<Event> view = null;
+              String filterName = null;
+              Predicate<Event> filter = null;
               Double radius = Double.MAX_VALUE;
               Double latitude = DEFAULT_LAT;
               Double longitude = DEFAULT_LON;
@@ -134,16 +132,16 @@ public class ProximalDaemon
               boolean hideVirtual = request.queryMap().hasKey("virtual") && !request.queryMap().get("virtual").booleanValue();
 
               //////////////////////////////
-              // View Filter (User Defined) 
+              // Filter (User Defined) 
               //////////////////////////////
 
-              if (request.queryMap().hasKey("view")) {
+              if (request.queryMap().hasKey("filter")) {
                
-                viewName = request.queryMap().get("view").value();
-                view = settings.views.get(routineName);
-                if ( view == null ) {
+                filterName = request.queryMap().get("filter").value();
+                filter = settings.filters.get(filterName);
+                if ( filter == null ) {
 
-                  view = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
+                  filter = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
                     public boolean test(Event x) { return true; }
                   };
                 }
@@ -153,7 +151,7 @@ public class ProximalDaemon
 
               LOG.info("processing request with parameters : " 
                   + ((routineName != null) ? " routine = " + routineName : "")
-                  + ((viewName != null) ? " view = " + viewName : "")
+                  + ((filterName != null) ? " filter = " + filterName : "")
                   + " radius = " + radius 
                   + " latitude  = " + latitude 
                   + " longitude = " + longitude 
@@ -162,6 +160,7 @@ public class ProximalDaemon
 
               final double finalLat = latitude;
               final double finalLon = longitude;
+              final Predicate finalFilter = filter;
 
               return gson.toJson(
                  EventService.getAllEvents()
@@ -170,7 +169,7 @@ public class ProximalDaemon
                 .filter(Events.InTheFuture())
                 .filter(Events.WithinKMilesOf(latitude,longitude,radius))
                 .filter( e -> !hideVirtual || !e.virtual)
-                .filter(view)
+                .filter(e -> finalFilter == null || finalFilter.test(e))
                 .map( e -> Events.CreateClientEvent(e,finalLat,finalLon) )
                 .collect(Collectors.toList())
               );
@@ -193,9 +192,9 @@ public class ProximalDaemon
           );
         });
 
-        get("/view", (request, response) ->  { 
+        get("/filter", (request, response) ->  { 
           return gson.toJson(
-            settings.views.keySet()
+            settings.filters.keySet()
             .stream()
             .collect(Collectors.toList())
           );

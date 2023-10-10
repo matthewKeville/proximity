@@ -1,9 +1,9 @@
 package keville.settings;
 
-import keville.scanner.ScanRoutine;
-
 import keville.event.Event;
-import keville.event.Events;
+import keville.event.EventTypeEnum;
+import keville.util.GeoUtils;
+import keville.scanner.ScanRoutine;
 import keville.compilers.EventCompiler;
 import keville.compilers.RSSCompiler;
 import keville.compilers.ICalCompiler;
@@ -11,12 +11,14 @@ import keville.compilers.ICalCompiler;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.function.Predicate;
-import java.util.LinkedList;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.time.Instant;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
@@ -26,7 +28,6 @@ public class Settings {
 
   static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(Settings.class);
 
-
   static final int EVENTBRITE_MAX_PAGES_DEFAULT = 8;
   static final int ALLEVENTS_MAX_PAGES_DEFAULT = 8;
 
@@ -35,14 +36,13 @@ public class Settings {
   public int eventbriteMaxPages;
   public int alleventsMaxPages;
   public Map<String,ScanRoutine> scanRoutines;
-  public Map<String,Predicate<Event>> views;
+  public Map<String,Predicate<Event>> filters;
   public List<EventCompiler> eventCompilers;
 
-  public static Settings parseSettings(String jsonString) throws Exception {/* populate jobs with data stored on LFS */
+  public static Settings parseSettings(String jsonString) throws Exception {
 
     Settings settings = new Settings();
     JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
-   
 
     settings.dbConnectionString  = "jdbc:sqlite:app.db";
     if  ( json.has("db_connection_string")) {
@@ -56,22 +56,27 @@ public class Settings {
     settings.eventbriteMaxPages = json.has("evenbrite_max_pages")  ? json.get("eventbrite_max_pages").getAsInt() : EVENTBRITE_MAX_PAGES_DEFAULT;
     settings.alleventsMaxPages = json.has("allevents_max_pages")  ? json.get("allevents_max_pages").getAsInt() : ALLEVENTS_MAX_PAGES_DEFAULT;
 
+    // routines
 
-    if ( !json.has("scans") ) {
-      LOG.warn("no scans where found in the configuration file, generating default scan");
+    if ( !json.has("routines") ) {
+      LOG.warn("no routines where found in the configuration file, generating default scan");
       settings.scanRoutines = new HashMap<String,ScanRoutine>();
       settings.scanRoutines.put("Default",ScanRoutine.createDefault());
     } else {
-      settings.scanRoutines = ScanRoutine.parseScanRoutines(json.get("scans").getAsJsonArray());
+      settings.scanRoutines = parseScanRoutines(json.get("routines").getAsJsonArray());
     }
 
-    if ( !json.has("views") ) {
-      LOG.warn("no views where found in the configuration file");
-      settings.views = new HashMap<String,Predicate<Event>>();
+    // custom filters
+
+    if ( !json.has("filters") ) {
+      LOG.warn("no filters where found in the configuration file");
+      settings.filters = new HashMap<String,Predicate<Event>>();
     } else {
-      settings.views = parseEventViews(json.get("views").getAsJsonArray());
+      settings.filters = parseEventFilters(json.get("filters").getAsJsonArray());
     }
+    Filters.registerCustomFilters(settings.filters);
 
+    // compilers
 
     if ( !json.has("compilers") ) {
       LOG.warn("no compilers where found in the configuration file");
@@ -84,20 +89,81 @@ public class Settings {
 
   }
 
+  public static Map<String,ScanRoutine> parseScanRoutines(JsonArray scans) throws Exception {
 
+    Map<String,ScanRoutine> scanRoutineMap = new HashMap<String,ScanRoutine>();
 
+    for ( JsonElement scan : scans ) {
+      ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject());
+      if ( scanRoutineMap.containsKey(routine.name) ) {
+          LOG.warn("Scan routine names must be unique! But found " + routine.name + " more than once");
+      }
+      scanRoutineMap.put(routine.name,routine);
+    }
 
+    return scanRoutineMap;
+
+  }
+
+  public static ScanRoutine parseScanRoutine(JsonObject scanJson) throws Exception {
+
+    ScanRoutine scanRoutine = new ScanRoutine();
+    scanRoutine.types = new HashSet<EventTypeEnum>();
+
+    if ( !scanJson.has("radius") ) {
+      throw new Exception("Invalid scan scanRoutine , you must set a \"radius\"");
+    }
+    scanRoutine.radius = scanJson.get("radius").getAsDouble();
+
+    if ( scanJson.has("auto") && scanJson.get("auto").getAsBoolean() ) {
+
+      Map<String,Double> coords = GeoUtils.getClientGeolocation();
+      scanRoutine.latitude = coords.get("latitude");
+      scanRoutine.longitude = coords.get("longitude");
+
+    } else {
+
+      if ( !scanJson.has("latitude")  || !scanJson.has("longitude") ) {
+        throw new Exception("Invalid scan scanRoutine , must set \"auto\" or \"latitude\" and \"longitude\"");
+      }
+
+      scanRoutine.latitude = scanJson.get("latitude").getAsDouble();
+      scanRoutine.longitude = scanJson.get("longitude").getAsDouble();
+
+    }
+
+    scanRoutine.delay = scanJson.get("delay").getAsInt();
+
+    if ( scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.MEETUP);
+    }
+    if ( scanJson.has("allevents")     && scanJson.get("allevents").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.ALLEVENTS);
+    }
+    if ( scanJson.has("eventbrite")     && scanJson.get("eventbrite").getAsBoolean() ) {
+        scanRoutine.types.add(EventTypeEnum.EVENTBRITE);
+    }
+
+    scanRoutine.runOnRestart =  scanJson.has("run_on_restart") && scanJson.get("run_on_restart").getAsBoolean();
+    scanRoutine.lastRan = scanRoutine.runOnRestart ? Instant.EPOCH : Instant.now();
+
+    scanRoutine.name =  scanJson.has("name") ? scanJson.get("name").getAsString()  : "";
+
+    scanRoutine.disabled =  scanJson.has("disabled") && scanJson.get("disabled").getAsBoolean();
+
+    return scanRoutine;
+
+  }
 
   /*
-  eventCompiler  configuration syntax
 
-  {
-    name : ...
-    type : "rss" | "ical",
-    path : "/path/to/the/result",
-    conjunctive : true,
-    filters : [{}]
-  }
+    {
+        type : "rss" | "ical",
+        path : "/path/to/the/result",
+        conjunctive : true,
+        filters : [{}]
+    }
+
   */
 
   private static List<EventCompiler> parseEventCompilers(JsonArray compilersJson) {
@@ -144,26 +210,13 @@ public class Settings {
 
       // parse filter chain
 
-      Predicate<Event> filter = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
-        public boolean test(Event x) { return true; }
-      };
-
-      if ( !compilerJson.has("filters") )  {
-        LOG.warn(name + " has no filters");
-        LOG.warn("this will include everything ...");
-      } else {
-
-        for ( JsonElement filterJsonElm : compilerJson.get("filters").getAsJsonArray() ) {
-          JsonObject filterJson = filterJsonElm.getAsJsonObject();
-          Predicate<Event> subFilter = parseCompilerFilter(filterJson);
-          if ( subFilter != null ) {
-            filter = (conjunction) ? filter.and(subFilter) : filter.or(subFilter);
-          } else {
-            LOG.warn("part of the filter chain for the compiler " +  name  + " is misconfigured");
-          }
-        }
-
+      if ( !compilerJson.has("filter") ) {
+        LOG.error("the compiler " + name + " does not specify any filters ");
+        continue;
       }
+
+      JsonArray jsonFilterChain = compilerJson.get("filters").getAsJsonArray();
+      Predicate<Event> filter = Filters.parseFilterChain(jsonFilterChain, conjunction);
 
       //  construct compiler
 
@@ -188,138 +241,41 @@ public class Settings {
 
   }
 
-  private static Map<String,Predicate<Event>> parseEventViews(JsonArray viewsJson) {
+  private static Map<String,Predicate<Event>> parseEventFilters(JsonArray filtersJson) {
 
-      Map<String,Predicate<Event>> eventViews = new HashMap<String,Predicate<Event>>();
+      Map<String,Predicate<Event>> eventFilters = new HashMap<String,Predicate<Event>>();
 
-      for ( JsonElement jsonElm : viewsJson ) {
+      for ( JsonElement jsonElm : filtersJson ) {
 
-        JsonObject viewJson = jsonElm.getAsJsonObject();
+        JsonObject filterJson = jsonElm.getAsJsonObject();
 
-        if ( !viewJson.has("name") ) {
-          LOG.warn("you have a misconfigured view in your settings.json");
-          LOG.warn("you must provide a \"name\" for  the view to build to");
+        if ( !filterJson.has("name") ) {
+          LOG.warn("you have a misconfigured filter in your settings.json");
+          LOG.warn("you must provide a name for  the filter to build to");
           continue;
         }
-        String name = viewJson.get("name").getAsString();
+        String name = filterJson.get("name").getAsString();
         
-        if ( !viewJson.has("conjunction") ) {
-          LOG.warn("the view " + name + " does not specify a conjunction value, assuming true");
+        if ( !filterJson.has("conjunction") ) {
+          LOG.warn("the filter " + name + " does not specify a conjunction value, assuming true");
         }
-        boolean conjunction = !viewJson.has("conjunction") || viewJson.get("conjunction").getAsBoolean();
+        boolean conjunction = !filterJson.has("conjunction") || filterJson.get("conjunction").getAsBoolean();
 
-        // parse filter chain
+        if ( !filterJson.has("filters") )  {
+          LOG.error(name + " has no filters");
+          continue;
+        } 
 
-        Predicate<Event> filter = new Predicate<Event>() {  //so cumbersome, why no Predicate.True?
-          public boolean test(Event x) { return true; }
-        };
+        JsonArray jsonFilterChain = filterJson.get("filters").getAsJsonArray();
+        Predicate<Event> filter = Filters.parseFilterChain(jsonFilterChain, conjunction);
 
-        if ( !viewJson.has("filters") )  {
-          LOG.warn(name + " has no filters");
-          LOG.warn("this will include everything ...");
-        } else {
-
-          for ( JsonElement filterJsonElm : viewJson.get("filters").getAsJsonArray() ) {
-            JsonObject filterJson = filterJsonElm.getAsJsonObject();
-            Predicate<Event> subFilter = parseCompilerFilter(filterJson);
-            if ( subFilter != null ) {
-              filter = (conjunction) ? filter.and(subFilter) : filter.or(subFilter);
-            } else {
-              LOG.warn("part of the filter chain for the view " +  name  + " is misconfigured");
-            }
-          }
-        }
-
-        eventViews.put(name,filter);
+        eventFilters.put(name,filter);
 
       }
 
-      return eventViews;
+      return eventFilters;
 
     }
-
-
-
-/*
-    planned filter types
-
-    {
-      type  : "and"
-      filterA :
-      filterB :
-    }
-    {
-      type  : "or"
-      filterA : {}
-      filterB : {}
-    }
-    {
-      type  : "disk",
-      radius : "",
-      latitude: "",
-      longitude : "",
-    }
-    
-    Having types for connective logic would allow for a more expressive configuration.
-    For a draft of compiler parsing these types will be left out.
-*/
-
-
-  private static Predicate<Event> parseCompilerFilter(JsonObject filterJson) {
-    
-    if ( !filterJson.has("type") ) {
-      LOG.error("misconfigured filter, you must provide a \"type\"");
-      return null;
-    }
-
-    String filterType = filterJson.get("type").getAsString();
-
-    switch (filterType) {
-
-      case "disk":
-
-        if (!filterJson.has("radius")) {
-          LOG.error("need value \"radius\", for filter type disk");
-          return null;
-        }
-        Double radius = filterJson.get("radius").getAsDouble(); 
-
-        if (!filterJson.has("latitude")) {
-          LOG.error("need value \"latitude\", for filter type disk");
-          return null;
-        }
-        Double latitude = filterJson.get("latitude").getAsDouble(); 
-
-        if (!filterJson.has("longitude")) {
-          LOG.error("need value \"longitude\", for filter type disk");
-          return null;
-        }
-        Double longitude = filterJson.get("longitude").getAsDouble(); 
-
-        if ( radius == null || latitude == null || longitude == null ) {
-          LOG.error("you have null values in a disk filter");
-          return null;
-        }
-
-        return Events.WithinKMilesOf(latitude,longitude,radius);
-
-      case "virtual":
-
-        if (!filterJson.has("allowed") || !filterJson.get("allowed").getAsBoolean() ) {
-          return Events.NotVirtual();
-        } 
-        return null;
-
-      default:
-        LOG.warn("filter type : " + filterType + " is unknown");
-        return null;
-
-    }
-
-  }
-
-
-
 
   public String toString() {
 
