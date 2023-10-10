@@ -95,8 +95,13 @@ public class Settings {
 
     for ( JsonElement scan : scans ) {
       ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject());
+      if ( routine == null ) {
+        LOG.error("unable to parse scan routine see : " +  scan.toString());
+        continue;
+      }
       if ( scanRoutineMap.containsKey(routine.name) ) {
-          LOG.warn("Scan routine names must be unique! But found " + routine.name + " more than once");
+          LOG.warn("Scan routine names must be unique! But found " + routine.name + " more than once, using first occurence");
+          continue;
       }
       scanRoutineMap.put(routine.name,routine);
     }
@@ -105,13 +110,14 @@ public class Settings {
 
   }
 
-  public static ScanRoutine parseScanRoutine(JsonObject scanJson) throws Exception {
+  public static ScanRoutine parseScanRoutine(JsonObject scanJson) {
 
     ScanRoutine scanRoutine = new ScanRoutine();
     scanRoutine.types = new HashSet<EventTypeEnum>();
 
     if ( !scanJson.has("radius") ) {
-      throw new Exception("Invalid scan scanRoutine , you must set a \"radius\"");
+      LOG.error("Invalid routine, you must set a \"radius\"");
+      return null;
     }
     scanRoutine.radius = scanJson.get("radius").getAsDouble();
 
@@ -124,7 +130,8 @@ public class Settings {
     } else {
 
       if ( !scanJson.has("latitude")  || !scanJson.has("longitude") ) {
-        throw new Exception("Invalid scan scanRoutine , must set \"auto\" or \"latitude\" and \"longitude\"");
+        LOG.error("Invalid routine, you must set \"auto\" or \"latitude\" and \"longitude\"");
+        return null;
       }
 
       scanRoutine.latitude = scanJson.get("latitude").getAsDouble();
@@ -132,6 +139,10 @@ public class Settings {
 
     }
 
+    if ( !scanJson.has("delay") ) {
+      LOG.error("Invalid routine , you must set \"delay\"");
+      return null;
+    }
     scanRoutine.delay = scanJson.get("delay").getAsInt();
 
     if ( scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean() ) {
@@ -148,7 +159,6 @@ public class Settings {
     scanRoutine.lastRan = scanRoutine.runOnRestart ? Instant.EPOCH : Instant.now();
 
     scanRoutine.name =  scanJson.has("name") ? scanJson.get("name").getAsString()  : "";
-
     scanRoutine.disabled =  scanJson.has("disabled") && scanJson.get("disabled").getAsBoolean();
 
     return scanRoutine;
@@ -156,16 +166,13 @@ public class Settings {
   }
 
   /*
-
     {
         type : "rss" | "ical",
         path : "/path/to/the/result",
         conjunctive : true,
         filters : [{}]
     }
-
-  */
-
+    */
   private static List<EventCompiler> parseEventCompilers(JsonArray compilersJson) {
 
     List<EventCompiler> eventCompilers = new LinkedList<EventCompiler>();
@@ -176,15 +183,14 @@ public class Settings {
 
       //parse top fields
       if ( !compilerJson.has("name") ) {
-        LOG.warn("you have a misconfigured compiler in your settings.json");
-        LOG.warn("you must provide a \"name\" for  the compiler to build to");
+        LOG.warn("Invalid compiler, you must provide a \"name\".");
         continue;
       }
       String name = compilerJson.get("name").getAsString();
       
       if ( !compilerJson.has("path") ) {
         LOG.warn(name + " compiler is misconfigured");
-        LOG.warn("you must provide a \"path\" for  the compiler to build to");
+        LOG.warn("Invalid compiler, you must provide a \"path\".");
         continue;
       }
 
@@ -197,8 +203,8 @@ public class Settings {
       File file = new File(pathString);
 
       if ( !compilerJson.has("type") ) {
-        LOG.warn(name + " compiler is misconfigured");
-        LOG.warn("you must supply a \"type\"");
+        LOG.error("Invalid compiler, you must provide a \"type\".");
+        continue;
       }
 
       String typeString = compilerJson.get("type").getAsString();
@@ -210,13 +216,17 @@ public class Settings {
 
       // parse filter chain
 
-      if ( !compilerJson.has("filter") ) {
-        LOG.error("the compiler " + name + " does not specify any filters ");
+      if ( !compilerJson.has("filters") ) {
+        LOG.warn("the compiler " + name + " does not specify any filters ");
         continue;
       }
 
       JsonArray jsonFilterChain = compilerJson.get("filters").getAsJsonArray();
       Predicate<Event> filter = Filters.parseFilterChain(jsonFilterChain, conjunction);
+      if ( filter  == null ) {
+        LOG.error("unable to construct compiler " + name + " because of a bad filter chain");
+        continue;
+      }
 
       //  construct compiler
 
@@ -230,8 +240,7 @@ public class Settings {
 
       } else {
 
-        LOG.warn(name + " compiler is misconfigured");
-        LOG.error("unknown compiler type : " + typeString);
+        LOG.error("unknown compiler type : " + typeString + " for compiler + " + name);
         
       }
 
@@ -259,7 +268,9 @@ public class Settings {
         if ( !filterJson.has("conjunction") ) {
           LOG.warn("the filter " + name + " does not specify a conjunction value, assuming true");
         }
+
         boolean conjunction = !filterJson.has("conjunction") || filterJson.get("conjunction").getAsBoolean();
+          LOG.warn("the filter " + name + " has a conjunction value : "  + conjunction);
 
         if ( !filterJson.has("filters") )  {
           LOG.error(name + " has no filters");
@@ -268,8 +279,11 @@ public class Settings {
 
         JsonArray jsonFilterChain = filterJson.get("filters").getAsJsonArray();
         Predicate<Event> filter = Filters.parseFilterChain(jsonFilterChain, conjunction);
-
-        eventFilters.put(name,filter);
+        if ( filter != null ) {
+          eventFilters.put(name,filter);
+        } else {
+          LOG.error("unable to register custom filter " + name  +  " because of a bad filter chain");
+        }
 
       }
 
@@ -298,6 +312,13 @@ public class Settings {
     for ( EventCompiler ec : eventCompilers ) {
       result+= "\n"+ec.toString();
     }
+
+    result += "\n Custom Filters : " +  filters.keySet().size() + "\n";
+    Iterator<String> filterKeyIterator = filters.keySet().iterator();
+    while ( filterKeyIterator.hasNext() ) {
+      result+= "\n"+filterKeyIterator.next();
+    }
+
 
     result += "\n";
 

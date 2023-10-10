@@ -45,7 +45,7 @@ public class Events {
 
     return new Predicate<Event>() {
       public boolean test(Event event) {
-        return invert ? !event.virtual : event.virtual;
+        return invert ? event.virtual : !event.virtual;
       }
     };
 
@@ -53,19 +53,21 @@ public class Events {
 
   // return events that match ( do not match if invert ) the list of keywords
   // compare against event.name and event.description
-  public static Predicate<Event> Keywords(List<String> keywords,boolean caseSensitive,boolean invert) {
+  public static Predicate<Event> Keywords(List<String> keywords,boolean caseInensitive,boolean invert) {
 
     return new Predicate<Event>() {
+
+      //the logic here is a bit cryptic
       public boolean test(Event event) {
           for ( String key : keywords ) {
-              Pattern pattern = Pattern.compile(Pattern.quote(key), ((caseSensitive) ? Pattern.LITERAL : Pattern.CASE_INSENSITIVE));
+              Pattern pattern = Pattern.compile(Pattern.quote(key), ((caseInensitive) ? Pattern.CASE_INSENSITIVE : Pattern.LITERAL ));
               Matcher descriptionMatcher = pattern.matcher(event.description);
               Matcher nameMatcher = pattern.matcher(event.name);
               if ( descriptionMatcher.find() || nameMatcher.find() ) {
-                return ( invert ? false : true );
+                return !invert;
               }
           }
-          return false;
+          return invert; //no match
       }
     };
 
@@ -85,7 +87,7 @@ public class Events {
             }
           }
 
-          return false;
+          return invert; //filter not matched
       }
     };
 

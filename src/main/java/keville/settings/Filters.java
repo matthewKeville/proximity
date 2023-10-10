@@ -38,7 +38,8 @@ public class Filters {
 
           } else {
 
-            LOG.warn("part of the filter chain is misconfigured");
+            LOG.error("part of the filter chain is misconfigured\n see : " + filterJson.toString());
+            return null;
 
           }
 
@@ -59,40 +60,49 @@ public class Filters {
 
         String filterType = filterJson.get("type").getAsString();
 
-        switch (filterType) {
+        try {
 
-          case "disk":
-            
-            return parseDiskFilter(filterJson);
+          switch (filterType) {
 
-          case "inPerson":
+            case "disk":
+              
+              return parseDiskFilter(filterJson);
 
-            return parseInPersonFilter(filterJson);
+            case "inPerson":
 
-          case "daysAwayRange":
+              return parseInPersonFilter(filterJson);
 
-            return parseDaysAwayRangeFilter(filterJson);
+            case "daysAwayRange":
 
-          case "weekdays":
+              return parseDaysAwayRangeFilter(filterJson);
 
-            return parseWeekdaysFilter(filterJson);
+            case "weekdays":
 
-          //case "months": //Implemented in Events.java
+              return parseWeekdaysFilter(filterJson);
 
-          case "keywords":
+            //case "months": //Implemented in Events.java
 
-            return parseKeywordsFilter(filterJson);
+            case "keywords":
 
-          case "custom":
+              return parseKeywordsFilter(filterJson);
 
-            return parseCustomFilter(filterJson);
+            case "custom":
 
-          default:
+              return parseCustomFilter(filterJson);
 
-            LOG.warn("filter type : " + filterType + " is unknown");
-            return null;
+            default:
 
+              LOG.warn("filter type : " + filterType + " is unknown");
+              return null;
+
+          }
+
+        } catch (Exception e) {
+          LOG.error("critical error parsing filter see  : " +  filterJson);
+          LOG.error(e.getMessage());
         }
+
+        return null;
 
     }
 
@@ -231,8 +241,8 @@ public class Filters {
     /*
      * {
      *  "type" : "keywords",
-     *  "keys" : ["the","keywords"]
-     *  "caseSensitive" : false
+     *  "keys" : ["the","keywords"],
+     *  "caseInsensitive" : false,
      *  "invert" : false
      * }
     */
@@ -255,7 +265,7 @@ public class Filters {
         if ( !loggedKeyCheck(filterJson,"invert",filterName) ) {
           return null;
         }
-        boolean invert = filterJson.get("caseSensitive").getAsBoolean(); 
+        boolean invert = filterJson.get("invert").getAsBoolean(); 
 
         return Events.Keywords(keywords,caseInsensitive,invert);
     }

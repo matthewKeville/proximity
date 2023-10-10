@@ -58,6 +58,7 @@ public class ProximalDaemon
               String result = "Server : Online";
               result += "\nScan routines loaded : " + settings.scanRoutines.size();
               result += "\nCompilers loaded : " + settings.eventCompilers.size();
+              result += "\nFilters loaded : " + settings.filters.size();
 
               return result;
         });
@@ -158,9 +159,11 @@ public class ProximalDaemon
                   + " dayBefore " + daysBefore 
                   + " hideVirtual " + hideVirtual);
 
+              // This is here because of the effectively final constraint for
+              // lambdas, rewrite this .
               final double finalLat = latitude;
               final double finalLon = longitude;
-              final Predicate finalFilter = filter;
+              final Predicate<Event> finalFilter = filter;
 
               return gson.toJson(
                  EventService.getAllEvents()
