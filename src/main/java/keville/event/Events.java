@@ -57,16 +57,28 @@ public class Events {
 
     return new Predicate<Event>() {
 
-      //the logic here is a bit cryptic
       public boolean test(Event event) {
+
           for ( String key : keywords ) {
+
               Pattern pattern = Pattern.compile(Pattern.quote(key), ((caseInensitive) ? Pattern.CASE_INSENSITIVE : Pattern.LITERAL ));
-              Matcher descriptionMatcher = pattern.matcher(event.description);
-              Matcher nameMatcher = pattern.matcher(event.name);
-              if ( descriptionMatcher.find() || nameMatcher.find() ) {
-                return !invert;
+
+              if ( event.description != null ) {
+                Matcher descriptionMatcher = pattern.matcher(event.description);
+                if (descriptionMatcher.find()) {
+                  return !invert;
+                }
               }
+
+              if ( event.name != null ) {
+                Matcher nameMatcher = pattern.matcher(event.name);
+                if (nameMatcher.find()) {
+                  return !invert;
+                }
+              }
+
           }
+
           return invert; //no match
       }
     };

@@ -82,13 +82,33 @@ public class EventUpdaterScheduler implements Runnable {
         return;
     }
 
-    Event updatedEvent = eventUpdater.updateEvent(event);
+    Event updatedEvent = event; 
+    try {
+    updatedEvent = eventUpdater.updateEvent(event);
+    } catch (Exception e) {
+      LOG.error("critical error trying to update event : " + event.id);
+      LOG.error(e.getMessage());
+      return;
+    }
+
+    if ( updatedEvent == null ) {
+      LOG.error("unable to update event : " + event.id);
+      LOG.error("quarentining : " + event.id);
+      event.status=EventStatusEnum.QUARENTINE;
+      EventService.updateEvent(event);
+      return;
+    }
+
     Event merged = eventMerger.merge(event,updatedEvent);
 
     if ( merged == null ) {
-      LOG.error("error updating event, quarentining : " + event.id);
+      LOG.error("unable to merge updated event : " + event.id);
+      LOG.error("quarentining : " + event.id);
+      event.status=EventStatusEnum.QUARENTINE;
+      EventService.updateEvent(event);
       return;
     }
+
     merged.status = EventStatusEnum.HEALTHY;
     EventService.updateEvent(merged);
 

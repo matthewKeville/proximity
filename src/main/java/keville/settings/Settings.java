@@ -63,7 +63,7 @@ public class Settings {
       settings.scanRoutines = new HashMap<String,ScanRoutine>();
       settings.scanRoutines.put("Default",ScanRoutine.createDefault());
     } else {
-      settings.scanRoutines = parseScanRoutines(json.get("routines").getAsJsonArray());
+      settings.scanRoutines = parseScanRoutines(json.get("routines").getAsJsonArray(),settings /*this is so wrong */);
     }
 
     // custom filters
@@ -89,12 +89,12 @@ public class Settings {
 
   }
 
-  public static Map<String,ScanRoutine> parseScanRoutines(JsonArray scans) throws Exception {
+  public static Map<String,ScanRoutine> parseScanRoutines(JsonArray scans,Settings settings) throws Exception {
 
     Map<String,ScanRoutine> scanRoutineMap = new HashMap<String,ScanRoutine>();
 
     for ( JsonElement scan : scans ) {
-      ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject());
+      ScanRoutine routine  = parseScanRoutine(scan.getAsJsonObject(),settings);
       if ( routine == null ) {
         LOG.error("unable to parse scan routine see : " +  scan.toString());
         continue;
@@ -110,7 +110,7 @@ public class Settings {
 
   }
 
-  public static ScanRoutine parseScanRoutine(JsonObject scanJson) {
+  public static ScanRoutine parseScanRoutine(JsonObject scanJson,Settings settings) {
 
     ScanRoutine scanRoutine = new ScanRoutine();
     scanRoutine.types = new HashSet<EventTypeEnum>();
@@ -152,6 +152,10 @@ public class Settings {
         scanRoutine.types.add(EventTypeEnum.ALLEVENTS);
     }
     if ( scanJson.has("eventbrite")     && scanJson.get("eventbrite").getAsBoolean() ) {
+        if ( settings.eventbriteApiKey == null | settings.eventbriteApiKey.equals("") ) {
+          LOG.error("Invalid routine, you must provide an eventbrite_api_key to scan eventbrite");
+          return null;
+        }
         scanRoutine.types.add(EventTypeEnum.EVENTBRITE);
     }
 

@@ -30,7 +30,6 @@ public class ICalCompiler extends EventCompiler {
 
     for ( Event ev : events ) {
 
-
       VEvent event = new VEvent();
 
       event.setSummary(ev.name);

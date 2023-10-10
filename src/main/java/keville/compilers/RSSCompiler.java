@@ -74,58 +74,23 @@ public class RSSCompiler extends EventCompiler {
       return;
     }
 
-
-    int added = 0;
     discoveries = discoveries.stream().filter(filter).collect(Collectors.toList());
 
-    for ( Event event : discoveries ) {
-
-      //what if the nodes need updating ?  Needs rework when implementing Event Update Protocol
-      
-      if ( !itemAlreadyExists(items,event) ) {
-        
-        channel.appendChild(createItem(rss,event));
-        added++;
-
-      } else {
-        LOG.warn("found an event that already exists as an item, item : " + Integer.toString(event.id));
-      }
-
-    }
-
-    LOG.info("added " + added + " new events to feed");
-    saveRssXml(rss);
-
-  }
-
-  // this feels wrong
-  private boolean itemAlreadyExists(NodeList items, Event event) {
-
-    String eventGuid = event.eventType.toString() + event.eventId;
-
+    //remove all previous entries from the parent
+    
     for ( int i = 0; i < items.getLength(); i++ ) {
-
         Node item = items.item(i);
-        NodeList itemChildren = item.getChildNodes();
-
-        // find the guid node
-        Node guidNode = null; 
-        for ( int j  = 0; j < itemChildren.getLength(); j++ ) {
-          if ( itemChildren.item(j).getNodeName().equals("guid") ) {
-            guidNode = itemChildren.item(j);
-            break;
-          }
-        }
-
-        if ( guidNode != null ) {
-          if (guidNode.getTextContent().equals(eventGuid)) {
-            return true;
-          }
-        }
-
+        item.getParentNode().removeChild(item);
     }
 
-    return false;
+    //add all qualified events
+
+    for ( Event event : discoveries ) {
+      channel.appendChild(createItem(rss,event));
+    }
+
+    LOG.info(" compiled " + discoveries.size() + " into feed " + name);
+    saveRssXml(rss);
 
   }
 

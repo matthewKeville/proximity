@@ -37,18 +37,31 @@ public class AllEventsUpdater implements EventUpdater {
       LOG.info("targetting " + event.url + " to update event : " + event.id);
       driver.get(event.url);
 
-      List<WebElement> eventJsonScriptElements = driver.findElements(By.xpath("//*[@id=\"event-container\"]/script[1]"));
-      if ( eventJsonScriptElements.size() != 1 ) {
-        LOG.warn("unable to update event : " + event.id);
-        return null;
-      }
+      try {
 
-      String eventJsonString = eventJsonScriptElements.get(0).getAttribute("text");
-      JsonObject jsonData = JsonParser.parseString(eventJsonString).getAsJsonObject();
-      EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(jsonData);
-      eb.setEventId(event.eventId);
-      eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
-      return eb.build();
+        // this isn't consistent ... Ex. https://allevents.in/portland/slowdive/230002844302965
+        List<WebElement> eventJsonScriptElements = driver.findElements(By.xpath("//*[@id=\"event-container\"]/script[1]"));
+        if ( eventJsonScriptElements.size() != 1 ) {
+          LOG.error("an error was encountered updating event : " + event.id);
+          LOG.error("unable to locate event json script");
+          return null;
+        }
+
+        String eventJsonString = eventJsonScriptElements.get(0).getAttribute("text");
+        JsonObject jsonData = JsonParser.parseString(eventJsonString).getAsJsonObject();
+
+        EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(jsonData);
+        eb.setEventId(event.eventId);
+        eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
+        return eb.build();
+
+      } catch (Exception e) {
+
+        LOG.error("an error was encountered updating event : " + event.id);
+        LOG.error(e.getMessage());
+        return null;
+
+      }
 
     }
 

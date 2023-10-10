@@ -2,7 +2,6 @@ package keville.scanner;
 
 import keville.event.EventService;
 import keville.event.EventTypeEnum;
-import keville.compilers.EventCompiler;
 import keville.providers.Providers;
 import keville.settings.Settings;
 
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.time.Instant;
-
 
 public class EventScannerScheduler implements Runnable {
 
@@ -76,7 +74,6 @@ public class EventScannerScheduler implements Runnable {
 
         if ( scanReport != null ) {
 
-
           LOG.info("processing scanned events");
 
           ScannedEventsReport ser =  EventService.processFoundEvents(scanReport.events);
@@ -84,15 +81,9 @@ public class EventScannerScheduler implements Runnable {
           LOG.info(scanReport.toString());
           LOG.info(ser.toString());
 
-          for ( EventCompiler ec : settings.eventCompilers )  {
-            ec.compile(ser.getAll());
-          }
-
         }
 
       }
-
-      // wait
 
       try {
         Thread.sleep(timeStepMS);
@@ -106,22 +97,13 @@ public class EventScannerScheduler implements Runnable {
   }
 
   private boolean shouldRunNow(ScanRoutine routine) {
+
     if ( routine.disabled ) return false;
-    //this failsafe is in the wrong place, we want to abstract away the
-    //scan routine source... 
-    //TODO : move to settings where we are aware of specific types.
-    if ( routine.types.contains(EventTypeEnum.EVENTBRITE) && 
-        ( settings.eventbriteApiKey == null || 
-          settings.eventbriteApiKey.equals("") 
-        )
-    ) {
-      LOG.warn("the configuration for " + routine.name + " is invalid");
-      LOG.warn("to use eventbrite scanning you must supply an eventbrite api key");
-      return false;
-    } 
+
     Instant nextScanStart = (routine.lastRan).plusSeconds(routine.delay);
     Instant now = Instant.now();
     return  nextScanStart.isBefore(now);
+
   }
 
   private List<EventScanJob> makeScanJobs(ScanRoutine routine) {

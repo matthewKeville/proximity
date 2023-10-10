@@ -6,9 +6,10 @@ import keville.event.EventService;
 import keville.event.Event;
 import keville.event.Events;
 import keville.event.EventTypeEnum;
+import keville.compilers.EventCompilerScheduler;
+import keville.updater.EventUpdaterScheduler;
 import keville.scanner.EventScannerScheduler;
 import keville.scanner.ScanRoutine;
-import keville.updater.EventUpdaterScheduler;
 import keville.gson.InstantAdapter;
 import keville.gson.FileAdapter;
 import keville.util.GeoUtils;
@@ -33,6 +34,7 @@ public class ProximalDaemon
     static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ProximalDaemon.class);
     static Thread scannerThread;
     static Thread updaterThread;
+    static Thread compilerThread;
     static Settings settings;
 
     static double DEFAULT_LAT; 
@@ -244,13 +246,15 @@ public class ProximalDaemon
 
       EventScannerScheduler scannerScheduler = new EventScannerScheduler(settings);
       EventUpdaterScheduler updaterScheduler = new EventUpdaterScheduler(settings);
-
+      EventCompilerScheduler compilerScheduler = new EventCompilerScheduler(settings);
 
       scannerThread = new Thread(scannerScheduler, "ScannerThread");
       updaterThread = new Thread(updaterScheduler, "UpdaterThread");
+      compilerThread = new Thread(compilerScheduler, "CompilerThread");
 
       scannerThread.start();
       updaterThread.start();
+      compilerThread.start();
 
     }
 
