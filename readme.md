@@ -184,8 +184,10 @@ prxy --restart
 
 ## Viewing events
 
-If you want to check event data interactively you have 2 views at your disposal.
+***Note : proximity stores event data in a sqlite3 database named `app.db` so you can interact with that directly
+if desired.***
 
+If you want to check event data interactively you have 2 views at your disposal. 
 
 **Json view**
 
