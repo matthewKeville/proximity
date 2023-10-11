@@ -156,7 +156,7 @@ specifying a **custom** type.
 
 ## Usage
 
-Proximity is a sever, so we need some way to launch it. While you can invoke the server directly through `proximity.jar`. It is recommended you
+**proximity** is distribuited as an executable JAR, while you can invoke the server directly through `proximity.jar`. It is recommended you
 use the companion client `prxy` to manage the **proxmity** instance. 
 
 When you have a valid `settings.json`, you launch **proximity** using `prxy` like below.
@@ -173,22 +173,36 @@ by issuing this command to the client.
 prxy --status
 ```
 
-If you want to check event data interactively you have views at your disposal.
+If you want to stop or restart the server you can issue these commands.
 
-### json view
+```sh
+prxy --kill
+prxy --restart
+```
+
+## Viewing events
+
+If you want to check event data interactively you have 2 views at your disposal.
+
+
+**Json view**
 
 ```sh
 prxy --json # recommended that you use jq , i.e. prxy --json | jq '.'
 ```
 will ask **proximity** for all events in json format.
 
-### table view
+---
+
+**table view**
 
 ```sh
 prxy
 ```
 
-### view flags
+---
+
+***view flags***
 
 You can pass flags to the client to create different views into the event data.
 
@@ -204,11 +218,14 @@ or
 prxy --routine <routine-name> # use the same location settings as named routine
 ```
 
+***When using a routine, you can override routine parameters with the explicit
+radius, longitude, and latitude flags.***
+
 ***When no Location Filter is specified `prxy` will not filter events by location***
 
 ---
 
-### custom filters
+**custom filters**
 
 As mentioned earlier, we can use our custom filters to query data. That
 is done using the `--filter` flags. To use the custom filter defined earlier.
@@ -218,7 +235,3 @@ prxy --filter nearPhillyInPersonOnTheWeekEnd
 # or
 prxy --json --filter nearPhillyInPersonOnTheWeekEnd
 ```
-
-
-
-
