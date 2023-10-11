@@ -107,6 +107,8 @@ Proximity ships with a set or primitive filters that can be used as building blo
 create more specific filters. In the **filters** section of your **settings.json** you define
 custom filters that can be referenced in your compilers definitions or used to query the server with ( more on that below ).
 
+For more information on primitive filters see [filters](docs/filters.md)
+
 
 ```json
 "filters" : [

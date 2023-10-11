@@ -16,3 +16,4 @@ sensitive/*
 *.har
 client/prox
 client/prxy
+sample-data/
