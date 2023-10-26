@@ -76,6 +76,7 @@ public class HarUtil {
 
     if ( response == null ) {
       LOG.warn("unable to find a valid response for the request url : " + targetUrl);
+      return null;
     }
 
     // was it a redirect?
@@ -202,7 +203,13 @@ public class HarUtil {
       } else {
 
         LOG.warn("response was not encoded i.e. plain text");
-        return responseContent.get("text").getAsString();
+        try {
+          return responseContent.get("text").getAsString();
+        } catch (Exception e) {
+          LOG.error("unable to extract response text");
+          LOG.error(e.getMessage());
+          return null;
+        }
 
       }
 

@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -32,19 +33,27 @@ public class MeetupHarProcessor {
 
       List<Event> eventsEmbedded = extractEventsFromStaticPage(HarUtil.harToString(har),targetUrl);
       List<Event> eventsAjax = extractEventsFromAjax(HarUtil.harToString(har));
+      List<Event> allEvents = new LinkedList<Event>();
 
-      LOG.info("found " + eventsEmbedded.size() + " embedded events");
-      LOG.info("found " + eventsAjax.size()     + " ajax events");
+      if ( eventsEmbedded != null ) {
+        LOG.info("found " + eventsEmbedded.size() + " embedded events");
+        allEvents.addAll(eventsEmbedded);
+      }
 
-      eventsEmbedded.addAll(eventsAjax);
+      if ( eventsAjax != null ) {
+        LOG.info("found " + eventsAjax.size()     + " ajax events");
+        allEvents.addAll(eventsAjax);
+      }
       
-      return eventsEmbedded;
+      return allEvents;
     }
 
     public static List<Event> extractEventsFromStaticPage(String harString,String targetUrl) {
 
       // Find inital web response
         
+      LOG.info("extracting static events");
+
       JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
       if ( response == null ) {
 
@@ -144,6 +153,8 @@ public class MeetupHarProcessor {
   }
 
   public static List<Event> extractEventsFromAjax(String harString) {
+
+      LOG.info("extracting ajax events");
 
       final String apiUrl = "https://www.meetup.com/gql";
       List<Event> events = new LinkedList<Event>();

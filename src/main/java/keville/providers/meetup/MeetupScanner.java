@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import java.time.Duration;
 import java.time.Instant;
 
+import java.net.URLEncoder;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.JavascriptExecutor;
@@ -140,7 +142,22 @@ public class MeetupScanner implements EventScanner {
         distanceString  = "&distance=hundredMiles";
       }
 
-      String targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS%s",location.country,location.region,location.locality,distanceString);
+      String targetUrl = null;
+
+      try {
+
+        targetUrl = String.format("https://www.meetup.com/find/?location=%s--%s--%s&source=EVENTS%s",
+            URLEncoder.encode(location.country,"UTF-8"),
+            URLEncoder.encode(location.region,"UTF-8"),
+            URLEncoder.encode(location.locality,"UTF-8"),
+            distanceString);
+
+      } catch (Exception e)  {
+
+        LOG.error("unable to create target url : " + targetUrl);
+        LOG.error(e.getMessage());
+
+      }
 
       return targetUrl;
   }
