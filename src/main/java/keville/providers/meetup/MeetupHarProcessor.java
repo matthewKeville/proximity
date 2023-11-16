@@ -55,6 +55,7 @@ public class MeetupHarProcessor {
       LOG.info("extracting static events");
 
       JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
+
       if ( response == null ) {
 
         LOG.warn("unable to find intial web response");
@@ -92,7 +93,11 @@ public class MeetupHarProcessor {
       for (JsonElement jo : schemaEvents) {
 
         JsonObject event = jo.getAsJsonObject();
-        newEvents.add(createEventFrom(event));
+        Event ev = createEventFrom(event);
+
+        if ( ev != null ) {
+          newEvents.add(ev);
+        }
 
       }
 
@@ -138,6 +143,11 @@ public class MeetupHarProcessor {
   private static Event createEventFrom(JsonObject eventJson) {
 
     EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
+
+    if ( eb == null ) {
+      return null;
+    }
+
     eb.setEventTypeEnum(EventTypeEnum.MEETUP);
 
     //I am assuming this last part is the eventId
