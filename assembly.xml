@@ -10,7 +10,8 @@
           <source>client/prxy</source>
         </file>
         <file>
-          <source>settings.json</source>
+          <source>default-settings.json</source>
+          <destName>settings.json</destName>
         </file>
 
         <file>
