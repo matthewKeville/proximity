@@ -5,12 +5,8 @@
 # Features
 
 - Proximity can scrape event data from [eventbrite](https://eventbrite.com) , [meetup](https://meetup.com) and [allevents](https://allevents.in) based on user defined scanning routines.
-- Proximity can maintain the accuracy of it's dataset by ensuring currency through it's update protocol.
 - Proximity is capable of transforming scanned events into RSS feeds and iCalendars.
 - Proximity features a filtering pipeline that enables users to create datasets with specificity.
-- Proximity has a companion client **prxy** that can be used to interact with the server and it's event data on the command line
-    using an interactive TUI or programmatically in the CLI modes.
-
 
 ## Configuration
 
