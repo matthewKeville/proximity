@@ -1,4 +1,4 @@
-# Proximity
+# 🛰 Proximity
 
 **Proximity** is an event aggregation server that enables you to stay in informed about local happenings while avoiding web bloat. It leverages Selenium over [Browser Mob Proxy](https://github.com/lightbody/browsermob-proxy) to collect event data from websites that don't have a public ( or free ) API sufficient to locate events.
 - ✅ Scrape event data from [eventbrite.com](https://eventbrite.com) , [meetup.com](https://meetup.com) and [allevents.in](https://allevents.in)
