@@ -11,3 +11,5 @@ proximity.server/target/
 # app code
 **/app.db
 proximity.server/logs
+
+proximity.server/allevents-warn.har

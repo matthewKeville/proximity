@@ -3,6 +3,7 @@
     "allevents_max_pages" : 5,
     "routines" : [
         {
+          "disabled": true,
           "name" : "Local Scan",
           "radius" : 10.0,
           "auto" : true,
