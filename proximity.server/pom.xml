@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>keville</groupId>
+  <artifactId>proximity</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0</version>
+  <name>proximity</name>
+  <url>http://www.github.com/matthewKeville/proximity</url>
+
+  <properties>
+    <!-- this is a spring-boot-ism, not a standard maven option... -->
+    <!-- <java.version>17</java.version> -->
+    <!-- maven defaults to JRE 1.8 for some reason ... -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <!--https://stackoverflow.com/questions/51871635/couldnt-destroy-threadgroup-org-codehaus-mojo-exec-execjavamojoisolatedthreadg-->
+    <exec.cleanupDaemonThreads>false</exec.cleanupDaemonThreads>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-text</artifactId>
+        <version>1.9</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>4.12.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.lightbody.bmp</groupId>
+      <artifactId>browsermob-core</artifactId>
+      <version>2.1.5</version>
+    </dependency>
+
+    <!-- https://stackoverflow.com/questions/71095560/java-lang-nosuchmethoderror-com-google-common-collect-immutablemap-error-when -->
+    <!-- Selenium uses this library but the version my selenium depency pulls down is incompatible with
+        itself, so pull down a different version of the guava library to use -->
+    <!-- this is a transitive depency issue -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>31.0.1-jre</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.9.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
+    <dependency>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
+        <version>3.43.0.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-core</artifactId>
+      <version>2.9.4</version>
+      </dependency>
+
+    <dependency>
+      <groupId>net.sf.biweekly</groupId>
+      <artifactId>biweekly</artifactId>
+      <version>0.6.7</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+      <plugins>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.0.2</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.1</version>
+          <configuration>
+          <!--
+          <systemPropertyVariables>
+          <log4j.configurationFile>src/main/resources/log4j2.xml</log4j.configurationFile>
+            </systemPropertyVariables>
+          -->
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.0.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <executions>
+
+            <!-- run server from mvn exec:java@server -->
+            <execution>
+              <id>server</id>
+              <goals>
+                <goal>java</goal>
+              </goals>
+              <configuration>
+                <mainClass>keville.ProximalDaemon</mainClass>
+                <arguments>
+                  <argument></argument>
+                </arguments>
+                <systemProperties>
+                  <systemProperty>
+                    <key>log4j.configurationFile</key>
+                    <value>src/main/resources/log4j2.xml</value>
+                  </systemProperty>
+                </systemProperties>
+              </configuration>
+            </execution>
+
+          </executions>
+          </plugin>
+
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+
+              <!-- Fat JAR -->
+              <execution>
+                <id>building-jar-with-dependencies-0</id>
+                <phase>package</phase>
+                <configuration>
+                  <descriptorRefs>
+                    <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                       <manifest>
+                       <mainClass>keville.ProximalDaemon</mainClass>
+                       </manifest>
+                    </archive>
+                </configuration>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+              </execution>
+
+            </executions>
+          </plugin>
+      </plugins>
+  </build>
+</project>

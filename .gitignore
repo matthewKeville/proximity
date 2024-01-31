@@ -1,19 +1,13 @@
-target/*
-.classpath
-.factorypath
-.project
-.settings
-settings.json
-logs/
-eventbrite.db
-eventbrite.db-journal
-app.db
-test.db
-custom.properties
-custom.json
-custom.json.bak
-sensitive/*
-*.har
-client/prox
-client/prxy
-sample-data/
+
+# jdtls
+proximity.server/.classpath
+proximity.server/.factorypath
+proximity.server/.project
+proximity.server/.settings
+
+# maven
+proximity.server/target/
+
+# app code
+**/app.db
+proximity.server/logs
