@@ -1,20 +1,13 @@
-# Proximity
+# 🛰 Proximity
 
-**Proximity** is an event aggregation server that is capable of generating custom RSS feeds and calendars.
+**Proximity** is an event aggregation server that enables you to stay in informed about local happenings while avoiding web bloat. It leverages Selenium over [Browser Mob Proxy](https://github.com/lightbody/browsermob-proxy) to collect event data from websites that don't have a public ( or free ) API sufficient to locate events.
+- ✅ Scrape event data from [eventbrite.com](https://eventbrite.com) , [meetup.com](https://meetup.com) and [allevents.in](https://allevents.in)
+- ✅ Filter event data based on temporal distance, day of the week, provider, keywords, and other filters.
+- ✅ Transform event streams into RSS feeds and iCalendars.
 
-# Features
+## 📦 Installation
 
-- Proximity can scrape event data from [eventbrite](https://eventbrite.com) , [meetup](https://meetup.com) and [allevents](https://allevents.in) based on user defined scanning routines.
-- Proximity can maintain the accuracy of it's dataset by ensuring currency through it's update protocol.
-- Proximity is capable of transforming scanned events into RSS feeds and iCalendars.
-- Proximity features a filtering pipeline that enables users to create datasets with specificity.
-- Proximity has a companion client **prxy** that can be used to interact with the server and it's event data on the command line
-    using an interactive TUI or programmatically in the CLI modes.
-
-
-## Configuration
-
-<br>
+## ⚙️ Configuration
 
 To use Proximity you must define a `settings.json`.
 
@@ -41,9 +34,7 @@ The what is determined by 3 lists : **routines**,**compilers**, and **filters**
 - **filters**          : define custom event filters
 
 
-## Routines
-
-<br>
+### Routines
 
 Routines define what data to collect, where to collect it from, and how often. A routine requires 4
 components a **name** , a **delay** , **providers** and a **geographical circle** defined by a  **latitude**, **longitude** and **radius**.
@@ -68,11 +59,11 @@ disabled. However, you can simply omit disabled providers in the configuration a
 There are some routine attributes not on display above.
 
 - `"auto" : true`  Instead of specifying a geolocation you can ask the server to infer based on ip.
+  - ⚠️ This is an experimental feature that is not well tested. Explicit coordinates are preferred.
 - `"disable" : true` You can disable an entire scan which may be useful for troubleshooting.
-- `"run_on_restart" : true` By default **proximity** will wait **delay** seconds to run any configured scan routines, but you can force a routine to run ASAP.
+- `"run_on_restart" : true` By default **proximity** will wait **delay** seconds to run any configured scan routines, but you can force a routine to run on server startup.
 
-
-## Compilers 
+### Compilers 
 
 Comilers produce export formats for found data like RSS or iCalendar. Compilers are defined by 5 key components, **name**, **type**, **path**, 
 **conjunction**, and **filters**.
@@ -101,14 +92,13 @@ Note : the attribute **conjunction** defines how to logically compose the filter
 With a value of false, the filters would be disjunctive, meaning an event need only 
 be true for one of the defined filters for inclusion.
 
-## Filters
+### Filters
 
 Proximity ships with a set or primitive filters that can be used as building blocks to
 create more specific filters. In the **filters** section of your **settings.json** you define
 custom filters that can be referenced in your compilers definitions or used to query the server with ( more on that below ).
 
 For more information on primitive filters see [filters](doc/filters.md)
-
 
 ```json
 "filters" : [
@@ -154,8 +144,6 @@ specifying a **custom** type.
     "name" : "nearPhillyInPersonOnTheWeekEnd"
 }
 ```
-
-
 ## Usage
 
 **proximity** is distribuited as an executable JAR, while you can invoke the server directly through `proximity.jar`. It is recommended you
@@ -182,7 +170,7 @@ prxy --kill
 prxy --restart
 ```
 
-## Viewing events
+### Viewing events from the client
 
 ***Note : proximity stores event data in a sqlite3 database named `app.db` so you can interact with that directly
 if desired.***
@@ -203,6 +191,8 @@ will ask **proximity** for all events in json format.
 ```sh
 prxy
 ```
+will print out an interactive table built with [BubbleTea](https://github.com/charmbracelet/bubbletea) that allows you to filter
+and sort events. You can navigate directly to the source event on its website from a here.
 
 ---
 
