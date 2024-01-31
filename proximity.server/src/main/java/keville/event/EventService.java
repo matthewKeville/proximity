@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -24,13 +28,13 @@ import java.time.format.DateTimeFormatter;
 public class EventService {
 
   private static Settings settings;
-  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventService.class);
+  private static Logger LOG = LoggerFactory.getLogger(EventService.class);
 
-  public static void applySettings(Settings s) {
+  public static void init(Settings s) {
     settings = s;
+    initDb();
   }
 
-  /* locate an Event row in the database */
   public static Event getEvent(/* pk id */int id) {
     Connection con = getDbConnection();
     Event event;
@@ -51,28 +55,6 @@ public class EventService {
     return null;
   }
 
-  /* 
-     locate event row in db without pk
-   */
-  public static Event getEvent(EventTypeEnum type, String eventId) {
-    Connection con = getDbConnection();
-    try {
-      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
-      ps.setString(1,eventId);
-      ps.setString(2,type.toString());
-      ResultSet rs = ps.executeQuery();
-      if ( rs.next() ) {
-        return eventRowToEvent(rs);
-      }
-    } catch (SQLException e) {
-      LOG.error("An error occurred checking if an event exists { type, eventId } = { " + 
-          type + " , " + eventId + " } ");
-      LOG.error(e.getMessage());
-    } finally {
-      closeDbConnection(con);
-    }
-    return null;
-  }
 
   /* return a list of Events from the DB */
   public static List<Event> getEvents(Predicate<Event> filter) {
@@ -131,7 +113,7 @@ public class EventService {
    * and eventType (source). [New events from scanners do not have id]
    */
   public static boolean exists(EventTypeEnum type, String eventId) {
-    return getEvent(type,eventId) != null;
+    return getEventById(type,eventId) != null;
   }
 
   /**
@@ -288,12 +270,12 @@ public class EventService {
 
     for ( Event e : events ) {
 
-      Event dbe = getEvent(e.eventType,e.eventId);
+      Event dbe = getEventById(e.eventType,e.eventId);
 
       if ( dbe == null ) {
 
         if ( createEvent(e) ) {
-          dbe = getEvent(e.eventType,e.eventId);
+          dbe = getEventById(e.eventType,e.eventId);
           created.add(dbe);
         } else {
           LOG.error("couldn't create a new event (type, eventId) : ( " + e.eventType.toString() + " , "  +  e.eventId + " )");
@@ -336,7 +318,71 @@ public class EventService {
 
   /* check if the db exists, if not create a new db */
   public static void initDb() {
-    //File dbFile = new File(getDbConnectionString());
+    File dbFile = new File(settings.dbFile());
+    if (dbFile.exists()) {
+      //todo : check if table are correct...
+      //assume okay for now
+      LOG.info("db file found : " + settings.dbFile());
+      LOG.warn("skipping db integrity check");
+    } else {
+      LOG.info("no db file found, creating new event db");
+      Connection con = getDbConnection();
+      try {
+        Statement stmt = con.createStatement();
+        /*
+        String sql = "CREATE TABLE EVENT("
+          + "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+          + "EVENT_ID TEXT NOT NULL,"
+          + "SOURCE STRING NOT NULL,"
+          + "NAME TEXT NOT NULL,"
+          + "DESCRIPTION TEXT,"
+          + "START_TIME TEXT NOT NULL,"
+          + "END_TIME TEXT NOT NULL,"
+          + "LOCATION_NAME TEXT,"
+          + "COUNTRY TEXT,"
+          + "REGION TEXT,"
+          + "LOCALITY TEXT,"
+          + "STREET_ADDRESS TEXT,"
+          + "LONGITUDE REAL,"
+          + "LATITUDE REAL,"
+          + "ORGANIZER TEXT,"
+          + "URL TEXT,"
+          + "VIRTUAL INTEGER,"
+          + "LAST_UPDATE TEXT NOT NULL,"
+          + "STATUS TEXT NOT NULL);";
+        */
+        String sql = """
+          CREATE TABLE EVENT(
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            EVENT_ID TEXT NOT NULL,
+            SOURCE STRING NOT NULL,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            START_TIME TEXT NOT NULL,
+            END_TIME TEXT NOT NULL,
+            LOCATION_NAME TEXT,
+            COUNTRY TEXT,
+            REGION TEXT,
+            LOCALITY TEXT,
+            STREET_ADDRESS TEXT,
+            LONGITUDE REAL,
+            LATITUDE REAL,
+            ORGANIZER TEXT,
+            URL TEXT,
+            VIRTUAL INTEGER,
+            LAST_UPDATE TEXT NOT NULL,
+            STATUS TEXT NOT NULL
+          );
+        """;
+        stmt.execute(sql);
+      } catch (SQLException e) {
+        LOG.error("error creating event database");
+        LOG.error(e.getMessage());
+      } finally {
+        closeDbConnection(con);
+      }
+
+    }
   }
 
   private static String getDbConnectionString() {
@@ -364,6 +410,26 @@ public class EventService {
       LOG.error("unable to close db connection");
       LOG.error(e.getMessage());
     }
+  }
+
+  private static Event getEventById(EventTypeEnum type, String eventId) {
+    Connection con = getDbConnection();
+    try {
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE EVENT_ID=? AND SOURCE=?;");
+      ps.setString(1,eventId);
+      ps.setString(2,type.toString());
+      ResultSet rs = ps.executeQuery();
+      if ( rs.next() ) {
+        return eventRowToEvent(rs);
+      }
+    } catch (SQLException e) {
+      LOG.error("An error occurred checking if an event exists { type, eventId } = { " + 
+          type + " , " + eventId + " } ");
+      LOG.error(e.getMessage());
+    } finally {
+      closeDbConnection(con);
+    }
+    return null;
   }
 
   // convert sqllite row to domain Event map

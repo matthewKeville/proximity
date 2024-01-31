@@ -245,9 +245,11 @@ public class ProximalDaemon
 
       LOG.info(settings.toString());
 
-      Providers.init(settings);
+      // This is really bad, EventCache needs to be init after EventService
+      // This structure is inflexible and incoherent..
+      EventService.init(settings);
       EventCache.applySettings(settings);
-      EventService.applySettings(settings);
+      Providers.init(settings);
 
       // spawn threads
 

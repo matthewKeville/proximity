@@ -34,12 +34,12 @@ public class SettingsParser {
 
     JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
 
-    String dbFile  = "jdbc:sqlite:app.db";
-    if  ( json.has("db_connection_string")) {
-      dbFile  = json.get("db_connection_string").getAsString();
+    String dbFile  = "app.db";
+    if  ( json.has("db_path")) {
+      dbFile  = json.get("db_path").getAsString();
     }
 
-    String eventbriteApiKey = null;
+    String eventbriteApiKey = "";
     if ( json.has("eventbrite_api_key") ) {
       eventbriteApiKey  = json.get("eventbrite_api_key").getAsString();
     }

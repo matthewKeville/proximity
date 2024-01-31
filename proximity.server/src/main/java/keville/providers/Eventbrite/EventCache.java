@@ -2,6 +2,8 @@ package keville.providers.Eventbrite;
 
 import keville.settings.Settings;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -15,9 +17,11 @@ import com.google.gson.JsonParser;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+/* query eventbrite api for event data, store in local cache */
 public class EventCache {
 
   private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
@@ -25,11 +29,12 @@ public class EventCache {
   private static Settings settings;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
-  public static void applySettings(Settings s) {
+  public static void applySettings(Settings s) throws FileNotFoundException {
     settings = s;
+    initTable();
   }
 
-  public static JsonObject get(String eventId) {
+  public static JsonObject getEventById(String eventId) {
     JsonObject eventJson = getEventJsonFromDb(eventId);
     if ( (eventJson == null) ) {
       LOG.debug(String.format("local miss on event %s",eventId));
@@ -149,6 +154,40 @@ public class EventCache {
     }
 
     return eventJson;
+
+  }
+
+  /* make sure there is an eventbrite event table */
+  private static void initTable() throws FileNotFoundException {
+
+    File dbFile = new File(settings.dbFile());
+    if (!dbFile.exists()) {
+      LOG.error("no db file found : " + settings.dbFile());
+      throw new FileNotFoundException();
+    }
+
+    Connection con = getDbConnection();
+    try {
+      Statement stmt = con.createStatement();
+      /*
+      String sql = "CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT("
+      + "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+      + "EVENT_ID TEXT NOT NULL,"
+      + "JSON STRING NOT NULL);";
+      */
+      String sql = """
+        CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT(
+          ID INTEGER PRIMARY KEY AUTOINCREMENT, 
+          EVENT_ID TEXT NOT NULL JSON STRING NOT NULL
+        );
+      """;
+      stmt.execute(sql);
+    } catch (SQLException e) {
+      LOG.error("error initalzing eventbrite event table");
+      LOG.error(e.getMessage());
+    } finally {
+      closeDbConnection(con);
+    }
 
   }
 

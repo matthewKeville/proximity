@@ -47,7 +47,7 @@ public class EventbriteHarProcessor {
 
     LocationBuilder lb = new LocationBuilder();
 
-    JsonObject eventJson = keville.providers.Eventbrite.EventCache.get(eventId);
+    JsonObject eventJson = keville.providers.Eventbrite.EventCache.getEventById(eventId);
     if (eventJson == null) {
       LOG.error("error creating Event from eventbrite id : " + eventId + "\n\t unable to find eventJson in eventcache");
       return null;
