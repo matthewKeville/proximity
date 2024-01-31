@@ -329,28 +329,6 @@ public class EventService {
       Connection con = getDbConnection();
       try {
         Statement stmt = con.createStatement();
-        /*
-        String sql = "CREATE TABLE EVENT("
-          + "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-          + "EVENT_ID TEXT NOT NULL,"
-          + "SOURCE STRING NOT NULL,"
-          + "NAME TEXT NOT NULL,"
-          + "DESCRIPTION TEXT,"
-          + "START_TIME TEXT NOT NULL,"
-          + "END_TIME TEXT NOT NULL,"
-          + "LOCATION_NAME TEXT,"
-          + "COUNTRY TEXT,"
-          + "REGION TEXT,"
-          + "LOCALITY TEXT,"
-          + "STREET_ADDRESS TEXT,"
-          + "LONGITUDE REAL,"
-          + "LATITUDE REAL,"
-          + "ORGANIZER TEXT,"
-          + "URL TEXT,"
-          + "VIRTUAL INTEGER,"
-          + "LAST_UPDATE TEXT NOT NULL,"
-          + "STATUS TEXT NOT NULL);";
-        */
         String sql = """
           CREATE TABLE EVENT(
             ID INTEGER PRIMARY KEY AUTOINCREMENT,

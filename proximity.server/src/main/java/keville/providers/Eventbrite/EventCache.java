@@ -169,12 +169,6 @@ public class EventCache {
     Connection con = getDbConnection();
     try {
       Statement stmt = con.createStatement();
-      /*
-      String sql = "CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT("
-      + "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-      + "EVENT_ID TEXT NOT NULL,"
-      + "JSON STRING NOT NULL);";
-      */
       String sql = """
         CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT(
           ID INTEGER PRIMARY KEY AUTOINCREMENT, 
