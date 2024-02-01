@@ -26,13 +26,12 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventScannerBackgroundService.class);
   private static final Duration delay = Duration.ofSeconds(60);
-  private static final Duration startupDelay = Duration.ofSeconds(30);
+  private static final Duration startupDelay = Duration.ofSeconds(15);
 
   private Settings settings;
   private EventService eventService;
 
   private List<EventScanJob> jobs;
-  public int timeStepMS = 10000;
 
   public EventScannerBackgroundService(
       @Autowired Settings settings,
@@ -48,25 +47,29 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
   //run all routines that are allowed to run
   public void doTask() {
 
+      LOG.info("Evaluating Scan Routines");
+
+      //translate routines into scan jobs
       Iterator<String> routineKeyIterator = settings.scanRoutines().keySet().iterator();
       while (routineKeyIterator.hasNext()) {
 
         ScanRoutine routine = settings.scanRoutines().get(routineKeyIterator.next());
+
         if (routineShouldRun(routine)) {
-          LOG.info("It is time to scan " + routine.name);
-          List<EventScanJob> newJobs = makeScanJobs(routine);
-          LOG.info("adding " + newJobs.size() + " into the scan job queue ");
-          jobs.addAll(newJobs);
+          jobs.addAll(makeScanJobs(routine));
+          //Not the best naming convention here, it was slated to run now. It's in the queue
           routine.lastRan = Instant.now();
         }
 
       }
 
+      LOG.info(jobs.size() + " Scan Jobs in queue ");
+
+      //run 1 scan job from the queue
       if (jobs.size() != 0) {
 
         EventScanJob esj = jobs.remove(0);
-        LOG.info("executing scan job");
-        LOG.info(esj.toString());
+        LOG.info("Performing scan " + esj.toString());
         ScanReport scanReport = null;
 
         try {
@@ -75,7 +78,7 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
           if (scanner != null) {
             scanReport = Providers.providers.get(esj.source).scanner.scan(esj.latitude, esj.longitude, esj.radius);
           } else {
-            LOG.error("unable to find a scanner for type : " + esj.source);
+            LOG.error("Unable to find a scanner for type : " + esj.source);
           }
 
         } catch (Exception e) {
@@ -85,14 +88,13 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
 
         }
 
-        LOG.info("scan job complete");
+        LOG.info("Scan complete");
 
         if (scanReport != null) {
 
-          LOG.info("processing scanned events");
-
+          //This design seems incoherent (ScannedEventsReport & ScanReport) ?
+          LOG.debug("processing scanned events");
           ScannedEventsReport ser = eventService.processFoundEvents(scanReport.events);
-
           LOG.info(scanReport.toString());
           LOG.info(ser.toString());
 

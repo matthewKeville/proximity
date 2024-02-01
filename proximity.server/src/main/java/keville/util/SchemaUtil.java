@@ -29,7 +29,7 @@ public class SchemaUtil {
         String startTimestring = eventJson.get("startDate").getAsString();
         if ( startTimestring.length() == 10 ) {  // ex: 2023‐09‐13
 
-          LOG.warn("Schema event had start Date instead of DateTime , faking Time component setting INCOMPLETE");
+          LOG.debug("Schema event had start Date instead of DateTime , faking Time component setting INCOMPLETE");
           startTimestring+="T00:00:00.000Z";
           eb.setStatus(EventStatusEnum.INCOMPLETE);
 
@@ -41,7 +41,7 @@ public class SchemaUtil {
         String endTimestring = eventJson.get("endDate").getAsString(); // DateTime or Date
         if ( endTimestring.length() == 10) {  // ex: 2023‐09‐13
                                                //
-          LOG.warn("Schema event had end Date instead of DateTime , faking Time component, setting INCOMPLETE");
+          LOG.debug("Schema event had end Date instead of DateTime , faking Time component, setting INCOMPLETE");
           endTimestring+="T00:00:00.000Z";
           eb.setStatus(EventStatusEnum.INCOMPLETE);
 
@@ -53,7 +53,7 @@ public class SchemaUtil {
 
         } else {
 
-          LOG.warn("Schema event had empty endDate string , setting end to start");
+          LOG.debug("Schema event had empty endDate string , setting end to start");
           eb.setEnd(start);
 
         }
@@ -106,7 +106,6 @@ public class SchemaUtil {
         } else if ( location.get("@type").getAsString().equals("VirtualLocation") ) {
 
           eb.setVirtual(true);
-          LOG.warn("creating an event with a VirtualLocation");
 
         } else {
 

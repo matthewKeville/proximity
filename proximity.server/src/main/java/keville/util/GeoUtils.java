@@ -16,7 +16,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-
+/*
+ * This class has low cohesion. Location utilities isWithinMiles, radialBbox, distanceInMiles
+ * are of a different nature than getClientGeolocation. FIXME : break this into two classes 
+ * */
 public class GeoUtils {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(GeoUtils.class);
@@ -49,7 +52,6 @@ public class GeoUtils {
     return distMiles;
   }
 
-  //https://github.com/dcarrillo/whatismyip
   public static Map<String,Double> getClientGeolocation() {
 
     Map<String,Double> geoLocation = new HashMap<String,Double>();
@@ -58,16 +60,16 @@ public class GeoUtils {
     String response = "";
 
     try {
-    URI uri = new URI("https://ifconfig.es/geo"); /*without terminal '/' we get a 301 */
-    getRequest = HttpRequest.newBuilder()
-      .uri(uri) 
-      .GET()
-      .build();
+      //without terminal '/' we get a 301
+      URI uri = new URI("https://ifconfig.es/geo"); 
+      getRequest = HttpRequest.newBuilder()
+        .uri(uri) 
+        .GET()
+        .build();
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      LOG.info(String.format("request returned %d",getResponse.statusCode()));
       response = getResponse.body();
     } catch (Exception e) {
-      LOG.error(String.format("error sending request %s",e.getMessage()));
+      LOG.error(String.format("Error requesting reverse Geocode information",e.getMessage()));
     }
 
     /*
@@ -93,7 +95,7 @@ public class GeoUtils {
     HttpRequest getRequest;
     String response = "";
     
-    LOG.info(" attempting reverse geocode on lat = " + latitude + " and lon = " + longitude);
+    LOG.info("Reverse Geocoding : " + latitude + " , " + longitude);
 
     try {
 
@@ -103,7 +105,6 @@ public class GeoUtils {
         .GET()
         .build();
       HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      LOG.info(String.format("request returned %d",getResponse.statusCode()));
       response = getResponse.body();
 
     } catch (Exception e) {
@@ -116,7 +117,7 @@ public class GeoUtils {
       JsonObject json = JsonParser.parseString(response).getAsJsonObject();
 
       if ( !json.has("address"))  {
-        LOG.warn("geo code did not map to an address");
+        LOG.warn("No address returned");
         return result;
       }
 
@@ -136,23 +137,23 @@ public class GeoUtils {
       } else if ( address.has("city") ) {
         locality = address.get("city").getAsString();
       } else {
-        LOG.warn("Failed to find a town , city or village for the geocoordinate : ( " + latitude + " , " + longitude + ")" );
-        LOG.warn("response :  " + response);
+        LOG.warn("Failed to find a town , city or village for the geocoordinate : " + latitude + " , " + longitude);
       }
-
 
       LocationBuilder lb = new LocationBuilder();
       lb.setLatitude(latitude);
       lb.setLongitude(longitude);
-      LOG.warn("spoofing country field, api returns country in name format instead of ANSIL standard");
+
+      LOG.warn("Spoofing country field, api returns country in name format instead of ANSIL standard");
       lb.setCountry("us");
+
       lb.setRegion(state);
       lb.setLocality(locality);
       result =  lb.build();
 
     } catch (Exception e) {
 
-      LOG.error(" unable to reverse geocode lat=" + latitude + "  , lon=" + latitude + " into a Location ");
+      LOG.error("Failed to reverse Geocode " + latitude + " , " + longitude);
       LOG.error(e.getMessage());
 
     }

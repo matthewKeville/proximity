@@ -42,7 +42,7 @@ public class DefaultEventService implements EventService {
     Connection con = getDbConnection();
     Event event;
     try {
-      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE ID=?;"); //what is the query?
+      PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENT WHERE ID=?;");
       ps.setString(1,Integer.toString(id));
       ResultSet rs = ps.executeQuery();
       if (rs.next()) {
@@ -58,8 +58,6 @@ public class DefaultEventService implements EventService {
     return null;
   }
 
-
-  /* return a list of Events from the DB */
   public List<Event> getEvents(Predicate<Event> filter) {
 
     /* probably not a great idea to pull all events into memory, then filter.
@@ -185,7 +183,7 @@ public class DefaultEventService implements EventService {
       return rowsUpdated == 1;
 
     } catch (Exception e) {
-      LOG.error("an error occurred updating an event in the database, id : " + event.id);
+      LOG.error("An error occurred updating an event in the database, id : " + event.id);
       LOG.error(e.getMessage());
     } finally {
       closeDbConnection(con);
@@ -206,7 +204,7 @@ public class DefaultEventService implements EventService {
 
     //do not create duplicates
     if ( exists(event.eventType,event.eventId) ) { 
-      LOG.warn(" event - " + "eventid : " +  event.id + "\n\t was requested to be created , but already exists ");
+      LOG.warn("Event : " +  event.id + "\n\t was requested to be created , but already exists ");
       return false; 
     }
 
@@ -261,10 +259,6 @@ public class DefaultEventService implements EventService {
     return true;
   }
 
-  /**
-   * 
-   * @return : newly created events
-   */
   public ScannedEventsReport processFoundEvents(List<Event> events) {
 
     List<Event> created  = new  LinkedList<Event>();
@@ -281,31 +275,27 @@ public class DefaultEventService implements EventService {
           dbe = getEventById(e.eventType,e.eventId);
           created.add(dbe);
         } else {
-          LOG.error("couldn't create a new event (type, eventId) : ( " + e.eventType.toString() + " , "  +  e.eventId + " )");
+          LOG.error("Couldn't create a new event (type, eventId) : ( " + e.eventType.toString() + " , "  +  e.eventId + " )");
         }
 
       } else {
 
-        // known events found in a scan can be updated
         EventMerger eventMerger = Providers.getMerger(dbe.eventType);
         if ( eventMerger == null ) {
-            LOG.error("Unable to find merger for type : " + dbe.eventType);
-            LOG.error("aborting processing for event id " + dbe.id);
+            LOG.error("Unable to find merger for type : " + dbe.eventType + " to merge event " + dbe.id);
             continue;
         }
         Event merge = eventMerger.merge(dbe,e);
 
         if ( merge != null ) {
 
-          LOG.info("found an updated version of existing event " + merge.id);
-          //update event in db
+          LOG.debug("Found an updated version of existing event " + merge.id);
           updateEvent(merge);
           updated.add(merge);
 
         } else {
 
-          //refresh last update and status
-          LOG.info("found an existing event in scan " + dbe.id);
+          LOG.debug("Found an existing event in scan " + dbe.id + " but it is not updated");
           updateEvent(dbe);  
           unchanged.add(dbe);
 
@@ -319,11 +309,10 @@ public class DefaultEventService implements EventService {
 
   }
 
-  /* check if the db exists, if not create a new db */
   public void initDb() {
     File dbFile = new File(settings.dbFile());
     if (dbFile.exists()) {
-      //todo : check if table are correct...
+      //TODO : check if table are correct...
       //assume okay for now
       LOG.info("db file found : " + settings.dbFile());
       LOG.warn("skipping db integrity check");
@@ -372,14 +361,11 @@ public class DefaultEventService implements EventService {
 
   private Connection getDbConnection() {
     Connection con  = null;
-    LOG.debug("connecting to " + getDbConnectionString());
     try {
       con = DriverManager.getConnection(getDbConnectionString());
-      LOG.debug("connected to " + getDbConnectionString());
     } catch (SQLException e) {
       LOG.error("Critical error : unable to read events from database app.db");
       LOG.error(e.getMessage());
-      System.exit(5);
     }
     return con;
   }
@@ -388,7 +374,7 @@ public class DefaultEventService implements EventService {
     try {
       con.close();
     } catch (Exception e) {
-      LOG.error("unable to close db connection");
+      LOG.error("Unable to close db connection");
       LOG.error(e.getMessage());
     }
   }

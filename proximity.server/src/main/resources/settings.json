@@ -12,7 +12,7 @@
           "run_on_restart" : true,
           "delay" : 86400,
           "meetup" : true,
-          "allevents" : true
+          "allevents" : false
         }
     ],
     "compilers" : [],

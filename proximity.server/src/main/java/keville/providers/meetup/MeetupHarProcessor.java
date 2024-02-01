@@ -24,7 +24,16 @@ import com.google.gson.JsonObject;
 
 import net.lightbody.bmp.core.har.Har;
 
-
+/*
+ * Meetup event data can be found in two ways. The inital payload contains embedded event data in the html.
+ * As the user scrolls through the page, additional data is requested through a graphql endpoint, we try to process both.
+ * I don't remember why these needed to be processed in a different way. 
+ *
+ * TODO : Investigate differences.
+ *
+ * As this class has a bimodal nature, perhaps it should be broken up into two classes to elucidate that and let this
+ * class delegate. It would make it easier to reason about in the future.
+ */
 public class MeetupHarProcessor {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupHarProcessor.class);
@@ -36,44 +45,39 @@ public class MeetupHarProcessor {
       List<Event> allEvents = new LinkedList<Event>();
 
       if ( eventsEmbedded != null ) {
-        LOG.info("found " + eventsEmbedded.size() + " embedded events");
+        LOG.debug("found " + eventsEmbedded.size() + " embedded events");
         allEvents.addAll(eventsEmbedded);
       }
 
       if ( eventsAjax != null ) {
-        LOG.info("found " + eventsAjax.size()     + " ajax events");
+        LOG.debug("found " + eventsAjax.size()     + " ajax events");
         allEvents.addAll(eventsAjax);
       }
       
       return allEvents;
     }
 
+    /* The embedded JsonSchema data does not require additional processing */
     public static List<Event> extractEventsFromStaticPage(String harString,String targetUrl) {
 
       // Find inital web response
         
-      LOG.info("extracting static events");
+      LOG.debug("extracting static events");
 
       JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
 
       if ( response == null ) {
-
-        LOG.warn("unable to find intial web response");
+        LOG.debug("unable to find intial web response");
         HarUtil.saveHARtoLFS(harString,"meetup-error.har");
         return null;
-
       }
 
-
       // get response data
-
       String webpageData = HarUtil.getDecodedResponseText(response);
       if ( webpageData == null ) {
-
-        LOG.error("initial response data is empty");
+        LOG.debug("Initial response data is empty");
         HarUtil.saveHARtoLFS(harString,"meetup-error.har");
         return null;
-
       }
 
 
@@ -83,7 +87,7 @@ public class MeetupHarProcessor {
 
       if ( schemaEvents == null ) {
         
-        LOG.warn("no embedded schema events found");
+        LOG.debug("No embedded schema events found");
         HarUtil.saveHARtoLFS(harString,"meetup-error.har");
       
       }
@@ -118,23 +122,17 @@ public class MeetupHarProcessor {
       try {
 
         if (mat.find()) {
-
           eventJsonSchemaArrayString = mat.group(0);
-
         } else {
-
-          LOG.warn("unable to find embedded event data");
+          LOG.debug("Unable to find embedded event data");
           return null;
-
         }
 
         return JsonParser.parseString(eventJsonSchemaArrayString).getAsJsonArray();
 
       } catch (Exception e ) {
-
-        LOG.error("unexpected har data");
+        LOG.error("Unexpected har data");
         return null;
-
       }
 
   }
@@ -164,60 +162,43 @@ public class MeetupHarProcessor {
 
   public static List<Event> extractEventsFromAjax(String harString) {
 
-      LOG.info("extracting ajax events");
-
+      LOG.debug("extracting ajax events");
       final String apiUrl = "https://www.meetup.com/gql";
       List<Event> events = new LinkedList<Event>();
 
       List<JsonObject> responses = HarUtil.findAllResponsesFromRequestUrl(harString,apiUrl);
-
-      LOG.info("found " + responses.size() + " /gql responses ");
+      LOG.debug("found " + responses.size() + " /gql responses ");
 
       for (JsonObject resp : responses ) {
 
         String jsonRaw = HarUtil.getDecodedResponseText(resp);
         if ( jsonRaw == null ) {
-          LOG.warn("the response content is null, skipping...");
+          LOG.debug("The response content is null, skipping...");
           continue;
         }
 
         // sanity check to track assumptions of site api 
-
         if ( resp.get("content").getAsJsonObject().has("encoding") ) { //assumed to be  base64
-
           String encoding = resp.get("content").getAsJsonObject().get("encoding").getAsString();
-
-          LOG.warn("unexpected response, found a response encoded with : " + encoding );
-          LOG.warn("expected no encoding");
+          LOG.warn("Unexpected response, found a response encoded with : " + encoding + " but expected no encoding");
 
         // process response content of interest 
-
         } else {
 
-          //gql event to domain Event
-
           JsonArray edges = extractEdgesFromRawGqLJson(jsonRaw);
-
           if ( edges == null )  {
-
-            LOG.warn("failed to extract edges from response content");
+            LOG.warn("Failed to extract edges from response content");
             continue;
-
           }
 
           for ( JsonElement edgeElement : edges ) {
-
              JsonObject edge = edgeElement.getAsJsonObject(); 
              events.add(createEventFromGqlEventEdge(edge));
-
           }
-          
         }
-
       }
 
       return events;
-
   }
 
 
