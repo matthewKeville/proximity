@@ -1,6 +1,5 @@
 package keville;
 
-import keville.providers.Providers;
 import keville.providers.Eventbrite.EventCache;
 import keville.settings.Settings;
 import keville.settings.SettingsParser;
@@ -60,10 +59,8 @@ public class Proximity {
       try {
 
         LOG.info(settings.toString());
-        // This is really bad, EventCache needs to be init after EventService
-        // This structure is inflexible and incoherent..
+        //TODO DI
         EventCache.applySettings(settings);
-        Providers.init(settings);
 
       } catch (Exception e) {
         LOG.error("failed to init");

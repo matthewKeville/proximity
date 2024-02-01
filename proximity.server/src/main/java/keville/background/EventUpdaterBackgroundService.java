@@ -2,10 +2,10 @@ package keville.background;
 
 import keville.event.Event;
 import keville.merger.EventMerger;
+import keville.providers.Providers;
 import keville.event.EventService;
 import keville.event.EventStatusEnum;
 import keville.updater.EventUpdater;
-import keville.providers.Providers;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,11 +20,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventUpdaterBackgroundService extends SelfSchedulingBackgroundTask  {
 
-  private EventService eventService;
 
   private static org.slf4j.Logger LOG = LoggerFactory.getLogger(EventUpdaterBackgroundService.class);
   private static final Duration delay = Duration.ofSeconds(60);
   private static final Duration startupDelay = Duration.ofSeconds(60);
+
+  private EventService eventService;
+  private Providers providers;
 
   private List<Event> outdatedEvents;
   private final int updateBatchSize = 5;
@@ -32,9 +34,11 @@ public class EventUpdaterBackgroundService extends SelfSchedulingBackgroundTask 
 
   public EventUpdaterBackgroundService(
       @Autowired EventService eventService,
+      @Autowired Providers providers,
       @Autowired TaskScheduler taskScheduler) {
     super(taskScheduler, delay,startupDelay,"Event Updater Background Service");
     this.eventService = eventService;
+    this.providers = providers;
     this.outdatedEvents = new LinkedList<Event>();
   }
 
@@ -71,8 +75,8 @@ public class EventUpdaterBackgroundService extends SelfSchedulingBackgroundTask 
 
     LOG.warn("updating event " + event.id);
 
-    EventUpdater eventUpdater = Providers.getUpdater(event.eventType);
-    EventMerger eventMerger = Providers.getMerger(event.eventType);
+    EventUpdater eventUpdater = providers.getUpdater(event.eventType);
+    EventMerger eventMerger = providers.getMerger(event.eventType);
 
     if (eventUpdater == null || eventMerger == null) {
       LOG.error("unable to get updater for type " + event.eventType);

@@ -16,8 +16,9 @@ public class AlleventsScannerTest {
     private static Logger LOG = LoggerFactory.getLogger(AlleventsScannerTest.class);
     private AllEventsScanner scanner;
 
-    public AlleventsScannerTest(@Autowired Settings settings) {
-      this.scanner = new AllEventsScanner(settings);
+    public AlleventsScannerTest(@Autowired Settings settings,
+        @Autowired AllEventsScanner allEventsScanner) {
+      this.scanner = allEventsScanner;
     }
 
     @Test

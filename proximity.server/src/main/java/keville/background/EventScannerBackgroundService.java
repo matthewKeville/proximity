@@ -30,17 +30,20 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
 
   private Settings settings;
   private EventService eventService;
+  private Providers providers;
 
   private List<EventScanJob> jobs;
 
   public EventScannerBackgroundService(
       @Autowired Settings settings,
       @Autowired EventService eventService,
-      @Autowired TaskScheduler taskScheduler
+      @Autowired TaskScheduler taskScheduler,
+      @Autowired Providers providers
       ) {
     super(taskScheduler,delay,startupDelay,"Event Compiler Background Service");
     this.settings = settings;
     this.eventService = eventService;
+    this.providers = providers;
     jobs = new LinkedList<EventScanJob>();
   }
 
@@ -74,9 +77,9 @@ public class EventScannerBackgroundService extends SelfSchedulingBackgroundTask 
 
         try {
 
-          EventScanner scanner = Providers.getScanner(esj.source);
+          EventScanner scanner = providers.getScanner(esj.source);
           if (scanner != null) {
-            scanReport = Providers.providers.get(esj.source).scanner.scan(esj.latitude, esj.longitude, esj.radius);
+            scanReport = providers.providers.get(esj.source).scanner.scan(esj.latitude, esj.longitude, esj.radius);
           } else {
             LOG.error("Unable to find a scanner for type : " + esj.source);
           }

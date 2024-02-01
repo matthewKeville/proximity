@@ -31,10 +31,14 @@ import java.time.format.DateTimeFormatter;
 public class DefaultEventService implements EventService {
 
   private static Logger LOG = LoggerFactory.getLogger(DefaultEventService.class);
+  private Providers providers;
   private Settings settings;
 
-  public DefaultEventService(@Autowired Settings settings) {
+  public DefaultEventService(
+      @Autowired Settings settings,
+      @Autowired Providers providers) {
     this.settings = settings;
+    this.providers = providers;
     initDb();
   }
 
@@ -280,7 +284,7 @@ public class DefaultEventService implements EventService {
 
       } else {
 
-        EventMerger eventMerger = Providers.getMerger(dbe.eventType);
+        EventMerger eventMerger = providers.getMerger(dbe.eventType);
         if ( eventMerger == null ) {
             LOG.error("Unable to find merger for type : " + dbe.eventType + " to merge event " + dbe.id);
             continue;

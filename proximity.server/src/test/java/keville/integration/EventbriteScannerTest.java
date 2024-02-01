@@ -16,8 +16,9 @@ public class EventbriteScannerTest
     private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteScannerTest.class);
     private EventbriteScanner scanner;
 
-    public EventbriteScannerTest(@Autowired Settings settings) {
-      this.scanner = new EventbriteScanner(settings);
+    public EventbriteScannerTest(@Autowired Settings settings,
+        @Autowired EventbriteScanner eventbriteScanner) {
+      this.scanner = eventbriteScanner;
     }
 
     @Test

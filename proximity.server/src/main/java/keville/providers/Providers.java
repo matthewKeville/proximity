@@ -4,67 +4,71 @@ import keville.event.EventTypeEnum;
 import keville.settings.Settings;
 
 import keville.providers.AllEvents.AllEventsScanner;
-import keville.providers.AllEvents.AllEventsUpdater;
 import keville.providers.Eventbrite.EventbriteScanner;
 import keville.providers.meetup.MeetupScanner;
-import keville.merger.DefaultEventMerger;
-import keville.updater.DefaultUpdater;
 
 import keville.scanner.EventScanner;
 import keville.merger.EventMerger;
 import keville.updater.EventUpdater;
 
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.util.HashMap;
 
+@Component
 public class Providers {
 
-    public static Map<EventTypeEnum,Provider> providers;
+    public  Map<EventTypeEnum,Provider> providers;
 
-    public static void init(Settings settings) {
+    public Providers(
+      @Autowired Settings  settings,
+      @Autowired AllEventsScanner allEventsScanner,
+      @Autowired EventbriteScanner eventbriteScanner,
+      @Autowired MeetupScanner meetupScanner,
+      @Autowired EventMerger eventMerger,
+      @Autowired EventUpdater eventUpdater
+        ) {
 
-        EventMerger defaultMerger = new DefaultEventMerger();
         providers = new HashMap<EventTypeEnum,Provider>();
         
         Provider ae = new Provider(
-                new AllEventsScanner(settings),
-                new AllEventsUpdater(),
-                defaultMerger
+          allEventsScanner,
+          eventUpdater,
+          eventMerger
         );
 
         Provider eb = new Provider(
-                new EventbriteScanner(settings),
-                new DefaultUpdater(),
-                defaultMerger
+          eventbriteScanner,
+          eventUpdater,
+          eventMerger
         );
 
         Provider mu = new Provider(
-                new MeetupScanner(settings),
-                new DefaultUpdater(),
-                defaultMerger
+          meetupScanner, 
+          eventUpdater,
+          eventMerger
         );
 
         providers.put(EventTypeEnum.ALLEVENTS,ae);
         providers.put(EventTypeEnum.EVENTBRITE,eb);
         providers.put(EventTypeEnum.MEETUP,mu);
-                                    
 
     }
 
-    //@Precondition : Providers.init()
-    public static EventScanner getScanner(EventTypeEnum type) {
+    public EventScanner getScanner(EventTypeEnum type) {
         Provider p = providers.get(type);
         return ( p == null ) ? null : p.scanner;
     }
 
-    //@Precondition : Providers.init()
-    public static EventUpdater getUpdater(EventTypeEnum type) {
+    public EventUpdater getUpdater(EventTypeEnum type) {
         Provider p = providers.get(type);
         return ( p == null ) ? null : p.updater;
     }
 
-    //@Precondition : Providers.init()
-    public static EventMerger getMerger(EventTypeEnum type) {
+    public EventMerger getMerger(EventTypeEnum type) {
         Provider p = providers.get(type);
         return ( p == null ) ? null : p.merger;
     }

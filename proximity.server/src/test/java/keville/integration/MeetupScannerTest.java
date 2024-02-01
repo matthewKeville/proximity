@@ -15,8 +15,10 @@ public class MeetupScannerTest
     private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupScannerTest.class);
     private MeetupScanner scanner;
 
-    public MeetupScannerTest(@Autowired Settings settings) {
-      this.scanner = new MeetupScanner(settings);
+    public MeetupScannerTest(
+        @Autowired Settings settings,
+        @Autowired MeetupScanner meetupScanner) {
+      this.scanner = meetupScanner;
     }
 
     @Test
