@@ -6,12 +6,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.io.File;
 
-
 public abstract class EventCompiler {
 
-  protected String name;
-  protected File file;
-  protected Predicate<Event> filter = null;
+  public String name;
+  public File file;
+  public Predicate<Event> filter = null;
 
   public EventCompiler(String name,Predicate<Event> filter, File file) {
     this.name = name;

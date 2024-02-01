@@ -11,8 +11,7 @@ public class ScanReport {
   public Instant start;
   public Instant processStart;
   public Instant finish;
-
-  List<Event> events;
+  public List<Event> events;
 
   public ScanReport(Instant start, Instant processStart, Instant finish, List<Event> events) {
     this.start = start;

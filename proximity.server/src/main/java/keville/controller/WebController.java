@@ -34,8 +34,9 @@ public class WebController {
     
     private Gson gson;
     private Settings settings;
+    private EventService eventService;
 
-    public WebController(@Autowired Settings settings) {
+    public WebController(@Autowired Settings settings, @Autowired EventService eventService) {
       this.settings = settings;
 
       this.gson = new GsonBuilder()
@@ -168,7 +169,7 @@ public class WebController {
         final Predicate<Event> filter
       ) {
       return 
-        EventService.getAllEvents()
+        eventService.getAllEvents()
           .stream()
           .filter(Events.InTheFuture())
           .filter(Events.WithinKMilesOf(latitude,longitude,radius))
