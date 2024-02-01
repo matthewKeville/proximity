@@ -71,13 +71,6 @@
     </dependency>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-java</artifactId>
         <version>4.12.1</version>
@@ -138,12 +131,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.sparkjava</groupId>
-      <artifactId>spark-core</artifactId>
-      <version>2.9.4</version>
-      </dependency>
-
-    <dependency>
       <groupId>net.sf.biweekly</groupId>
       <artifactId>biweekly</artifactId>
       <version>0.6.7</version>
@@ -153,91 +140,24 @@
 
   <build>
     <plugins>
+      <!-- spring boot integration -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
 
-        <!-- spring boot integration -->
-        <plugin>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-maven-plugin</artifactId>
-        </plugin>
+      <!-- override spring boot default config for surefire -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- do not run Scanner Tests by default (mvn test) , which hooks into mvn package -->
+          <excludes>
+            <include>%regex[.*(Scanner).*Test.*]</include>
+          </excludes>
+        </configuration>
+      </plugin>
 
-        <plugin>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
-          <configuration>
-          </configuration>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>exec-maven-plugin</artifactId>
-          <version>3.1.0</version>
-          <executions>
-
-            <!-- run server from mvn exec:java@server -->
-            <execution>
-              <id>server</id>
-              <goals>
-                <goal>java</goal>
-              </goals>
-              <configuration>
-                <mainClass>keville.ProximalDaemon</mainClass>
-                <arguments>
-                  <argument></argument>
-                </arguments>
-                <systemProperties>
-                  <systemProperty>
-                    <key>log4j.configurationFile</key>
-                    <value>src/main/resources/log4j2.xml</value>
-                  </systemProperty>
-                </systemProperties>
-              </configuration>
-            </execution>
-
-          </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.6.0</version>
-            <executions>
-
-              <!-- Fat JAR -->
-              <execution>
-                <id>building-jar-with-dependencies-0</id>
-                <phase>package</phase>
-                <configuration>
-                  <descriptorRefs>
-                    <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                       <manifest>
-                       <mainClass>keville.ProximalDaemon</mainClass>
-                       </manifest>
-                    </archive>
-                </configuration>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-              </execution>
-
-            </executions>
-          </plugin>
-      </plugins>
+    </plugins>
   </build>
 </project>

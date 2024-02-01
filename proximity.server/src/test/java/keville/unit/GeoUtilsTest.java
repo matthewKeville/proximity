@@ -1,10 +1,12 @@
 package keville.unit;
 
-import static org.junit.Assert.assertEquals;
-import keville.util.GeoUtils;
-import keville.location.Location;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import keville.util.GeoUtils;
+
+import org.junit.jupiter.api.Test;
+
+import keville.location.Location;
 
 public class GeoUtilsTest 
 {
