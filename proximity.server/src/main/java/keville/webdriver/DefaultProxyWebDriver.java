@@ -1,4 +1,4 @@
-package keville.scanner;
+package keville.webdriver;
 
 import java.time.Duration;
 

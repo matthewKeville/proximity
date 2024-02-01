@@ -7,7 +7,6 @@ import java.util.function.Predicate;
 
 import keville.compilers.EventCompiler;
 import keville.event.Event;
-import keville.scanner.ScanRoutine;
 
 public record Settings(String dbFile,String eventbriteApiKey,int eventbriteMaxPages,int alleventsMaxPages,
     Map<String,ScanRoutine> scanRoutines, Map<String,Predicate<Event>> filters, List<EventCompiler> eventCompilers) {

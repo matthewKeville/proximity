@@ -3,7 +3,6 @@ package keville.settings;
 import keville.event.Event;
 import keville.event.EventTypeEnum;
 import keville.util.GeoUtils;
-import keville.scanner.ScanRoutine;
 import keville.compilers.EventCompiler;
 import keville.compilers.RSSCompiler;
 import keville.compilers.ICalCompiler;

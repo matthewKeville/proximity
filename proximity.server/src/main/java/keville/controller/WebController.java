@@ -24,7 +24,7 @@ import keville.event.EventTypeEnum;
 import keville.event.Events;
 import keville.gson.FileAdapter;
 import keville.gson.InstantAdapter;
-import keville.scanner.ScanRoutine;
+import keville.settings.ScanRoutine;
 import keville.settings.Settings;
 
 @RestController

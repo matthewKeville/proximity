@@ -3,10 +3,9 @@ package keville.background;
 import keville.event.EventService;
 import keville.event.EventTypeEnum;
 import keville.providers.Providers;
-import keville.scanner.EventScanJob;
 import keville.scanner.EventScanner;
 import keville.scanner.ScanReport;
-import keville.scanner.ScanRoutine;
+import keville.settings.ScanRoutine;
 import keville.scanner.ScannedEventsReport;
 import keville.settings.Settings;
 

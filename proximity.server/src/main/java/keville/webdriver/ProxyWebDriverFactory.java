@@ -1,4 +1,4 @@
-package keville.scanner;
+package keville.webdriver;
 
 import org.springframework.stereotype.Component;
 
@@ -6,5 +6,6 @@ import org.springframework.stereotype.Component;
 public class ProxyWebDriverFactory {
   public ProxyWebDriver getInstance() {
     return new DefaultProxyWebDriver();
+    //return new DebugProxyWebDriver();
   }
 }

@@ -4,9 +4,8 @@ import keville.event.Event;
 import keville.location.Location;
 import keville.util.GeoUtils;
 import keville.scanner.ScanReport;
-import keville.settings.Settings;
-import keville.scanner.ProxyWebDriver;
-import keville.scanner.ProxyWebDriverFactory;
+import keville.webdriver.ProxyWebDriver;
+import keville.webdriver.ProxyWebDriverFactory;
 
 import java.util.List;
 import java.util.LinkedList;

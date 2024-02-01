@@ -1,4 +1,4 @@
-package keville.scanner;
+package keville.webdriver;
 
 import org.openqa.selenium.WebDriver;
 

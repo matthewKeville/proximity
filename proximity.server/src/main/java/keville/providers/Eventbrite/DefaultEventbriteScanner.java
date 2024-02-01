@@ -3,8 +3,8 @@ package keville.providers.Eventbrite;
 import keville.scanner.ScanReport;
 import keville.settings.Settings;
 import keville.event.Event;
-import keville.scanner.ProxyWebDriver;
-import keville.scanner.ProxyWebDriverFactory;
+import keville.webdriver.ProxyWebDriver;
+import keville.webdriver.ProxyWebDriverFactory;
 import keville.util.GeoUtils;
 
 import java.time.Instant;

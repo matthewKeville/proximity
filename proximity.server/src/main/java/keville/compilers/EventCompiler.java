@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.io.File;
 
+/* a compiler creates an artifact from events */
 public abstract class EventCompiler {
 
   public String name;

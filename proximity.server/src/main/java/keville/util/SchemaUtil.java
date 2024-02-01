@@ -1,8 +1,6 @@
 package keville.util;
 
-import keville.location.Location;
 import keville.location.LocationBuilder;
-import keville.event.Event;
 import keville.event.EventBuilder;
 import keville.event.EventStatusEnum;
 
@@ -13,12 +11,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 
-// Transform https://schema.org/ entities into Domain entities
-
 public class SchemaUtil {
 
  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SchemaUtil.class);
 
+// Transform https://schema.org/ entities into Domain entities
  public static EventBuilder createEventFromSchemaEvent(JsonObject eventJson) {
 
       try {
