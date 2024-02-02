@@ -15,8 +15,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 @SpringBootApplication
 public class Proximity {
@@ -34,8 +36,22 @@ public class Proximity {
   @Bean
   Settings parseSettings() {
 
+    // read settings from current directory
+    File localSettings = new File("settings.json");
+    if ( localSettings.exists() ) {
+      LOG.info("found local settings..");
+      try {
+        String localSettingsString = Files.readString(localSettings.toPath());
+        Settings settings = SettingsParser.parseSettings(localSettingsString);
+        return settings;
+      } catch (Exception e) {
+        LOG.error(e.getMessage());
+        throw new BeanCreationException("./settings.json is unparsable");
+      }
+    }
+
+    // read settings from classpath
     try {
-      // read settings
       InputStream inputStream = Proximity.class.getResourceAsStream("/settings.json");
       if (inputStream == null) {
         throw new BeanCreationException("settings.json is empty");
@@ -57,11 +73,7 @@ public class Proximity {
     return args -> {
 
       try {
-
         LOG.info(settings.toString());
-        //TODO DI
-        EventCache.applySettings(settings);
-
       } catch (Exception e) {
         LOG.error("failed to init");
         LOG.error(e.getMessage());

@@ -28,11 +28,14 @@ public class DefaultEventbriteScanner implements EventbriteScanner {
   private static Logger LOG = LoggerFactory.getLogger(DefaultEventbriteScanner.class);
   private Settings settings;
   private ProxyWebDriverFactory proxyWebDriverFactory;
+  private EventbriteHarProcessor eventbriteHarProcessor;
 
   public DefaultEventbriteScanner(@Autowired Settings settings,
-      @Autowired ProxyWebDriverFactory proxyWebDriverFactory) {
+      @Autowired ProxyWebDriverFactory proxyWebDriverFactory,
+      @Autowired EventbriteHarProcessor eventbriteHarProcessor) {
     this.settings = settings;
     this.proxyWebDriverFactory = proxyWebDriverFactory;
+    this.eventbriteHarProcessor = eventbriteHarProcessor;
   }
 
   public ScanReport scan(double latitude, double longitude, double radius) throws Exception {
@@ -99,7 +102,7 @@ public class DefaultEventbriteScanner implements EventbriteScanner {
     proxyWebDriver.kill();
 
     Instant processStart = Instant.now();
-    List<Event> events = EventbriteHarProcessor.process(har);
+    List<Event> events = eventbriteHarProcessor.process(har);
 
     events = events.stream()
         .distinct()

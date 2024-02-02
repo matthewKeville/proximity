@@ -7,6 +7,8 @@ proximity.server/.settings
 
 # maven
 proximity.server/target/
+# local settings (has api key)
+proximity.server/.settings.json
 
 # app code
 **/app.db

@@ -22,7 +22,6 @@ public class EventbriteScannerTest
     }
 
     @Test
-    @Disabled // need API key
     public void scan() throws Exception {
       double latitude = 40.1784;
       double longitude = -74.0218;

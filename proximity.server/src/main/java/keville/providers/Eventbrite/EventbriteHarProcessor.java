@@ -9,9 +9,12 @@ import keville.location.LocationBuilder;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -21,37 +24,54 @@ import net.lightbody.bmp.core.har.Har;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-
+@Component
 public class EventbriteHarProcessor {
 
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventbriteHarProcessor.class);
 
+  private EventCache eventCache;
 
-  public static List<Event> process(Har har) {
+  public EventbriteHarProcessor(@Autowired EventCache eventCache) {
+    this.eventCache = eventCache;
+  }
+
+  public List<Event> process(Har har) {
+
     List<String> eventIds = extractEventIds(HarUtil.harToString(har));
-    List<Event> events = eventIds
-      .stream()
-      .distinct()
-      .map(ei -> createEventFrom(ei))
-      .filter(e -> e != null)
-      .collect(Collectors.toList());
+    LOG.debug("found " + eventIds.size() + " event ids");
+    List<Event> events = new LinkedList<Event>();
+
+    eventIds.stream().distinct().forEach( eid -> {
+
+      try {
+
+        events.add(createEventFrom(eid));
+
+      //Okay , carry on...
+      } catch ( UnlikelyEventIdException | EventbriteAPIException ex ) {
+
+        if ( ex instanceof UnlikelyEventIdException ) {
+          //a missed regex on the HAR could be gigantic
+          String eidPartial = eid.substring(0,Math.min(eid.length(),20));
+          LOG.debug("caught unlikely event id : " + eidPartial);
+        } else {
+          LOG.warn("caught EventbriteAPI exception : " + ex.getMessage());
+        }
+      }
+
+    });
+
     return events;
   }
 
 
   /* transform local event format to Event object */
-  private static Event createEventFrom(String eventId) {
+  private Event createEventFrom(String eventId) throws UnlikelyEventIdException, EventbriteAPIException {
 
+    JsonObject eventJson = eventCache.getEventById(eventId);
+    LocationBuilder lb = new LocationBuilder();
     EventBuilder eb = new EventBuilder();
     eb.setEventId(eventId);
-
-    LocationBuilder lb = new LocationBuilder();
-
-    JsonObject eventJson = keville.providers.Eventbrite.EventCache.getEventById(eventId);
-    if (eventJson == null) {
-      LOG.error("error creating Event from eventbrite id : " + eventId + "\n\t unable to find eventJson in eventcache");
-      return null;
-    }
 
     if ( eventJson.has("name") ) {
       eb.setName(eventJson.getAsJsonObject("name").get("text").getAsString());
@@ -145,7 +165,7 @@ public class EventbriteHarProcessor {
   }
 
   //this method is a bit inefficient, but does extract all event ids in the archive, including asynchronous ones
-  public static List<String> extractEventIds(String harString) {
+  public List<String> extractEventIds(String harString) {
 
     List<String> eventIds = new ArrayList<String>();
 

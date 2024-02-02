@@ -4,12 +4,6 @@ import keville.settings.Settings;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -18,45 +12,54 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-/* query eventbrite api for event data, store in local cache */
+// FIXME : This cache should short lifetime (Currently forever). It's primarily for test.
+@Component
 public class EventCache {
 
-  private static String eventBaseUri = "https://www.eventbriteapi.com/v3/events/";
-
-  private static Settings settings;
   private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(EventCache.class);
 
-  public static void applySettings(Settings s) throws FileNotFoundException {
-    settings = s;
+  private EventbriteAPI eventbriteAPI;
+  private Settings settings;
+
+  public EventCache(@Autowired Settings settings,
+      @Autowired EventbriteAPI eventbriteAPI) throws FileNotFoundException {
+    this.settings = settings;
+    this.eventbriteAPI = eventbriteAPI;
     initTable();
   }
 
-  public static JsonObject getEventById(String eventId) {
-    JsonObject eventJson = getEventJsonFromDb(eventId);
-    if ( (eventJson == null) ) {
-      LOG.debug(String.format("local miss on event %s",eventId));
-      eventJson = getEventFromApi(eventId);
-      if (eventJson != null ) {
-        createEventJsonInDb(eventId, eventJson);
-      } else {
-        LOG.error("eventbrite api generated a null eventjson");
-      }
-    } else {
-      LOG.debug(String.format("local hit on event %s",eventId));
+  public JsonObject getEventById(String eventId) throws UnlikelyEventIdException, EventbriteAPIException {
+
+    if (!NumberUtils.isCreatable(eventId)) {
+      throw new UnlikelyEventIdException("id string : " + eventId + " is an unlikely event id ");
     }
+
+    JsonObject eventJson = getEventJsonFromDb(eventId);
+    if ( eventJson != null ) {
+      return eventJson;
+    }
+
+    eventJson = eventbriteAPI.getEvent(eventId);
+    createEventJsonInDb(eventId, eventJson);
     return eventJson;
+
   }
 
   // PLS FIX
-  private static String getDbConnectionString() {
+  private String getDbConnectionString() {
     return "jdbc:sqlite:" + settings.dbFile();
   }
 
-  private static Connection getDbConnection() {
-    Connection con  = null;
+  private Connection getDbConnection() {
+    Connection con = null;
     LOG.debug("connecting to " + getDbConnectionString());
     try {
       con = DriverManager.getConnection(getDbConnectionString());
@@ -68,7 +71,7 @@ public class EventCache {
     return con;
   }
 
-  private static void closeDbConnection(Connection con) {
+  private void closeDbConnection(Connection con) {
     try {
       con.close();
     } catch (Exception e) {
@@ -77,18 +80,18 @@ public class EventCache {
     }
   }
 
-  private static boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
+  private boolean createEventJsonInDb(String eventId, JsonObject eventJson) {
 
     Connection con = getDbConnection();
     try {
       String queryTemplate = "INSERT INTO EVENTBRITE_EVENT (EVENT_ID, JSON) "
-        + " VALUES (?,?);";
+          + " VALUES (?,?);";
       PreparedStatement ps = con.prepareStatement(queryTemplate);
-      ps.setString(1,eventId);
-      ps.setString(2,eventJson.toString());
+      ps.setString(1, eventId);
+      ps.setString(2, eventJson.toString());
       int rowsUpdated = ps.executeUpdate();
       return rowsUpdated == 1;
-    } catch (SQLException se)  {
+    } catch (SQLException se) {
       LOG.error("error adding eventbrite event data db");
       LOG.error(se.getMessage());
     } finally {
@@ -97,21 +100,20 @@ public class EventCache {
     return false;
   }
 
+  private JsonObject getEventJsonFromDb(String eventId) {
 
-  private static JsonObject getEventJsonFromDb(String eventId) {
-
-    String json ="";
+    String json = "";
     JsonObject jsonEvent = null;
     Connection con = getDbConnection();
 
     try {
       PreparedStatement ps = con.prepareStatement("SELECT * FROM EVENTBRITE_EVENT WHERE EVENT_ID=?;");
-      ps.setString(1,eventId);
+      ps.setString(1, eventId);
       ResultSet rs = ps.executeQuery();
       if (rs.next()) {
         json = rs.getString("json");
         jsonEvent = JsonParser.parseString(json).getAsJsonObject();
-      } 
+      }
     } catch (SQLException se) {
       LOG.error("error retrieving eventbrite event data from db");
       LOG.error(se.getMessage());
@@ -122,59 +124,24 @@ public class EventCache {
     return jsonEvent;
   }
 
-  private static JsonObject getEventFromApi(String eventId) {
-
-    HttpClient  httpClient = HttpClient.newHttpClient();
-    HttpRequest getRequest;
-    JsonObject eventJson = null;
-
-    try {
-
-      // EB API has expansions that pull in data from other endpoints (organizer & venue)
-      URI uri = new URI(eventBaseUri+eventId+"/"+"?expand=organizer,venue");
-      getRequest = HttpRequest.newBuilder()
-        .uri(uri) 
-        .header("Authorization","Bearer "+settings.eventbriteApiKey())
-        .GET()
-        .build();
-
-    } catch (URISyntaxException e) {
-      LOG.error("error constructing api endpoint url");
-      LOG.error(String.format("error building request: %s",e.getMessage()));
-      return null;
-    }
-
-    try {
-      HttpResponse<String> getResponse = httpClient.send(getRequest, BodyHandlers.ofString());
-      LOG.debug(String.format("request returned %d",getResponse.statusCode()));
-      eventJson = JsonParser.parseString(getResponse.body()).getAsJsonObject();
-    } catch (Exception e) {
-      /*Interrupted / IO*/
-      LOG.error(String.format("error sending request %s",e.getMessage()));
-    }
-
-    return eventJson;
-
-  }
-
   /* make sure there is an eventbrite event table */
-  private static void initTable() throws FileNotFoundException {
+  private void initTable() {
 
     File dbFile = new File(settings.dbFile());
     if (!dbFile.exists()) {
-      LOG.error("no db file found : " + settings.dbFile());
-      throw new FileNotFoundException();
+      LOG.info("no db file found , creating db file @ " + settings.dbFile());
     }
 
     Connection con = getDbConnection();
     try {
       Statement stmt = con.createStatement();
       String sql = """
-        CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT(
-          ID INTEGER PRIMARY KEY AUTOINCREMENT, 
-          EVENT_ID TEXT NOT NULL JSON STRING NOT NULL
-        );
-      """;
+            CREATE TABLE IF NOT EXISTS EVENTBRITE_EVENT(
+              ID INTEGER PRIMARY KEY AUTOINCREMENT,
+              EVENT_ID TEXT NOT NULL,
+              JSON STRING NOT NULL
+            );
+          """;
       stmt.execute(sql);
     } catch (SQLException e) {
       LOG.error("error initalzing eventbrite event table");
