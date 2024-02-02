@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.LinkedList;
 
 import java.io.PrintStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.StringWriter;
 
@@ -129,17 +130,21 @@ public class HarUtil {
   }
 
   // Write a HAR file to disk
-  public static void saveHARtoLFS(String harString, String fileName) {
+  public static void saveHARtoLFS(Har har, String fileName) {
 
     try {
 
+      File file = new File(fileName);
+      file.getParentFile().mkdirs(); //create path to containing dir if not exists
+
       PrintStream filePrintStream = new PrintStream(new FileOutputStream(fileName));
-      filePrintStream.print(harString);
+      filePrintStream.print(harToString(har));
       filePrintStream.close();
 
     } catch (Exception e) {
 
       LOG.error("error trying to save HAR file to LFS");
+      LOG.error(e.getMessage());
 
     }
 

@@ -1,4 +1,4 @@
-package keville.scanner;
+package keville.background;
 
 import keville.event.EventTypeEnum;
 

@@ -1,6 +1,9 @@
 package keville.webdriver;
 
+import keville.util.HarUtil;
+
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
@@ -51,6 +54,8 @@ public class DebugProxyWebDriver implements ProxyWebDriver {
   }
 
   public void kill() {
+
+    HarUtil.saveHARtoLFS(this.proxy.getHar(),"./logs/debug." + LocalDateTime.now().toString() + ".har");
     this.webDriver.quit();
     this.proxy.stop();
   }

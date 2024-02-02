@@ -28,7 +28,6 @@ public class AllEventsHarProcessor {
     public static List<Event> process(Har har,String targetUrl,int pages) {
 
       List<Event> events = extractEventsFromStaticPages(HarUtil.harToString(har),targetUrl,pages);
-      
       return events;
 
     }
@@ -63,21 +62,15 @@ public class AllEventsHarProcessor {
           
         JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,url,true);
         if ( response == null ) {
-
           LOG.warn("unable to find intial web response");
-          HarUtil.saveHARtoLFS(harString,"allevents-error.har");
           return null;
-
         }
 
         // get the response data
 
         String webpageData = HarUtil.getDecodedResponseText(response);
         if ( webpageData == null ) {
-
           LOG.error("initial response data is empty");
-          HarUtil.saveHARtoLFS(harString,"allevents-error.har");
-
         }
 
         // find the Schema Event Data
@@ -85,10 +78,7 @@ public class AllEventsHarProcessor {
         JsonArray schemaEvents = extractJsonSchemaEventArray(webpageData);
 
         if ( schemaEvents == null ) {
-
           LOG.warn("no embedded schema events found");
-          HarUtil.saveHARtoLFS(harString,"allevents-warn.har");
-
         }
 
         // Transform Schema Event Data to domain Event
@@ -173,6 +163,5 @@ public class AllEventsHarProcessor {
     } 
     return splits[splits.length-1];
   }
-
 
 }
