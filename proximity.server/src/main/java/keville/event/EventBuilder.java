@@ -6,8 +6,6 @@ import java.time.Instant;
 
 public class EventBuilder {
 
-  private int id;
-
   private EventTypeEnum eventType; 
   private String eventId;
   private String name;
@@ -21,13 +19,7 @@ public class EventBuilder {
   private Instant lastUpdate;
   private EventStatusEnum status;
 
-  public EventBuilder() {
-    id = -1;
-  }
-  
-  public void setId(int id) {
-    this.id = id;
-  }
+  public EventBuilder() {}
 
   public void setEventTypeEnum(EventTypeEnum eventType) {
     this.eventType = eventType;
@@ -80,7 +72,6 @@ public class EventBuilder {
 
   public Event build() {
     Event event = new Event(
-      id,
       eventId,
       eventType,
       name,

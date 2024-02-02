@@ -2,26 +2,39 @@ package keville.event;
 
 import keville.location.Location;
 import java.time.Instant;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Embedded;
+import org.springframework.data.relational.core.mapping.Table;
+
 import java.io.Serializable;
 
+@Table
 public class Event implements Serializable {
 
-  public EventTypeEnum eventType;
-  public int id;
+  @Id
+  public Integer id;
   public String eventId;
+  @Column(value = "SOURCE")
+  public EventTypeEnum eventType;
   public String name;
   public String description;
+  @Column(value = "START_TIME")
   public Instant start;
+  @Column(value = "END_TIME")
   public Instant end;
+  @Embedded.Nullable
   public Location location;
-  public String url;
   public String organizer;
+  public String url;
   public boolean virtual;
+  @LastModifiedDate
   public Instant lastUpdate;
   public EventStatusEnum status;
 
   public Event(
-      int id, // pk in db
       String eventId, // from source location
       EventTypeEnum eventType,
       String name,
@@ -34,7 +47,6 @@ public class Event implements Serializable {
       boolean virtual,
       Instant lastUpdate,
       EventStatusEnum status) {
-    this.id = id;
     this.eventId = eventId;
     this.eventType = eventType;
     this.name = name;
@@ -108,7 +120,7 @@ public class Event implements Serializable {
       sameUrl = url == null && e.url == null;
     }
 
-    // TODO : Location
+    // TODO : Factor Location into event equivalence
     
     return sameName 
       && sameType 

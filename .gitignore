@@ -7,13 +7,12 @@ proximity.server/.settings
 
 # maven
 proximity.server/target/
-# local settings (has api key)
-proximity.server/.settings.json
 # testing data
 proximity.server/.debug.har
+# local settings (has api key)
+proximity.server/settings.json
 
 # app code
-**/app.db
 proximity.server/logs
-
-proximity.server/allevents-warn.har
+proximity.server/db
+proximity.server/db/*
