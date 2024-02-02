@@ -2,6 +2,7 @@ package keville.webdriver;
 
 import java.time.Duration;
 
+import org.openqa.selenium.PageLoadStrategy;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -29,6 +30,7 @@ public class DebugProxyWebDriver implements ProxyWebDriver {
     seleniumProxy.setSslProxy("localhost:"+proxy.getPort());
 
     ChromeOptions options = new ChromeOptions();
+    options.setCapability(CapabilityType.PAGE_LOAD_STRATEGY, PageLoadStrategy.EAGER); // wait for interactable (not loaded)
     options.setCapability(CapabilityType.PROXY, seleniumProxy);
     options.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
 

@@ -7,12 +7,16 @@ import keville.event.EventBuilder;
 import keville.location.LocationBuilder;
 import keville.util.SchemaUtil;
 import keville.util.HarUtil;
+import keville.util.SchemaParseException;
 
 import java.util.List;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -21,22 +25,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
 import net.lightbody.bmp.core.har.Har;
 
 /*
- * Meetup event data can be found in two ways. The inital payload contains embedded event data in the html.
- * As the user scrolls through the page, additional data is requested through a graphql endpoint, we try to process both.
- * I don't remember why these needed to be processed in a different way. 
- *
- * TODO : Investigate differences.
- *
- * As this class has a bimodal nature, perhaps it should be broken up into two classes to elucidate that and let this
- * class delegate. It would make it easier to reason about in the future.
+ * Meetup.com embeds event data into the inital page. We use a regex to locate this data.
+ * As we scroll new data is loaded from POST /gql2 in a different format and needs special consideration.
  */
 public class MeetupHarProcessor {
 
-  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(MeetupHarProcessor.class);
+  private static Logger LOG = LoggerFactory.getLogger(MeetupHarProcessor.class);
 
     public static List<Event> process(Har har,String targetUrl) {
 
@@ -44,74 +43,59 @@ public class MeetupHarProcessor {
       List<Event> eventsAjax = extractEventsFromAjax(HarUtil.harToString(har));
       List<Event> allEvents = new LinkedList<Event>();
 
-      if ( eventsEmbedded != null ) {
-        LOG.debug("found " + eventsEmbedded.size() + " embedded events");
-        allEvents.addAll(eventsEmbedded);
-      }
+      LOG.debug("found " + eventsEmbedded.size() + " embedded events");
+      LOG.debug("found " + eventsAjax.size()     + " ajax events");
 
-      if ( eventsAjax != null ) {
-        LOG.debug("found " + eventsAjax.size()     + " ajax events");
-        allEvents.addAll(eventsAjax);
-      }
-      
+      allEvents.addAll(eventsEmbedded);
+      allEvents.addAll(eventsAjax);
+
       return allEvents;
     }
 
-    /* The embedded JsonSchema data does not require additional processing */
+    // The embedded data is unescaped JsonSchema
     public static List<Event> extractEventsFromStaticPage(String harString,String targetUrl) {
 
-      // Find inital web response
-        
-      LOG.debug("extracting static events");
-
+      // Find inital web response (may have been redirected)
+      LOG.debug("processing embedded event data");
       JsonObject response = HarUtil.findFirstResponseFromRequestUrl(harString,targetUrl,true);
 
       if ( response == null ) {
         LOG.debug("unable to find intial web response");
-        HarUtil.saveHARtoLFS(harString,"meetup-error.har");
-        return null;
+        return Collections.emptyList();
       }
 
-      // get response data
+      // Get response data
       String webpageData = HarUtil.getDecodedResponseText(response);
       if ( webpageData == null ) {
         LOG.debug("Initial response data is empty");
-        HarUtil.saveHARtoLFS(harString,"meetup-error.har");
-        return null;
+        return Collections.emptyList();
       }
 
+      try {
 
-      // find the Schema Event Data
+        // Find the Schema Event Data by regex
+        JsonArray schemaEvents = extractJsonSchemaEventArray(webpageData);
+        List<Event> newEvents = new LinkedList<Event>();
 
-      JsonArray schemaEvents = extractJsonSchemaEventArray(webpageData);
-
-      if ( schemaEvents == null ) {
-        
-        LOG.debug("No embedded schema events found");
-        HarUtil.saveHARtoLFS(harString,"meetup-error.har");
-      
-      }
-
-      List<Event> newEvents = new LinkedList<Event>();
-
-      for (JsonElement jo : schemaEvents) {
-
-        JsonObject event = jo.getAsJsonObject();
-        Event ev = createEventFrom(event);
-
-        if ( ev != null ) {
-          newEvents.add(ev);
+        // Try to create domain Event
+        for (JsonElement jo : schemaEvents) {
+          JsonObject event = jo.getAsJsonObject();
+          Event ev = createEventFrom(event);
+          if ( ev != null ) {
+            newEvents.add(ev);
+          }
         }
+        return newEvents;
 
+      } catch (JsonParseException ex) {
+        LOG.warn("Error parsing embedded Event data");
+        return Collections.emptyList();
       }
-
-      return newEvents;
-
   }  
 
 
-  // find the Schema Json data embedded in the webpage markup
-  private static JsonArray extractJsonSchemaEventArray(String webPageData) {
+  // Find the Schema Json data embedded in the webpage
+  private static JsonArray extractJsonSchemaEventArray(String webPageData) throws JsonParseException {
 
     // regex101 : "(?<=www.googletagmanager.com\"/><script type=\"application/ld\+json\">).*?(?=</script>)"gm
     final String regex = "(?<=www.googletagmanager.com\\\"/><script type=\\\"application/ld\\+json\\\">).*?(?=</script>)"; 
@@ -119,55 +103,25 @@ public class MeetupHarProcessor {
     Matcher mat = pattern.matcher(webPageData);
     String eventJsonSchemaArrayString  = "";
 
-      try {
-
-        if (mat.find()) {
-          eventJsonSchemaArrayString = mat.group(0);
-        } else {
-          LOG.debug("Unable to find embedded event data");
-          return null;
-        }
-
-        return JsonParser.parseString(eventJsonSchemaArrayString).getAsJsonArray();
-
-      } catch (Exception e ) {
-        LOG.error("Unexpected har data");
-        return null;
-      }
+    if (mat.find()) {
+      eventJsonSchemaArrayString = mat.group(0);
+      return JsonParser.parseString(eventJsonSchemaArrayString).getAsJsonArray();
+    } 
+    LOG.debug("no embedded event data found, maybe regex is outdated?");
+    return new JsonArray();
 
   }
 
 
-  private static Event createEventFrom(JsonObject eventJson) {
-
-    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
-
-    if ( eb == null ) {
-      return null;
-    }
-
-    eb.setEventTypeEnum(EventTypeEnum.MEETUP);
-
-    //I am assuming this last part is the eventId
-    //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/
-    String url = eventJson.get("url").getAsString(); 
-    String[] splits = url.split("/");
-    String id = splits[splits.length-1];
-
-    eb.setEventId(id); 
-    eb.setStatus(EventStatusEnum.HEALTHY);
-
-    return eb.build();
-  }
 
   public static List<Event> extractEventsFromAjax(String harString) {
 
-      LOG.debug("extracting ajax events");
-      final String apiUrl = "https://www.meetup.com/gql";
+      LOG.debug("processing ajax event data");
+      final String apiUrl = "https://www.meetup.com/gql2";
       List<Event> events = new LinkedList<Event>();
 
       List<JsonObject> responses = HarUtil.findAllResponsesFromRequestUrl(harString,apiUrl);
-      LOG.debug("found " + responses.size() + " /gql responses ");
+      LOG.debug("found " + responses.size() + " /gql2 responses ");
 
       for (JsonObject resp : responses ) {
 
@@ -177,46 +131,68 @@ public class MeetupHarProcessor {
           continue;
         }
 
-        // sanity check to track assumptions of site api 
-        if ( resp.get("content").getAsJsonObject().has("encoding") ) { //assumed to be  base64
-          String encoding = resp.get("content").getAsJsonObject().get("encoding").getAsString();
-          LOG.warn("Unexpected response, found a response encoded with : " + encoding + " but expected no encoding");
-
-        // process response content of interest 
-        } else {
-
+        try {
           JsonArray edges = extractEdgesFromRawGqLJson(jsonRaw);
-          if ( edges == null )  {
-            LOG.warn("Failed to extract edges from response content");
-            continue;
-          }
-
           for ( JsonElement edgeElement : edges ) {
              JsonObject edge = edgeElement.getAsJsonObject(); 
              events.add(createEventFromGqlEventEdge(edge));
           }
+        } catch (JsonParseException e) {
+          LOG.debug("unexpected data from /gql2 response");
         }
+
       }
 
       return events;
   }
 
+  /*
+   * Event data extraction from embedded JsonSchema
+   */
+  private static Event createEventFrom(JsonObject eventJson) {
 
-  private static JsonArray extractEdgesFromRawGqLJson(String rawGqlJsonString) {
-
-    JsonObject jsonData = JsonParser.parseString(rawGqlJsonString).getAsJsonObject();
-   
     try {
-      JsonArray edges = jsonData.get("data").getAsJsonObject().get("rankedEvents").getAsJsonObject().get("edges").getAsJsonArray();
-      return edges;
-    } catch (Exception e) {
-      LOG.error("error trying to extract edges from raw json gql");
-      LOG.error(e.getMessage());
+
+      EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
+      eb.setEventTypeEnum(EventTypeEnum.MEETUP);
+      //I am assuming this last part is the eventId
+      //https://www.meetup.com/monmouth-county-golf-n-sports-fans-social-networking/events/294738939/
+      String url = eventJson.get("url").getAsString(); 
+      String[] splits = url.split("/");
+      String id = splits[splits.length-1];
+
+      eb.setEventId(id); 
+      eb.setStatus(EventStatusEnum.HEALTHY);
+      return eb.build();
+
+    } catch ( SchemaParseException ex ) {
+
+      LOG.error("Caught Schema Parse Exception");
+      LOG.error(ex.getMessage());
       return null;
+
     }
 
   }
 
+
+  /*
+   * We anticipate two response type from the POST to /gql2 , one that has the chain of fields
+   * data.result.edges and one that has data.conversations, that latter is irrelevant 
+   */
+  private static JsonArray extractEdgesFromRawGqLJson(String rawGqlJsonString) throws JsonParseException {
+    JsonObject jsonData = JsonParser.parseString(rawGqlJsonString).getAsJsonObject();
+    //this response has no event data
+    if ( jsonData.get("data").getAsJsonObject().has("conversations") ) {
+      return new JsonArray();
+    }
+    //this is the anticipated response
+    return jsonData.get("data").getAsJsonObject().get("result").getAsJsonObject().get("edges").getAsJsonArray();
+  }
+
+  /* 
+   * Event data extraction from gql format
+   */
   private static Event createEventFromGqlEventEdge(JsonObject eventEdge) {
 
     EventBuilder eb = new EventBuilder();

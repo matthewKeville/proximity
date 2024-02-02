@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 
@@ -15,8 +16,7 @@ public class SchemaUtil {
 
  private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SchemaUtil.class);
 
-// Transform https://schema.org/ entities into Domain entities
- public static EventBuilder createEventFromSchemaEvent(JsonObject eventJson) {
+ public static EventBuilder createEventFromSchemaEvent(JsonObject eventJson) throws SchemaParseException {
 
       try {
 
@@ -152,11 +152,10 @@ public class SchemaUtil {
       return eb;
 
     } catch (Exception e) {
-  
-      LOG.error("error creating event from schema event");
-      LOG.error(eventJson.toString());
-      LOG.error(e.getMessage());
-      return null;
+ 
+      String msg = " failed to parse schema. offending json :\n " + 
+        eventJson.toString() + "\n caused : " + e.getMessage();
+      throw new SchemaParseException(msg);
 
     }
 

@@ -6,6 +6,7 @@ import keville.event.EventStatusEnum;
 import keville.event.EventBuilder;
 import keville.util.SchemaUtil;
 import keville.util.HarUtil;
+import keville.util.SchemaParseException;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -94,8 +95,11 @@ public class AllEventsHarProcessor {
 
         for (JsonElement jo : schemaEvents ) {
 
-          JsonObject event = jo.getAsJsonObject();
-          newEvents.add(createEventStubFrom(event));
+          JsonObject jsonEvent = jo.getAsJsonObject();
+          Event event = createEventStubFrom(jsonEvent);
+          if ( event != null ) {
+            newEvents.add(event);
+          }
 
         }
 
@@ -144,10 +148,16 @@ public class AllEventsHarProcessor {
 
   private static Event createEventStubFrom(JsonObject eventJson) {
 
-    EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
-    eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
-    eb.setEventId(extractIdFromJson(eventJson)); 
-    return eb.build();
+    try {
+      EventBuilder eb = SchemaUtil.createEventFromSchemaEvent(eventJson);
+      eb.setEventTypeEnum(EventTypeEnum.ALLEVENTS);
+      eb.setEventId(extractIdFromJson(eventJson)); 
+      return eb.build();
+    } catch (SchemaParseException ex) {
+      LOG.error("caught SchemaParseException");
+      LOG.error(ex.getMessage());
+      return null;
+    }
 
   }
 

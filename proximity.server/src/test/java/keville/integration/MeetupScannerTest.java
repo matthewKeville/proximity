@@ -25,7 +25,8 @@ public class MeetupScannerTest
     public void scan() throws Exception {
       double latitude = 40.1784;
       double longitude = -74.0218;
-      double radius = 6;
+      //double radius = 6;
+      double radius = 14;
       ScanReport report = scanner.scan(latitude,longitude,radius);
       LOG.info(report.toString());
     }

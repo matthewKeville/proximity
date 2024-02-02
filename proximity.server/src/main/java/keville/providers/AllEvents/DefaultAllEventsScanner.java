@@ -49,12 +49,13 @@ public class DefaultAllEventsScanner implements AllEventsScanner {
 
     LOG.info("targetting " + targetUrl);
     proxyWebDriver.getDriver().get(targetUrl);
+    LOG.debug("after loading target url");
 
     int pages = 1;
-    proxyWebDriver.getDriver().get(targetUrl);
 
     // is there another page?
     List<WebElement> nextLinkMatches = proxyWebDriver.getDriver().findElements(By.xpath("//*[@id='show_more_events']"));
+    LOG.debug("nextLinkMatches : " + nextLinkMatches.size());
 
     if (!nextLinkMatches.isEmpty()) {
       WebElement nextLink = nextLinkMatches.get(0);
