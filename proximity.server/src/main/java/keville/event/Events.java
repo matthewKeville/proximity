@@ -4,6 +4,7 @@ import java.util.List;
 import java.time.DayOfWeek;
 import java.time.Month;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.Duration;
 import java.util.function.Predicate;
 import keville.util.GeoUtils;
@@ -13,9 +14,12 @@ import java.time.ZoneId;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Events {
 
-  static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(Events.class);
+  static Logger LOG = LoggerFactory.getLogger(Events.class);
 
   public static Predicate<Event> WithinKMilesOf(double lat, double lon, double miles) {
 
@@ -34,7 +38,7 @@ public class Events {
 
     return new Predicate<Event>() {
       public boolean test(Event event) {
-        return event.start.isAfter(Instant.now());
+        return event.start.isAfter(LocalDateTime.now());
       }
     };
 

@@ -5,16 +5,20 @@ import keville.event.EventBuilder;
 import keville.event.EventStatusEnum;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonArray;
 
 public class SchemaUtil {
 
- private static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SchemaUtil.class);
+ private static Logger LOG = LoggerFactory.getLogger(SchemaUtil.class);
 
  public static EventBuilder createEventFromSchemaEvent(JsonObject eventJson) throws SchemaParseException {
 
@@ -23,36 +27,33 @@ public class SchemaUtil {
         EventBuilder eb = new EventBuilder();
         LocationBuilder lb = new LocationBuilder();
 
+        // parse event start
+
         String startTimestring = eventJson.get("startDate").getAsString();
         if ( startTimestring.length() == 10 ) {  // ex: 2023‐09‐13
-
           LOG.debug("Schema event had start Date instead of DateTime , faking Time component setting INCOMPLETE");
           startTimestring+="T00:00:00.000Z";
           eb.setStatus(EventStatusEnum.INCOMPLETE);
-
         }       
         Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(startTimestring));
-        eb.setStart(start);
+        LocalDateTime utc = LocalDateTime.ofInstant(start,ZoneOffset.UTC);
+        eb.setStart(utc);
 
+        // parse event end
 
-        String endTimestring = eventJson.get("endDate").getAsString(); // DateTime or Date
+        String endTimestring = eventJson.get("endDate").getAsString();
         if ( endTimestring.length() == 10) {  // ex: 2023‐09‐13
-                                               //
           LOG.debug("Schema event had end Date instead of DateTime , faking Time component, setting INCOMPLETE");
           endTimestring+="T00:00:00.000Z";
           eb.setStatus(EventStatusEnum.INCOMPLETE);
-
         } 
-        if ( endTimestring.length() != 0 ) { //meetup has sent schema with empty endDate string 
-                                             //
+        if ( endTimestring.length() != 0 ) {
           Instant end  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(endTimestring));
-          eb.setEnd(end);
-
-        } else {
-
+          utc = LocalDateTime.ofInstant(start,ZoneOffset.UTC);
+          eb.setEnd(utc);
+        } else { //meetup has sent schema with empty endDate string 
           LOG.debug("Schema event had empty endDate string , setting end to start");
-          eb.setEnd(start);
-
+          eb.setEnd(utc);
         }
 
         eb.setName(eventJson.get("name").getAsString());
@@ -81,7 +82,7 @@ public class SchemaUtil {
           JsonObject address = location.getAsJsonObject("address");
 
           if ( address.get("@type").getAsString().equals("PostalAddress") ) {
-      
+
             if ( address.has("addressCountry") ) {
               lb.setCountry(address.get("addressCountry").getAsString());
             }

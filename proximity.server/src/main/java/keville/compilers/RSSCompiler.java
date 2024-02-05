@@ -97,10 +97,9 @@ public class RSSCompiler extends EventCompiler {
   private Node createItem(Document doc,Event event) {
 
     final int MAX_EVENT_NAME_SIZE = 100;
-    LocalDateTime  dateTime = LocalDateTime.ofInstant(event.start,  ZoneOffset.UTC);
 
-    String dayDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(dateTime);
-    String timeString = DateTimeFormatter.ofPattern("hh:mm").format(dateTime);
+    String dayDateString = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(event.start);
+    String timeString = DateTimeFormatter.ofPattern("hh:mm").format(event.start);
 
     Element item = doc.createElement("item");
     Element titleNode = doc.createElement("title");

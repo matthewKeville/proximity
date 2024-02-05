@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import net.lightbody.bmp.core.har.Har;
@@ -89,14 +91,16 @@ public class EventbriteHarProcessor {
       JsonObject eventStartJson = eventJson.getAsJsonObject("start");
       String timestring = eventStartJson.get("utc").getAsString();
       Instant start  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
-      eb.setStart(start);
+      LocalDateTime utc = LocalDateTime.ofInstant(start,ZoneOffset.UTC);
+      eb.setStart(utc);
     }
 
     if ( eventJson.has("end") ) {
       JsonObject eventEndJson = eventJson.getAsJsonObject("end");
       String timestring = eventEndJson.get("utc").getAsString();
       Instant end  = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestring));
-      eb.setEnd(end);
+      LocalDateTime utc = LocalDateTime.ofInstant(end,ZoneOffset.UTC);
+      eb.setEnd(utc);
     }
 
     if ( eventJson.has("venue") && !eventJson.get("venue").isJsonNull() ) {

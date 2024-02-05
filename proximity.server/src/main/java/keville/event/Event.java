@@ -1,7 +1,6 @@
 package keville.event;
 
 import keville.location.Location;
-import java.time.Instant;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -10,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Embedded;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Table
 public class Event implements Serializable {
@@ -22,30 +22,32 @@ public class Event implements Serializable {
   public String name;
   public String description;
   @Column(value = "START_TIME")
-  public Instant start;
+  public LocalDateTime start;
   @Column(value = "END_TIME")
-  public Instant end;
+  public LocalDateTime end;
   @Embedded.Nullable
   public Location location;
   public String organizer;
   public String url;
   public boolean virtual;
+  @Column(value = "LAST_UPDATE")
   @LastModifiedDate
-  public Instant lastUpdate;
+  public LocalDateTime lastUpdate;
   public EventStatusEnum status;
+
+  public Event(){}
 
   public Event(
       String eventId, // from source location
       EventTypeEnum eventType,
       String name,
       String description,
-      Instant start,
-      Instant end,
+      LocalDateTime start,
+      LocalDateTime end,
       Location location,
       String organizer,
       String url,
       boolean virtual,
-      Instant lastUpdate,
       EventStatusEnum status) {
     this.eventId = eventId;
     this.eventType = eventType;
@@ -57,7 +59,6 @@ public class Event implements Serializable {
     this.organizer = organizer;
     this.url = url;
     this.virtual = virtual;
-    this.lastUpdate = lastUpdate;
     this.status = status;
   }
 

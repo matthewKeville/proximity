@@ -2,7 +2,7 @@ package keville.event;
 
 import keville.location.Location;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class EventBuilder {
 
@@ -10,13 +10,12 @@ public class EventBuilder {
   private String eventId;
   private String name;
   private String description;
-  private Instant start;
-  private Instant end;
+  private LocalDateTime start;
+  private LocalDateTime end;
   private Location location;
   private String organizer;
   private String url;
   private boolean virtual;
-  private Instant lastUpdate;
   private EventStatusEnum status;
 
   public EventBuilder() {}
@@ -37,11 +36,11 @@ public class EventBuilder {
     this.description = description;
   }
 
-  public void setStart(Instant start) {
+  public void setStart(LocalDateTime start) {
     this.start = start;
   }
 
-  public void setEnd(Instant end) {
+  public void setEnd(LocalDateTime end) {
     this.end = end;
   }
 
@@ -62,10 +61,6 @@ public class EventBuilder {
     this.virtual = virtual;
   }
 
-  public void setLastUpdate(Instant lastUpdate) {
-    this.lastUpdate = lastUpdate;
-  }
-
   public void setStatus(EventStatusEnum status) {
     this.status = status;
   }
@@ -82,7 +77,6 @@ public class EventBuilder {
       organizer,
       url,
       virtual,
-      lastUpdate,
       status
     );
     return event;

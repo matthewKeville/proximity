@@ -7,7 +7,6 @@ public class ClientEvent extends Event {
 
   public ClientEvent(Event event,double distance, int daysFromNow, int hoursFromNow) {
     super(
-      event.id, // pk in db
       event.eventId, // from source location
       event.eventType,
       event.name,
@@ -18,7 +17,6 @@ public class ClientEvent extends Event {
       event.organizer,
       event.url,
       event.virtual,
-      event.lastUpdate,
       event.status
     );
     this.distance = distance;

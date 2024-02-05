@@ -6,7 +6,12 @@ import java.util.function.Predicate;
 import java.util.List;
 import java.util.Date;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
+import java.time.ZoneOffset;
 
 import biweekly.Biweekly;
 import biweekly.ICalendar;
@@ -15,7 +20,7 @@ import biweekly.property.Geo;
 
 public class ICalCompiler extends EventCompiler {
 
-  static org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ICalCompiler.class);
+  static Logger LOG = LoggerFactory.getLogger(ICalCompiler.class);
 
   public ICalCompiler(String name,Predicate<Event> filter, File file) {
     super(name,filter,file);
@@ -37,8 +42,8 @@ public class ICalCompiler extends EventCompiler {
       event.setOrganizer(ev.organizer);
       event.setUrl(ev.url);
       event.setGeo(new Geo(ev.location.latitude,ev.location.longitude));
-      event.setDateStart(Date.from(ev.start));
-
+      Date startDate = java.util.Date.from(ev.start.toInstant(ZoneOffset.UTC));
+      event.setDateStart(startDate);
       ical.addEvent(event);
 
     }

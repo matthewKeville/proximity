@@ -18,7 +18,8 @@ import org.springframework.stereotype.Component;
 import com.google.common.collect.Lists;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Component
 public class DefaultEventService implements EventService {
@@ -63,7 +64,7 @@ public class DefaultEventService implements EventService {
 
   public List<Event> getOudatedEvents(int batchSize,Duration maxAcceptableAge) {
     Predicate<Event> filter = (e -> e.status == EventStatusEnum.INCOMPLETE);
-    filter = filter.or(e ->  e.lastUpdate.plus(maxAcceptableAge).isBefore(Instant.now()));
+    filter = filter.or(e ->  e.lastUpdate.plus(maxAcceptableAge).isBefore(LocalDateTime.now(ZoneOffset.UTC)));
     filter = filter.and(e ->  e.status != EventStatusEnum.QUARENTINE);
     return getEvents(filter).stream().limit(batchSize).collect(Collectors.toList());
   }

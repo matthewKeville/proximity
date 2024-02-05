@@ -19,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import com.google.gson.JsonElement;
@@ -204,18 +207,20 @@ public class MeetupHarProcessor {
       eb.setEventId(node.get("id").getAsString());
     }
 
-    if (node.has("dateTime")) { // start
+    //2023-09-27T12:00-04:00 (from gql : iso offset time)
+
+    if (node.has("dateTime")) {
       String timestring = node.get("dateTime").getAsString();
-      //2023-09-27T12:00-04:00 (from gql : iso offset time)
       Instant start  = Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(timestring));
-      eb.setStart(start);
+      LocalDateTime utc = LocalDateTime.ofInstant(start,ZoneOffset.UTC);
+      eb.setStart(utc);
     }
 
-    if (node.has("endTime")) { // end 
+    if (node.has("endTime")) {
       String timestring = node.get("endTime").getAsString();
-      //2023-09-27T12:00-04:00 (from gql : iso offset time)
       Instant end  = Instant.from(DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(timestring));
-      eb.setEnd(end);
+      LocalDateTime utc = LocalDateTime.ofInstant(end,ZoneOffset.UTC);
+      eb.setEnd(utc);
     }
 
     if (node.has("title")) {

@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 @EnableJdbcAuditing
-@EnableJdbcRepositories //needed to create repos
+@EnableJdbcRepositories
 @SpringBootApplication
 public class Proximity {
   static Logger LOG = LoggerFactory.getLogger(Proximity.class);

@@ -7,7 +7,7 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface EventRepository extends CrudRepository<Event, Integer>{
 
-  //todo , actually discriminate under enum..
+  //FIXME , actually discriminate under enum..
   @Query("SELECT * FROM EVENT WHERE event_id = :eventId")
   Optional<Event> findByEventIdAndType(String eventId,EventTypeEnum type);
 
