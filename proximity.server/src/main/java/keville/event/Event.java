@@ -25,7 +25,8 @@ public class Event implements Serializable {
   public LocalDateTime start;
   @Column(value = "END_TIME")
   public LocalDateTime end;
-  @Embedded.Nullable
+  // allow Location columns to have null values
+  @Embedded.Empty
   public Location location;
   public String organizer;
   public String url;

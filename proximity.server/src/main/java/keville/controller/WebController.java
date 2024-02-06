@@ -38,7 +38,7 @@ public class WebController {
 
     public WebController(@Autowired Settings settings, @Autowired EventService eventService) {
       this.settings = settings;
-
+      this.eventService = eventService;
       this.gson = new GsonBuilder()
         .registerTypeAdapter(Instant.class, new InstantAdapter())
         .registerTypeAdapter(File.class, new FileAdapter())

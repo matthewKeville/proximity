@@ -12,7 +12,7 @@ import (
 
 func GetStatus() string {
 
-  requestString := "http://localhost:4567/status"
+  requestString := "http://localhost:6666/status"
   log.Printf("requesting : %s", requestString)
 
   resp, err := http.Get(requestString)
@@ -33,7 +33,7 @@ func GetStatus() string {
 
 func GetRoutines() string {
 
-  requestString := "http://localhost:4567/routine"
+  requestString := "http://localhost:6666/routine"
   log.Printf("requesting : %s", requestString)
 
   resp, err := http.Get(requestString)
@@ -54,7 +54,7 @@ func GetRoutines() string {
 
 func GetCompilers() string {
 
-  requestString := "http://localhost:4567/compiler"
+  requestString := "http://localhost:6666/compiler"
   log.Printf("requesting : %s", requestString)
 
   resp, err := http.Get(requestString)
@@ -75,7 +75,7 @@ func GetCompilers() string {
 
 func GetFilters() string {
 
-  requestString := "http://localhost:4567/filter"
+  requestString := "http://localhost:6666/filter"
   log.Printf("requesting : %s", requestString)
 
   resp, err := http.Get(requestString)
@@ -122,7 +122,7 @@ func GetEventsRaw(latitude float64,longitude float64, radius float64,showVirtual
     v.Add("daysBefore",fmt.Sprintf("%d",daysBefore));
   } 
 
-  requestString := fmt.Sprintf("http://localhost:4567/events?%s",v.Encode())
+  requestString := fmt.Sprintf("http://localhost:6666/events?%s",v.Encode())
   log.Printf("requesting : %s",requestString)
 
   resp, err := http.Get(requestString)

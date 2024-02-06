@@ -6,7 +6,6 @@ import (
   "time"
 )
 
-
 type Event struct {
   EventType string
   Id int

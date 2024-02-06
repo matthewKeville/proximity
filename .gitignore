@@ -14,5 +14,7 @@ proximity.server/settings.json
 
 # app code
 proximity.server/logs
-proximity.server/db
-proximity.server/db/*
+proximity.server/app.db
+
+# deploy
+build/

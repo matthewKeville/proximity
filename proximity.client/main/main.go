@@ -36,9 +36,8 @@ func startServer() int {
     os.Exit(1)
   }
 
-  logCfgPath := cwd+"/log4j2.xml";
-  jarPath := cwd+"/proximity-daemon.jar"
-  cmd := exec.Command("java","-Dlog4j.configurationFile="+logCfgPath,"-jar",jarPath)
+  jarPath := cwd+"/proximity.jar"
+  cmd := exec.Command("java","-jar",jarPath)
 
   fh, err := os.OpenFile("logs/prxy-wrapper.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
   if err != nil {

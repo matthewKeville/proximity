@@ -5,10 +5,8 @@
         {
           "disabled": false,
           "name" : "Local Scan",
-          "radius" : 8.0,
-          "auto" : false,
-          "latitude": 40.1784,
-          "longitude": -74.0218,
+          "radius" : 9.0,
+          "auto" : true,
           "run_on_restart" : true,
           "delay" : 86400,
           "meetup" : true,

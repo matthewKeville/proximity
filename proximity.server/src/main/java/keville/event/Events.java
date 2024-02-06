@@ -11,6 +11,7 @@ import keville.util.GeoUtils;
 
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -151,7 +152,8 @@ public class Events {
       LOG.warn("spoofing distance for virtual event");
     }
 
-    Duration duration = Duration.between(Instant.now(),event.start);
+    //Duration duration = Duration.between(Instant.now(),event.start);
+    Duration duration = Duration.between(LocalDateTime.now(ZoneOffset.UTC),event.start);
     return new ClientEvent(event,distance,(int) duration.toDaysPart(), duration.toHoursPart());
   }
 
