@@ -76,9 +76,6 @@ public class ScanRoutine {
     if ( scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean() ) {
         scanRoutine.types.add(EventTypeEnum.MEETUP);
     }
-    if ( scanJson.has("allevents")     && scanJson.get("allevents").getAsBoolean() ) {
-        scanRoutine.types.add(EventTypeEnum.ALLEVENTS);
-    }
     if ( scanJson.has("eventbrite")     && scanJson.get("eventbrite").getAsBoolean() ) {
         scanRoutine.types.add(EventTypeEnum.EVENTBRITE);
     }
@@ -112,7 +109,6 @@ public class ScanRoutine {
     result += "\n\tlatitude : " + latitude;
     result += "\n\tlongitude : " + longitude;
     result += "\n\tmeetup : " + types.contains(EventTypeEnum.MEETUP);
-    result += "\n\tallevents : " + types.contains(EventTypeEnum.ALLEVENTS);
     result += "\n\teventbrite : " + types.contains(EventTypeEnum.EVENTBRITE);
     result += "\n\tdelay : " + delay;
     result += "\n\tlastRan : " + lastRan;

@@ -136,9 +136,6 @@ public class SettingsParser {
     if ( scanJson.has("meetup")     && scanJson.get("meetup").getAsBoolean() ) {
         scanRoutine.types.add(EventTypeEnum.MEETUP);
     }
-    if ( scanJson.has("allevents")     && scanJson.get("allevents").getAsBoolean() ) {
-        scanRoutine.types.add(EventTypeEnum.ALLEVENTS);
-    }
     if ( scanJson.has("eventbrite")     && scanJson.get("eventbrite").getAsBoolean() ) {
         if ( !eventbriteKeyFound ) {
           LOG.error("Invalid routine, you must provide an eventbrite_api_key to scan eventbrite");

@@ -3,7 +3,6 @@ package keville.providers;
 import keville.event.EventTypeEnum;
 import keville.settings.Settings;
 
-import keville.providers.AllEvents.AllEventsScanner;
 import keville.providers.Eventbrite.EventbriteScanner;
 import keville.providers.meetup.MeetupScanner;
 
@@ -25,7 +24,6 @@ public class Providers {
 
     public Providers(
       @Autowired Settings  settings,
-      @Autowired AllEventsScanner allEventsScanner,
       @Autowired EventbriteScanner eventbriteScanner,
       @Autowired MeetupScanner meetupScanner,
       @Autowired EventMerger eventMerger,
@@ -34,11 +32,6 @@ public class Providers {
 
         providers = new HashMap<EventTypeEnum,Provider>();
         
-        Provider ae = new Provider(
-          allEventsScanner,
-          eventUpdater,
-          eventMerger
-        );
 
         Provider eb = new Provider(
           eventbriteScanner,
@@ -52,7 +45,6 @@ public class Providers {
           eventMerger
         );
 
-        providers.put(EventTypeEnum.ALLEVENTS,ae);
         providers.put(EventTypeEnum.EVENTBRITE,eb);
         providers.put(EventTypeEnum.MEETUP,mu);
 
