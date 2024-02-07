@@ -4,6 +4,7 @@ import (
   "proximity-client/grid"
   "proximity-client/http"
   "proximity-client/kill"
+  "runtime"
   "os"
   "os/exec"
   "io/ioutil"
@@ -123,8 +124,18 @@ func serverRunning() (bool, int)  {
   ///////////////////////////
 
   process, err := os.FindProcess(pid)
-  err = process.Signal(syscall.Signal(0))
-  // (see go docs for why this is necessary)
+
+  if ( runtime.GOOS == "windows" ) {
+    if ( err == nil ) {
+      return true, pid
+    }
+    return false, -1
+  }
+
+  //https://pkg.go.dev/os#FindProcess
+  // docs outline why special consideration is need under *nix
+
+  err = process.Signal(syscall.Signal(0)) //send null signal
   if ( err == nil ) {
     return true, pid
   } 

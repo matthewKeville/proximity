@@ -16,5 +16,7 @@ proximity.server/settings.json
 proximity.server/logs
 proximity.server/app.db
 
+proximity.client/prxy
+
 # deploy
 build/
