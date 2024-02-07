@@ -3,6 +3,7 @@ package main
 import (
   "proximity-client/grid"
   "proximity-client/http"
+  "proximity-client/kill"
   "os"
   "os/exec"
   "io/ioutil"
@@ -183,12 +184,14 @@ func main() {
 
     fmt.Println("killing daemon")
     log.Println("killing daemon")
-    err := syscall.Kill(serverPid,syscall.SIGKILL)
 
+
+    err := kill.KillByPid(serverPid)
     if ( err != nil ) {
       fmt.Println("unable to kill daemon")
       log.Panicf("unable to kill daemon : %s", err)
     }
+
 
     os.Exit(0)
     
