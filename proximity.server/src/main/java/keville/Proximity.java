@@ -1,7 +1,8 @@
 package keville;
 
 import keville.settings.Settings;
-import keville.settings.SettingsParser;
+import keville.settings.parser.SettingsParser;
+import keville.settings.parser.SettingsParserException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,21 +38,50 @@ public class Proximity {
   @Bean
   Settings parseSettings() {
 
-    // read settings from current directory
+    // read settings from current directory (quit if bad cfg)
+
     File localSettings = new File("settings.json");
     if ( localSettings.exists() ) {
+
       LOG.info("found local settings..");
+
       try {
+
         String localSettingsString = Files.readString(localSettings.toPath());
         Settings settings = SettingsParser.parseSettings(localSettingsString);
+        LOG.info(settings.toString());
         return settings;
+
+      //broadcast startup errors to standard out AND logs
       } catch (Exception e) {
-        LOG.error(e.getMessage());
-        throw new BeanCreationException("./settings.json is unparsable");
+
+        if ( e instanceof SettingsParserException ) {
+
+          LOG.error("Bad configuration in settings.json");
+          LOG.error(e.getMessage());
+
+          System.err.println("Bad configuration in settings.json");
+          System.err.println(e.getMessage());
+
+        } else {
+
+          LOG.error("Unexpected error parsing settings.json");
+          LOG.error(e.getClass().toString());
+          LOG.error(e.getMessage());
+
+          System.err.println("Unexpected error parsing settings.json");
+          System.err.println(e.getMessage());
+        }
+
+        System.exit(1);
+
+
       }
+
     }
 
-    // read settings from classpath
+    // read default settings from classpath
+
     try {
       InputStream inputStream = Proximity.class.getResourceAsStream("/settings.json");
       if (inputStream == null) {

@@ -91,15 +91,6 @@ public class ScanRoutine {
 
   }
 
-  public static ScanRoutine createDefault() {
-
-    ScanRoutine routine = new ScanRoutine();
-    routine.types = new HashSet<EventTypeEnum>();
-    routine.radius = 5.0;
-    routine.delay = 7200;
-    return routine;
-  }
-
   public String toString() {
 
     String result = "";

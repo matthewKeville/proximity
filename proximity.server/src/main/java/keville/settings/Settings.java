@@ -8,18 +8,23 @@ import java.util.function.Predicate;
 import keville.compilers.EventCompiler;
 import keville.event.Event;
 
-public record Settings(String dbFile,String eventbriteApiKey,int eventbriteMaxPages,int alleventsMaxPages,
-    Map<String,ScanRoutine> scanRoutines, Map<String,Predicate<Event>> filters, List<EventCompiler> eventCompilers) {
+public record Settings(
+    String dbFile,
+    String eventbriteApiKey,
+    int eventbriteMaxPages,
+    Map<String,ScanRoutine> scanRoutines,
+    Map<String,Predicate<Event>> filters,
+    List<EventCompiler> eventCompilers) 
+{
 
-  public String StringOf(Settings settings) {
+  public String toString(Settings settings) {
 
     String result = "\ndbFile : " + settings.dbFile;
 
     result += "\neventbriteApiKey : " + settings.eventbriteApiKey;
     result += "\neventbriteMaxPages : " + settings.eventbriteMaxPages;
-    result += "\nalleventsMaxPages : " + settings.alleventsMaxPages;
 
-    result += "\n Scan Routines : " +  settings.scanRoutines.size() + "\n";
+    result += "\nScan Routines : " +  settings.scanRoutines.size() + "\n";
 
     Iterator<String> routineKeyIterator = settings.scanRoutines.keySet().iterator();
     while ( routineKeyIterator.hasNext() ) {
@@ -27,13 +32,13 @@ public record Settings(String dbFile,String eventbriteApiKey,int eventbriteMaxPa
       result+= "\n"+sr.toString();
     }
 
-    result += "\n Event Compilers : " +  settings.eventCompilers.size() + "\n";
+    result += "\nEvent Compilers : " +  settings.eventCompilers.size() + "\n";
 
     for ( EventCompiler ec : settings.eventCompilers ) {
       result+= "\n"+ec.toString();
     }
 
-    result += "\n Custom Filters : " +  settings.filters.keySet().size() + "\n";
+    result += "\nCustom Filters : " +  settings.filters.keySet().size() + "\n";
     Iterator<String> filterKeyIterator = settings.filters.keySet().iterator();
     while ( filterKeyIterator.hasNext() ) {
       result+= "\n"+filterKeyIterator.next();

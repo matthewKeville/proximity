@@ -1,5 +1,5 @@
 {
-    "event_brite_max_pages" : 5,
+    "eventbrite_max_pages" : 5,
     "allevents_max_pages" : 5,
     "routines" : [
         {

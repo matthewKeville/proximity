@@ -39,13 +39,10 @@ func startServer() int {
   jarPath := cwd+"/proximity.jar"
   cmd := exec.Command("java","-jar",jarPath)
 
-  fh, err := os.OpenFile("logs/prxy-wrapper.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
-  if err != nil {
-    log.Fatalf("error configuring log file for daemon wrapper")
-  }
-  defer fh.Close()
-  cmd.Stderr = fh
-  cmd.Stdin = fh
+  //cmd.Stdout = os.Stdout
+  //forward jvm stderr stream to this stderr
+  //so client can see config failure
+  cmd.Stderr = os.Stderr
 
   log.Printf("starting the server ")
   log.Printf("arguments : %s",cmd.Args)
@@ -55,7 +52,7 @@ func startServer() int {
 
   if err2 != nil {
     log.Fatalf("encountered an error starting server %s", err2)
-  } 
+  }
 
   log.Printf("daemon started... %d",cmd.Process.Pid)
  
