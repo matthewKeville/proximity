@@ -11,7 +11,7 @@ func OpenUrl(url string) {
   var cmd *exec.Cmd
 
   if ( runtime.GOOS == "windows" ) {
-    cmd = exec.Command("start",url)
+    cmd = exec.Command("cmd","/c","start",url)
   } else {
     cmd = exec.Command("open",url)
   }
