@@ -3,12 +3,18 @@ package desktop
 import (
   "os/exec"
   "log"
+  "runtime"
 )
 
 func OpenUrl(url string) {
 
-  // I think "start" works on windows
-  cmd := exec.Command("open",url) //open should be xplatform for MacOS
+  var cmd *exec.Cmd
+
+  if ( runtime.GOOS == "windows" ) {
+    cmd = exec.Command("start",url)
+  } else {
+    cmd = exec.Command("open",url)
+  }
 
   cmd.Stderr = nil
   cmd.Stdin = nil

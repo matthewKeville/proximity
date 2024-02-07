@@ -40,5 +40,5 @@ GOOS=$OS GOARCH=$ARCH go build -o $EXECUTABLE main/main.go
 cd ..
 mv ./proximity.client/$EXECUTABLE "$BUILD_DIR"
 
-zip "$BUILD_DIR"/proximity-"$OS"-"$ARCH".zip "$BUILD_DIR"/*
+zip -j "$BUILD_DIR"/proximity-"$OS"-"$ARCH".zip "$BUILD_DIR"/*
 
